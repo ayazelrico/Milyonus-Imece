@@ -37,13 +37,18 @@ def build_provider(cfg: ProviderConfig, *, model: str | None = None) -> Provider
             resolved_model,
             base_url=cfg.base_url,
             api_key_env=key_env or "OPENAI_API_KEY",
+            reasoning_effort=cfg.reasoning_effort,
         )
 
     if name == "local":
         # Local OpenAI-compatible server (Ollama default port). No key required.
         base = cfg.base_url or "http://localhost:11434/v1"
         return OpenAICompatProvider(
-            resolved_model, base_url=base, api_key="not-needed", api_key_env="_UNUSED"
+            resolved_model,
+            base_url=base,
+            api_key="not-needed",
+            api_key_env="_UNUSED",
+            reasoning_effort=cfg.reasoning_effort,
         )
 
     raise ProviderError(f"Unknown provider: {name}")

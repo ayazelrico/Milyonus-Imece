@@ -23,3 +23,28 @@ env_passthrough = []
 
 [telemetry]
 enabled = false                 # opt-in, anonymous, off by default
+
+[imece]
+# Milyonus-Imece run (`milyonus imece run "<task>"`). 10,000 is the reference
+# distribution; `agents` scales it. 17 is the minimum (every mandatory function
+# keeps at least one agent). The 5-member IRADE council is outside this total.
+agents = 120
+max_parallel = 8                # concurrent subagents
+max_tokens = 2000000            # shared token pool for the whole run
+max_rounds = 2                  # a Kapı 3 rejection feeds the next round
+pass_threshold = 0.6            # Kapı 2 test pass rate needed to reach IRADE
+veto_floor = 0.5                # IRADE: mean safety/legal/reversibility floor
+hard_veto_floor = 0.2           # IRADE: any single member below this vetoes
+audit_rate = 0.05               # share of tier 0-1 decisions re-checked by council
+allow_tools = []                # e.g. ["web_fetch"] to let recon read the web
+
+# Put council members and the approval seat on DIFFERENT vendors so their
+# errors are less correlated. Unset seats use [provider].
+# [imece.seats.council_risk]
+# name = "openai"
+# base_url = "https://openrouter.ai/api/v1"
+# model = "<vendor>/<model>"
+# [imece.seats.approval]
+# name = "openai"
+# base_url = "https://openrouter.ai/api/v1"
+# model = "<another-vendor>/<model>"

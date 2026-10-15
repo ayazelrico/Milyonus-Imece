@@ -107,6 +107,7 @@ from milyonus.cli.admin_cmd import admin_app  # noqa: E402
 from milyonus.cli.cron_cmd import cron_app  # noqa: E402
 from milyonus.cli.eval_cmd import eval_app  # noqa: E402
 from milyonus.cli.gateway_cmd import gateway_app  # noqa: E402
+from milyonus.cli.imece_cmd import imece_app  # noqa: E402
 from milyonus.cli.mcp_cmd import mcp_app  # noqa: E402
 from milyonus.cli.memory_cmd import audit_app, memory_app  # noqa: E402
 from milyonus.cli.proactive_cmd import proactive_app  # noqa: E402
@@ -125,6 +126,7 @@ app.add_typer(cron_app, name="cron")
 app.add_typer(proactive_app, name="proactive")
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(user_app, name="user")
+app.add_typer(imece_app, name="imece")
 
 
 def main() -> None:

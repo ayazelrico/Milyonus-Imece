@@ -46,9 +46,9 @@ milyonus = "milyonus.cli.app:main"
 mil = "milyonus.cli.app:main"
 
 [project.urls]
-Homepage = "https://github.com/ayazelrico/Milyonus-Agent-5.5"
-Documentation = "https://github.com/ayazelrico/Milyonus-Agent-5.5#readme"
-Repository = "https://github.com/ayazelrico/Milyonus-Agent-5.5"
+Homepage = "https://github.com/ayazelrico/Milyonus-Imece"
+Documentation = "https://github.com/ayazelrico/Milyonus-Imece#readme"
+Repository = "https://github.com/ayazelrico/Milyonus-Imece"
 
 [build-system]
 requires = ["hatchling"]

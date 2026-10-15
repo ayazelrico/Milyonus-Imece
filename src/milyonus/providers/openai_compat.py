@@ -79,6 +79,7 @@ class OpenAICompatProvider:
         api_key: str | None = None,
         api_key_env: str = "OPENAI_API_KEY",
         client: httpx.AsyncClient | None = None,
+        reasoning_effort: str | None = None,
     ) -> None:
         self.name = "openai"
         self.model = model
@@ -86,6 +87,7 @@ class OpenAICompatProvider:
         self._api_key = api_key or os.environ.get(api_key_env, "")
         self._api_key_env = api_key_env
         self._client = client
+        self._reasoning_effort = reasoning_effort
 
     def _headers(self) -> dict[str, str]:
         if not self._api_key:
@@ -122,6 +124,13 @@ class OpenAICompatProvider:
             ]
         if request.temperature != 1.0:
             payload["temperature"] = request.temperature
+        if self._reasoning_effort:
+            # Reasoning models spend max_tokens on hidden reasoning first; capping
+            # the effort leaves room for the actual answer.
+            if "openrouter" in self._url:
+                payload["reasoning"] = {"effort": self._reasoning_effort}
+            else:
+                payload["reasoning_effort"] = self._reasoning_effort
         return payload
 
     async def stream(self, request: CompletionRequest) -> AsyncIterator[StreamEvent]:
@@ -130,6 +139,7 @@ class OpenAICompatProvider:
         # tool_calls arrive as indexed deltas; assemble by index.
         tools: dict[int, dict] = {}
         usage = Usage()
+        stop_reason: str | None = None
         try:
             async with client.stream(
                 "POST",
@@ -177,8 +187,12 @@ class OpenAICompatProvider:
                                             id=slot["id"], name=slot["name"], arguments=args
                                         ),
                                     )
-                            yield StreamEvent(kind="usage", usage=usage)
-                            yield StreamEvent(kind="done", stop_reason=finish)
+                            tools.clear()
+                            stop_reason = finish
+            # Usage often arrives in a chunk AFTER finish_reason (stream_options
+            # include_usage), so report it only once the stream has ended.
+            yield StreamEvent(kind="usage", usage=usage)
+            yield StreamEvent(kind="done", stop_reason=stop_reason)
         finally:
             if owns_client:
                 await client.aclose()

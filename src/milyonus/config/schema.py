@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 ProviderName = Literal["anthropic", "openai", "local"]
 
@@ -30,6 +30,9 @@ class ProviderConfig(_Strict):
     # custom gateway coexist with the provider name "openai".
     api_key_env: str | None = None
     max_output_tokens: int = 4096
+    # For reasoning models on OpenAI-compatible endpoints: cap hidden reasoning
+    # so it cannot consume the whole output budget and leave an empty answer.
+    reasoning_effort: Literal["minimal", "low", "medium", "high"] | None = None
 
 
 class MemoryConfig(_Strict):
@@ -129,6 +132,63 @@ class MCPServerConfig(_Strict):
     risk: Literal["safe", "caution", "danger"] = "caution"
 
 
+# Model seats an imece run can pin to a specific provider/model. "pool" is the
+# imece labor pool; council_<perspective> are the five IRADE members; the rest
+# are the independent blocks. Unset seats fall back to `pool` (= [provider]).
+IMECE_SEATS = (
+    "pool",
+    "framing",
+    "test_design",
+    "red_team",
+    "evidence_audit",
+    "compliance",
+    "observer",
+    "approval",
+    "council_correctness",
+    "council_risk",
+    "council_user_impact",
+    "council_cost_speed",
+    "council_devils_advocate",
+)
+
+
+class ImeceConfig(_Strict):
+    """Milyonus-Imece: the İmece-İRADE multi-agent run (`milyonus imece run`)."""
+
+    # Total subagents, scaled from the 10,000 reference distribution. 17 is the
+    # smallest size at which every mandatory function has at least one agent.
+    agents: int = Field(default=120, ge=17, le=100_000)
+    max_parallel: int = Field(default=8, ge=1, le=256)
+    # Shared token pool for the whole run; the run stops cleanly when spent.
+    max_tokens: int = Field(default=2_000_000, ge=10_000)
+    max_rounds: int = Field(default=2, ge=1, le=5)
+    max_clusters: int = Field(default=9, ge=1, le=50)
+    shortlist: int = Field(default=4, ge=1, le=12)
+    pass_threshold: float = Field(default=0.6, ge=0.0, le=1.0)
+    # Output cap per imece agent. Reasoning models need room for hidden
+    # reasoning on top of the answer.
+    max_output_tokens: int = Field(default=8192, ge=256, le=64_000)
+    # IRADE: veto floors on safety/legal/reversibility, and escalation triggers.
+    veto_floor: float = Field(default=0.5, ge=0.0, le=1.0)
+    hard_veto_floor: float = Field(default=0.2, ge=0.0, le=1.0)
+    spread_threshold: float = Field(default=0.15, ge=0.0, le=1.0)
+    # Share of tier 0-1 decisions re-checked by the council (drift audit).
+    audit_rate: float = Field(default=0.05, ge=0.0, le=1.0)
+    # Non-"safe" tools imece agents may still use. Only read-only tools qualify.
+    allow_tools: list[Literal["web_fetch"]] = Field(default_factory=list)
+    # Per-seat models. Put each council member and the approval seat on a
+    # different vendor to keep their errors uncorrelated.
+    seats: dict[str, ProviderConfig] = Field(default_factory=dict)
+
+    @field_validator("seats")
+    @classmethod
+    def _known_seats(cls, v: dict[str, ProviderConfig]) -> dict[str, ProviderConfig]:
+        unknown = sorted(set(v) - set(IMECE_SEATS))
+        if unknown:
+            raise ValueError(f"unknown imece seat(s): {unknown}; valid: {list(IMECE_SEATS)}")
+        return v
+
+
 class MilyonusConfig(_Strict):
     """Top-level config, loaded from ~/.milyonus/config.toml."""
 
@@ -138,3 +198,4 @@ class MilyonusConfig(_Strict):
     telemetry: TelemetryConfig = Field(default_factory=TelemetryConfig)
     # External MCP servers to connect at startup. Empty by default (opt-in).
     mcp_servers: list[MCPServerConfig] = Field(default_factory=list)
+    imece: ImeceConfig = Field(default_factory=ImeceConfig)

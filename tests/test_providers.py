@@ -142,3 +142,28 @@ def test_missing_key_errors(monkeypatch):
     p = AnthropicProvider("m", api_key="")
     with pytest.raises(ProviderError):
         p._headers()
+
+
+@pytest.mark.asyncio
+async def test_openai_usage_after_finish_chunk_is_counted():
+    # stream_options.include_usage: usage arrives in its own chunk after finish.
+    body = (
+        'data: {"choices":[{"delta":{"content":"ok"},"finish_reason":null}]}\n\n'
+        'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n'
+        'data: {"choices":[],"usage":{"prompt_tokens":7,"completion_tokens":3}}\n\n'
+        "data: [DONE]\n\n"
+    )
+    p = OpenAICompatProvider("m", api_key="k", client=_client_returning(body))
+    text, _, usage, stop = await _collect(p, _req())
+    assert text == "ok" and stop == "stop"
+    assert usage.input_tokens == 7 and usage.output_tokens == 3
+
+
+def test_openrouter_reasoning_effort_payload():
+    p = OpenAICompatProvider(
+        "m", base_url="https://openrouter.ai/api/v1", api_key="k", reasoning_effort="low"
+    )
+    assert p._payload(_req())["reasoning"] == {"effort": "low"}
+    q = OpenAICompatProvider("m", api_key="k", reasoning_effort="low")
+    assert q._payload(_req())["reasoning_effort"] == "low"
+    assert "reasoning" not in OpenAICompatProvider("m", api_key="k")._payload(_req())
