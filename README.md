@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/brand/milyonus-wordmark.png" width="660" alt="Milyonus"/>
+<img src="docs/assets/milyonus-wordmark-lg.png" alt="Milyonus" width="640" />
 
 ### ✦ Milyonus-Imece — *Labor in the imece. Speed in IRADE. Truth at the gates.*
 
