@@ -28,29 +28,40 @@ uv run python -m evals.poisonbench.run                 # rule-based verifier
 MILYONUS_LIVE=1 uv run python -m evals.poisonbench.run # full pipeline (+ model verifier)
 ```
 
-### Results (v5.5.0, held-out = 8 novel attacks + 4 benign controls)
+### Results (2026-11-02, held-out = 8 novel attacks + 4 benign controls)
 
 | Configuration | Held-out ASR | Held-out RSR | Held-out legit |
 |---|---|---|---|
-| Rule-based verifier only | **75.0%** | 75.0% | 100% |
+| Rule-based verifier only | **50.0%** | 50.0% | 100% |
 | **Full pipeline (rule + model verifier)** | **0.0%** | **0.0%** | **100%** |
 
 **Read this carefully — it is the real story:**
 
-- The regex scanner **alone does not generalize** (75% ASR on novel attacks). A
+- The regex scanner **alone does not generalize** (50% ASR on this set). A
   scanner only catches what it was written for.
-- The **full pipeline generalizes to 0%** because poisoning resistance is
-  *structural*, not pattern-based: there is **no direct-write path**, an
+- The **full pipeline blocked all 8 attacks in this run**. There is **no direct-write path**, an
   independent **verifier model** judges every candidate, sources have
   **competence limits**, and promotion follows **trust tiers**. The model
-  verifier caught every novel attack the regex missed.
+  verifier caught every attack in this small held-out sample that the regex missed.
+  This is not a guarantee for arbitrary future attacks. API failures keep claims
+  quarantined rather than approving them or adding false negative-memory entries.
 - This is why the layered design exists. The deterministic floor is a cheap,
   key-less first pass; the verifier is what makes it hold against attacks nobody
   wrote a rule for.
 
 > Trade-off: the cautious model verifier also rejects some *legitimate* train-set
-> facts (train legit promotion ≈ 73%). Held-out legit promotion stayed at 100%.
+> facts (train legit promotion 8/9, ≈89%). Held-out legit promotion stayed at 4/4.
 > Tuning verifier precision is ongoing.
+
+Raw result: [`2026-11-02-final-memory.json`](trials/2026-11-02-final-memory.json).
+Reproduce using the configured independent verifier (API calls incur cost):
+
+```bash
+MILYONUS_LIVE=1 MILYONUS_EVAL_CONFIG=docs/imece-trial.toml uv run python -m evals.poisonbench.run --json memory-report.json
+```
+
+The keyless rule-only command exits nonzero when it misses the stated target;
+printing a failing benchmark no longer reports shell success.
 
 ### For orientation vs Hermes
 

@@ -20,6 +20,7 @@ through the council to measure drift (guarantee #6).
 from __future__ import annotations
 
 import json
+import math
 import random
 import statistics
 from collections.abc import Awaitable, Callable
@@ -52,6 +53,7 @@ OPTION_CHARS = 1200
 class Option:
     id: str
     summary: str
+    evidence: str = ""
 
 
 @dataclass(slots=True)
@@ -161,7 +163,16 @@ def _read_scores(raw: object, ids: list[str]) -> dict[str, dict[str, float]] | N
         if not isinstance(row, dict):
             return None
         try:
-            out[oid] = {dim: max(0.0, min(1.0, float(row[dim]))) for dim in DIMENSIONS}
+            values = [row[dim] for dim in DIMENSIONS]
+            if any(
+                isinstance(v, bool)
+                or not isinstance(v, (int, float))
+                or not math.isfinite(v)
+                or not 0 <= v <= 1
+                for v in values
+            ):
+                return None
+            out[oid] = dict(zip(DIMENSIONS, values, strict=True))
         except (KeyError, TypeError, ValueError):
             return None
     return out
@@ -169,7 +180,8 @@ def _read_scores(raw: object, ids: list[str]) -> dict[str, dict[str, float]] | N
 
 def _clamp(v: object) -> float:
     try:
-        return max(0.0, min(1.0, float(v)))  # type: ignore[arg-type]
+        value = float(v)  # type: ignore[arg-type]
+        return max(0.0, min(1.0, value)) if math.isfinite(value) else 0.0
     except (TypeError, ValueError):
         return 0.0
 
@@ -254,6 +266,40 @@ class Irade:
         self.log.append(d)
         return d
 
+    async def decide_layered(self, req: DecisionRequest, *, cell_size: int = 9) -> Decision:
+        """Bounded council packets. Every option is considered in a leaf cell;
+        winners retain their original payload and advance through parent cells.
+        Independent reality filtering must happen before calling this method.
+        """
+        if not 2 <= cell_size <= 12:
+            raise ValueError("council cell size must be between 2 and 12")
+        options = list(req.options)
+        level = 0
+        while len(options) > cell_size:
+            winners = []
+            for start in range(0, len(options), cell_size):
+                group = options[start : start + cell_size]
+                if len(group) == 1:
+                    winners.extend(group)
+                    continue
+                cell = DecisionRequest(
+                    req.kind, req.question, group, req.context, req.impact, req.reversible
+                )
+                decision = await self.decide(cell)
+                decision.rationale.append(f"hierarchy level {level}, cell {start // cell_size}")
+                if decision.stopped:
+                    return decision
+                winners.append(next(o for o in group if o.id == decision.choice))
+            options = winners
+            level += 1
+        result = await self.decide(
+            DecisionRequest(
+                req.kind, req.question, options, req.context, req.impact, req.reversible
+            )
+        )
+        result.rationale.append(f"hierarchy root level {level}")
+        return result
+
     def _triggers(self, d: Decision, *, strict: bool = False) -> list[str]:
         k = 1.5 if strict else 1.0
         out: list[str] = []
@@ -261,11 +307,11 @@ class Irade:
             out.append(f"council quorum not met ({len(d.abstained)} abstained)")
         elif d.choice is None:
             out.append("every option vetoed")
-        if d.spread > self.s.spread_threshold * k:
+        if d.spread > self.s.spread_threshold / k:
             out.append(f"score spread {d.spread:.2f}")
-        if d.vote_share < self.s.min_vote_share / k:
+        if d.vote_share < min(1.0, self.s.min_vote_share * k):
             out.append(f"vote share {d.vote_share:.2f}")
-        if d.confidence < self.s.min_confidence / k:
+        if d.confidence < min(1.0, self.s.min_confidence * k):
             out.append(f"low confidence {d.confidence:.2f}")
         return out
 
@@ -308,12 +354,13 @@ class Irade:
     # ── the council itself ─────────────────────────────────────────────────
     def _spec(self, req: DecisionRequest, perspective: str) -> AgentSpec:
         options = "\n\n".join(
-            f"## Option {o.id}\n{clip(o.summary, OPTION_CHARS)}" for o in req.options
+            f"## Option {o.id}\n{clip(o.summary, OPTION_CHARS)}\n\nIndependent gate evidence:\n{clip(o.evidence, OPTION_CHARS) if o.evidence else '(not supplied)'}"
+            for o in req.options
         )
         schema = {
-            "scores": {o.id: dict.fromkeys(DIMENSIONS, "0..1") for o in req.options[:1]},
+            "scores": {o.id: dict.fromkeys(DIMENSIONS, 0.8) for o in req.options[:1]},
             "choice": "option id",
-            "confidence": "0..1",
+            "confidence": 0.8,
             "rationale": "one paragraph",
         }
         return AgentSpec(
@@ -324,6 +371,10 @@ class Irade:
                 f"{req.question}\n\nScore EVERY option on every dimension from 0 (worst) to 1 "
                 f"(best), strictly from your perspective: {PERSPECTIVES[perspective]} "
                 "For 'reversibility', 1 means fully reversible. Then pick one option."
+                " All scores/confidence MUST be JSON numbers, never quoted strings. "
+                "Use the independent gate evidence; do not invent defects from hypothetical missing code. "
+                "Only penalize demonstrated contract violations. If multiple options share your top score, "
+                "choose the first listed tied option; do not introduce an unscored aesthetic tie-break."
             ),
             context=f"{req.context}\n\n# Options\n{options}",
             success_criteria=[

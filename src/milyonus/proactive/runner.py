@@ -53,6 +53,7 @@ async def run_scheduled_task(
     max_output_tokens: int = 4096,
 ) -> tuple[str, RunTrace, list[str]]:
     """Run the task's prompt unattended. Returns (answer, trace, denied_tools)."""
+    from milyonus.config.loader import load_config
     from milyonus.tools.fs.tools import make_fs_tools
     from milyonus.tools.registry import ToolRegistry
     from milyonus.tools.terminal.tools import make_shell_tool
@@ -61,11 +62,20 @@ async def run_scheduled_task(
     reg = ToolRegistry()
     for t in make_fs_tools(workspace):
         reg.register(t)
-    reg.register(make_shell_tool(workspace))
+    security = load_config().security
+    reg.register(
+        make_shell_tool(workspace, backend=security.sandbox_backend, image=security.sandbox_image)
+    )
     for t in make_web_tools():
         reg.register(t)
 
     denied: list[str] = []
+
+    async def on_denied(call, reason):
+        entry = f"{call.name} (blocked: {reason})"
+        if not any(d.startswith(call.name + " ") for d in denied):
+            denied.append(entry)
+
     tracer = Tracer(task_id=task.id, model=provider.model)
     loop = AgentLoop(
         provider=provider,
@@ -73,6 +83,7 @@ async def run_scheduled_task(
         system_prompt=build_system_prompt(),
         budget=Budget(max_iterations=20),
         approve=_policy_approver(task.autonomy, RiskEngine(), denied),
+        on_denied=on_denied,
         tracer=tracer,
         max_output_tokens=max_output_tokens,
     )

@@ -42,9 +42,32 @@ def make_fs_tools(root: Path) -> list[Tool]:
 
     async def write_file(args: dict[str, Any]) -> str:
         p = _resolve(root, args["path"])
-        p.parent.mkdir(parents=True, exist_ok=True)
         content = args["content"]
-        p.write_text(content, encoding="utf-8")
+
+        async def mutate():
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(content, encoding="utf-8")
+
+        core = Path(__file__).resolve().parents[2]
+        if core == p or core in p.parents:
+            from milyonus.selfmod.harness import SelfModHarness
+
+            repo = next((parent for parent in core.parents if (parent / ".git").exists()), None)
+            if repo is None:
+                return "Self-modification refused: no Git snapshot/rollback root available."
+            harness = SelfModHarness(repo)
+            kept, message = await harness.apply_change(
+                f"write {p.relative_to(repo)}",
+                mutate,
+                run_doctor=True,
+                changed_paths=(p,),
+            )
+            return (
+                message
+                if not kept
+                else f"Wrote: {args['path']} (self-modification test gate passed)"
+            )
+        await mutate()
         return f"Wrote: {args['path']} ({len(content)} chars)"
 
     async def list_dir(args: dict[str, Any]) -> str:

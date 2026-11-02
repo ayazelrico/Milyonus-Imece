@@ -17,6 +17,7 @@ Every rejection is written to negative memory so a rephrase is caught next time.
 from __future__ import annotations
 
 import time
+from contextlib import suppress
 
 from milyonus.config.schema import MemoryConfig
 from milyonus.memory.model import (
@@ -103,6 +104,9 @@ class MemoryPipeline:
         item = self.store.get(item_id)
         if item is None or item.state != "pending":
             return item.state if item else "missing"
+        if item.expires_at is not None and item.expires_at <= time.time():
+            self.store.expire_due()
+            return "expired"
 
         # 1. Rephrase-of-rejected check (negative memory).
         prior_neg = [n["content"] for n in self.store.negatives()]
@@ -117,6 +121,10 @@ class MemoryPipeline:
 
         # 2. Verifier (rule-based floor, optional model on top).
         verdict = await self._verify(item.content, item)
+        if verdict.retryable:
+            # An unavailable verifier is not evidence that a claim is false.
+            # Keep it quarantined without poisoning the negative-memory ledger.
+            return "pending"
         if not verdict.approved:
             self.store.mark_rejected(item_id, reason=verdict.reason)
             self.store.add_negative(
@@ -146,22 +154,46 @@ class MemoryPipeline:
             return "active"
         if tier == "T3":
             needed = self.config.t3_confirmations_required
-            if item.confirmations + 1 >= needed:
+            confirmations = 0
+            if item.provenance.source_uri:
+                with suppress(ValueError):
+                    confirmations = self.store.add_confirmation(
+                        item_id, source_uri=item.provenance.source_uri, evidence=item.content
+                    )
+            if confirmations >= needed:
                 self.store.mark_active(
                     item_id,
                     verdict=verdict.reason,
-                    confirmations=item.confirmations + 1,
+                    confirmations=confirmations,
                     review_at=review_at(tier, time.time(), self.config),
                 )
                 self._index(item_id)
                 return "active"
             # Not enough confirmations yet: keep pending, set an expiry so an
             # unconfirmed third-party claim does not linger forever.
-            self.store.add_confirmation(item_id)
-            self.store.set_expiry(item_id, expires_at=time.time() + self.config.t3_ttl_days * 86400)
+            if item.expires_at is None:
+                self.store.set_expiry(
+                    item_id, expires_at=item.created_at + self.config.t3_ttl_days * 86400
+                )
             return "pending"
         # T4 and anything else: never auto-promote.
         return "pending"
+
+    async def confirm(self, item_id: str, *, source_uri: str, evidence: str) -> str:
+        """For trusted ingestion adapters/operator workflows after observing a
+        second source. Not exposed as an agent-callable tool: a model must not
+        invent corroboration URLs to promote its own claims.
+        """
+        item = self.store.get(item_id)
+        if item is None or item.trust_tier != "T3" or item.state != "pending":
+            raise ValueError("only pending T3 claims accept corroboration")
+        verdict = await self._verify(evidence, item)
+        if verdict.retryable:
+            return "pending"
+        if not verdict.approved:
+            raise ValueError("corroborating evidence failed verification")
+        self.store.add_confirmation(item_id, source_uri=source_uri, evidence=evidence)
+        return await self.process_one(item_id)
 
     async def process_pending(self) -> dict[str, int]:
         """Process all pending items. Returns a count of resulting states."""

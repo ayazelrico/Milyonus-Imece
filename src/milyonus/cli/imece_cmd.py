@@ -84,7 +84,7 @@ def plan_cmd(
     from milyonus.config.loader import load_config
     from milyonus.imece.scale import ScaleError
 
-    total = agents or load_config().imece.agents
+    total = load_config().imece.agents if agents is None else agents
     try:
         console.print(_allocation_table(total))
     except ScaleError as exc:
@@ -138,6 +138,10 @@ def run_cmd(
     max_tokens: int = typer.Option(None, "--max-tokens", help="Shared token pool"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip the cost confirmation"),
     out: str = typer.Option(None, "--out", help="Write the deliverable to this file"),
+    verification: str = typer.Option(
+        None, "--verification", help="model or python (actual isolated tests)"
+    ),
+    sandbox_backend: str = typer.Option(None, "--sandbox-backend", help="docker or macos"),
 ) -> None:
     """Run a task through Kapı 1 → imece ↔ IRADE → Kapı 2 → Kapı 3."""
     raise typer.Exit(
@@ -149,6 +153,8 @@ def run_cmd(
             max_tokens=max_tokens,
             yes=yes,
             out=Path(out) if out else None,
+            verification=verification,
+            sandbox_backend=sandbox_backend,
         )
     )
 
@@ -162,6 +168,8 @@ def run_imece(
     max_tokens: int | None = None,
     yes: bool = False,
     out: Path | None = None,
+    verification: str | None = None,
+    sandbox_backend: str | None = None,
 ) -> int:
     import asyncio
 
@@ -178,15 +186,38 @@ def run_imece(
 
     load_env()
     cfg = load_config()
-    ic = cfg.imece
+    from pydantic import ValidationError
+
+    overrides = {
+        "agents": agents,
+        "max_parallel": parallel,
+        "max_tokens": max_tokens,
+        "max_rounds": rounds,
+        "verification": verification,
+        "sandbox_backend": sandbox_backend,
+    }
+    try:
+        ic = type(cfg.imece).model_validate(
+            cfg.imece.model_dump()
+            | {key: value for key, value in overrides.items() if value is not None}
+        )
+    except ValidationError as exc:
+        console.print(f"Invalid imece configuration: {exc}", markup=False)
+        return 1
     settings = ImeceSettings(
-        agents=agents or ic.agents,
-        max_parallel=parallel or ic.max_parallel,
-        max_tokens=max_tokens or ic.max_tokens,
-        max_rounds=rounds or ic.max_rounds,
+        agents=ic.agents if agents is None else agents,
+        max_parallel=ic.max_parallel if parallel is None else parallel,
+        max_tokens=ic.max_tokens if max_tokens is None else max_tokens,
+        max_rounds=ic.max_rounds if rounds is None else rounds,
         max_clusters=ic.max_clusters,
         shortlist=ic.shortlist,
         pass_threshold=ic.pass_threshold,
+        verification=ic.verification,
+        sandbox_backend=ic.sandbox_backend,
+        sandbox_image=ic.sandbox_image,
+        test_timeout=ic.test_timeout,
+        agent_timeout=ic.agent_timeout,
+        cell_size=ic.cell_size,
         irade=IradeSettings(
             veto_floor=ic.veto_floor,
             hard_veto_floor=ic.hard_veto_floor,
@@ -295,3 +326,68 @@ def run_imece(
             console.print(result.deliverable)
     console.print(f"[dim]full report → {report}[/]")
     return 0 if result.status == "accepted" else 2
+
+
+@imece_app.command("benchmark")
+def benchmark_cmd(
+    out: str = typer.Option("imece-benchmark.json", help="JSON report path"),
+    task: str = typer.Option(None, help="clamp, merge_intervals or iban_tr; omitted = all"),
+    agents: int = typer.Option(17, "--agents", "-n", min=17, max=100000),
+    repeats: int = typer.Option(1, min=1, max=20),
+    sandbox_backend: str = typer.Option("docker", help="docker or macos"),
+    max_tokens: int = typer.Option(250000, min=10000),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Confirm model API spend"),
+) -> None:
+    """Measure accepted results, held-out correctness, tokens, cost and calibration."""
+    import asyncio
+
+    from milyonus.config.env import load_env
+    from milyonus.config.loader import load_config
+    from milyonus.imece.agents import LLMAgentFn
+    from milyonus.imece.benchmark import TASKS, run_benchmark
+    from milyonus.imece.orchestrator import ImeceSettings
+
+    selected = tuple(t for t in TASKS if task is None or t.id == task)
+    if not selected:
+        raise typer.BadParameter("unknown benchmark task")
+    if sandbox_backend not in ("docker", "macos"):
+        raise typer.BadParameter("sandbox backend must be docker or macos")
+    load_env()
+    cfg = load_config()
+    seats, warnings = _seat_providers(cfg)
+    for warning in warnings:
+        console.print(warning, markup=False)
+    if not yes:
+        if not sys.stdin.isatty():
+            raise typer.BadParameter("noninteractive benchmark requires -y to confirm model spend")
+        typer.confirm(f"Run {len(selected) * repeats} model-backed evaluations?", abort=True)
+    settings = ImeceSettings(
+        agents=agents,
+        max_parallel=cfg.imece.max_parallel,
+        max_tokens=max_tokens,
+        max_rounds=cfg.imece.max_rounds,
+        verification="python",
+        sandbox_backend=sandbox_backend,
+        sandbox_image=cfg.imece.sandbox_image,
+        test_timeout=cfg.imece.test_timeout,
+        agent_timeout=cfg.imece.agent_timeout,
+        cell_size=cfg.imece.cell_size,
+    )
+    report = asyncio.run(
+        run_benchmark(
+            LLMAgentFn(seats=seats, max_output_tokens=cfg.imece.max_output_tokens),
+            settings,
+            tasks=selected,
+            repeats=repeats,
+            source="real-model",
+            on_phase=console.print,
+        )
+    )
+    report["models"] = {seat: provider.model for seat, provider in seats.items()}
+    report["independence_warnings"] = warnings
+    report_path = Path(out)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    console.print_json(data=report["summary"])
+    console.print(f"report → {out}")
+    raise typer.Exit(0 if report["summary"]["verified_successes"] == len(report["runs"]) else 2)

@@ -19,6 +19,8 @@ milyonus imece plan -n 120          # show the distribution, no model calls
 milyonus imece seats                # which model sits where + independence warnings
 milyonus imece run "<task>" -n 120 -p 8 --max-tokens 2000000
 milyonus imece stop                 # human stop: halts before the next phase
+milyonus imece run "<Python task>" -n 17 --verification python --sandbox-backend docker
+milyonus imece benchmark --task clamp --sandbox-backend docker -y --out benchmark.json
 ```
 
 `-n` is the number of real subagents. 10,000 is the reference distribution; any
@@ -43,3 +45,39 @@ scales proportionally. The 5 IRADE members are outside that total.
 
 Put council seats and the approval seat on different vendors (`[imece.seats.*]`,
 see `docs/config.example.toml`); `milyonus imece seats` warns when they share a model.
+
+## Executable verification
+
+The default `model` mode retains model-judged tests. `python` mode requires named
+artifacts (` ```python file=solution.py ` opening fence), standard-library Python
+test scripts, and an isolation backend. Tests are designed from the frame only;
+every script executes in a fresh process. Every executable test must pass,
+regardless of `pass_threshold`. A missing backend, invalid artifact, missing
+script, timeout or failed reviewer does not count as a pass. Revised and polished
+outputs are retested before council/approval use their evidence.
+
+Docker requires the CLI, daemon and a pre-pulled image:
+
+```bash
+docker pull python:3.12-slim
+```
+
+It runs without network/capabilities, as a non-root UID, with read-only code and
+oracle mounts, memory/CPU/PID limits and timeout cleanup. `macos` uses Seatbelt
+for local development; it restricts host-file reads, writes, process forks and
+network but is not equivalent to a container memory limit. No unsandboxed fallback
+is provided. Python dependencies beyond the standard library are not installed.
+
+## Hierarchy and measurement
+
+`cell_size` is 7–12 (default 9). Recon, expert and command contributions are
+reduced through bounded cells. Plan options enter layered council packets;
+each option is considered at a leaf and winners advance with original payloads.
+The worker pool bounds live asyncio tasks independently of total agent count.
+Hierarchical elimination can discard an option that a global comparison would
+prefer; evaluate this tradeoff on the benchmark rather than assuming equivalence.
+
+The benchmark separately reports acceptance and correctness under an oracle
+never shown to agents. Unknown costs stay null; token-price calculations are
+estimates, not billing receipts. One-run calibration is not statistically useful.
+Raw trial configuration and reports: [completion assessment](completion.md).

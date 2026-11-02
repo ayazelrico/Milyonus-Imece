@@ -2,7 +2,8 @@
 
 > Status: **v5.5.0 shipped** — most phases complete. This document records the
 > architecture and the decisions behind it; the README and `docs/` are the
-> living reference.
+> living reference. For the 2026-11-02 İmece/core completion work, see
+> [the evidence-backed assessment](docs/completion.md) and [the next 5X plan](PLAN-5X.md).
 > Owner: @ayazelrico · License: Apache-2.0
 
 ---
@@ -447,9 +448,9 @@ Production checklist in `docs/production.md`.
 | **F6 — Extension** | Subagent + contract, MCP client, self-mod harness, ACP | ✅ Done |
 | **F7 — Release** | Docker/installer, mkdocs, benchmark report, automated PyPI + Docker Hub | ✅ Done (v5.5.0) |
 | Eval & observability | Tracing, cost, TaskBench | ✅ Done |
-| Vector/embedding memory layer | opt-in sqlite-vec | ⏳ Planned |
-| Cross-session user modelling | Honcho-style | ⏳ Planned |
-| Larger PoisonBench + third-party audit | | ⏳ Planned |
+| Vector/embedding memory layer | trust-weighted semantic recall | ✅ Implemented; see README |
+| Cross-session user modelling | per-user scoped, verified-growth | ✅ Implemented; see README |
+| Larger PoisonBench + third-party audit | multi-step suite implemented; external audit pending | ⏳ Partial |
 
 ---
 

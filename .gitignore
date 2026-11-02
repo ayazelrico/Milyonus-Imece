@@ -13,3 +13,4 @@ build/
 *.db-wal
 *.db-shm
 .DS_Store
+.milyonus-selfmod-pending.json

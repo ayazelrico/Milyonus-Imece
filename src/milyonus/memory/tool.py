@@ -29,7 +29,11 @@ def make_memory_tools(
         # An agent proposing about the user's own stated preference is treated as
         # user-direct only when the caller marks it so; default is agent-observed.
         source = args.get("source_kind", default_source)
-        if source not in ("user-direct", "agent-observed"):
+        if default_source in ("third-party", "subagent", "unknown"):
+            # The transport sets the trust ceiling. A model cannot upgrade
+            # group content or a child summary by labelling it user-direct.
+            source = default_source
+        elif source not in ("user-direct", "agent-observed"):
             source = default_source  # the agent cannot self-declare third-party trust
         mid = pipeline.propose(
             content,

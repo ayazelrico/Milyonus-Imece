@@ -15,7 +15,8 @@ t3_ttl_days = 14                # unconfirmed third-party claims expire
 rephrase_similarity = 0.86      # negative-memory rephrase-detection threshold
 
 [security]
-sandbox_backend = "local"       # local | docker | ssh | modal | daytona
+sandbox_backend = "local"       # implemented: local | docker; ssh/modal/daytona fail explicitly
+sandbox_image = "python:3.12-slim" # pre-pull before selecting docker
 gateway_allow_all_users = false # NEVER true in production
 # ssrf_protection is always true and cannot be disabled.
 website_blocklist = []
@@ -32,6 +33,12 @@ agents = 120
 max_parallel = 8                # concurrent subagents
 max_tokens = 2000000            # shared token pool for the whole run
 max_rounds = 2                  # a Kapı 3 rejection feeds the next round
+verification = "model"         # model | python; python runs real isolated tests
+sandbox_backend = "docker"     # docker | macos (local development)
+sandbox_image = "python:3.12-slim"
+test_timeout = 10.0             # wall seconds per isolated test
+agent_timeout = 300.0           # wall seconds per subagent
+cell_size = 9                   # 7..12; last cell may be smaller
 pass_threshold = 0.6            # Kapı 2 test pass rate needed to reach IRADE
 veto_floor = 0.5                # IRADE: mean safety/legal/reversibility floor
 hard_veto_floor = 0.2           # IRADE: any single member below this vetoes

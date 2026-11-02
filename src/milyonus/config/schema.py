@@ -94,6 +94,7 @@ class SecurityConfig(_Strict):
     """Fields here gate irreversible/outward actions. Treat changes as sensitive."""
 
     sandbox_backend: Literal["local", "docker", "ssh", "modal", "daytona"] = "local"
+    sandbox_image: str = "python:3.12-slim"
     # Gateway default is deny. Turning this on prints a loud startup warning.
     gateway_allow_all_users: bool = False
     # SSRF protection is always on and cannot be disabled; present for audit only.
@@ -165,6 +166,12 @@ class ImeceConfig(_Strict):
     max_clusters: int = Field(default=9, ge=1, le=50)
     shortlist: int = Field(default=4, ge=1, le=12)
     pass_threshold: float = Field(default=0.6, ge=0.0, le=1.0)
+    verification: Literal["model", "python"] = "model"
+    sandbox_backend: Literal["docker", "macos"] = "docker"
+    sandbox_image: str = "python:3.12-slim"
+    test_timeout: float = Field(default=10.0, gt=0, le=120)
+    agent_timeout: float = Field(default=300.0, gt=0, le=1800)
+    cell_size: int = Field(default=9, ge=7, le=12)
     # Output cap per imece agent. Reasoning models need room for hidden
     # reasoning on top of the answer.
     max_output_tokens: int = Field(default=8192, ge=256, le=64_000)

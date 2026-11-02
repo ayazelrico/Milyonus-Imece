@@ -24,3 +24,9 @@ jobs:
         run: uv run ruff format --check src tests
       - name: Test
         run: uv run pytest -q
+      - name: Prepare isolated Python execution image
+        run: docker pull python:3.12-slim
+      - name: Verify real Docker isolation and execution
+        env:
+          MILYONUS_TEST_DOCKER: "1"
+        run: uv run pytest tests/test_imece_completion.py -q -k real_docker

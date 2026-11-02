@@ -52,8 +52,58 @@ async def test_third_party_needs_confirmations(tmp_path):
     )
     # First pass: not enough confirmations -> stays pending.
     assert await p.process_one(mid) == "pending"
-    # Second pass: now confirmations reach the threshold -> active.
-    assert await p.process_one(mid) == "active"
+    # Replaying the same source is not independent corroboration.
+    assert await p.process_one(mid) == "pending"
+    assert (
+        await p.confirm(mid, source_uri="https://b", evidence="Paris Fransa'nın başkentidir.")
+        == "active"
+    )
+
+
+async def test_confirmation_is_source_bound_and_revocable(tmp_path):
+    p = _pipe(tmp_path)
+    mid = p.propose(
+        "A factual claim.", source_kind="third-party", source_uri="https://a.example.com/1"
+    )
+    assert await p.process_one(mid) == "pending"
+    assert (
+        await p.confirm(mid, source_uri="https://b.example.com/2", evidence="A factual claim.")
+        == "pending"
+    )
+    with pytest.raises(ValueError):
+        await p.confirm(mid, source_uri="https://other.org", evidence="Different claim.")
+    assert (
+        await p.confirm(mid, source_uri="https://other.org", evidence="A factual claim.")
+        == "active"
+    )
+    assert mid in p.store.revoke_by_source("https://other.org")
+    assert p.store.get(mid).state == "revoked"
+    assert p.store.verify_ledger()
+
+
+async def test_pending_expiry_is_not_extended_by_reprocessing(tmp_path):
+    p = _pipe(tmp_path)
+    mid = p.propose("fact", source_kind="third-party", source_uri="https://source.example")
+    assert await p.process_one(mid) == "pending"
+    p.store.set_expiry(mid, 1.0)
+    assert await p.process_one(mid) == "expired"
+
+
+@pytest.mark.parametrize("claimed_source", ["user-direct", "agent-observed"])
+async def test_group_memory_cannot_upgrade_its_transport_trust(tmp_path, claimed_source):
+    from milyonus.memory.tool import make_memory_tools
+
+    p = _pipe(tmp_path)
+    tools = make_memory_tools(
+        p, session_id="group", user_ref="paired", default_source="third-party"
+    )
+    result = await tools[0].handler(
+        {"content": "A neutral project fact.", "source_kind": claimed_source}
+    )
+    assert "quarantined" in result
+    items = p.store.by_state("pending")
+    assert len(items) == 1 and items[0].trust_tier == "T3"
+    assert not p.store.active()
 
 
 async def test_subagent_never_autopromotes(tmp_path):

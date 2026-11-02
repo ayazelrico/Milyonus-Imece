@@ -1,0 +1,40 @@
+{
+  "source": "deterministic-fake-not-real-models",
+  "agents": 10000,
+  "status": "accepted",
+  "calls_by_block": {
+    "framing": 151,
+    "recon": 700,
+    "domain_experts": 1000,
+    "command": 555,
+    "plan": 400,
+    "irade": 156,
+    "production": 4508,
+    "exploration": 50,
+    "test_design": 400,
+    "test_exec": 4559,
+    "red_team": 409,
+    "evidence_audit": 309,
+    "compliance": 103,
+    "integration": 300,
+    "polish": 1,
+    "approval": 50,
+    "observer": 100
+  },
+  "metrics": {
+    "recon_command_layers": 3.0,
+    "expert_0_command_layers": 3.0,
+    "expert_1_command_layers": 3.0,
+    "approach_command_layers": 3.0,
+    "candidate_similarity": 0.687,
+    "distinct_approaches": 3,
+    "council_share": 1.0,
+    "agent_failure_rate": 0.0,
+    "budget_pressure": 0.068
+  },
+  "notes": [
+    "round 1: 4550/4550 candidates passed Kap\u0131 2"
+  ],
+  "decisions": 52,
+  "failed_by_block": {}
+}

@@ -1,0 +1,49 @@
+# Small reproducible trial. No secrets here; reads OPENROUTER_API_KEY from env.
+# Models verified against the OpenRouter catalog on 2026-11-02.
+[provider]
+name = "openai"
+model = "anthropic/claude-sonnet-4.5"
+verifier_model = "anthropic/claude-sonnet-4.5"
+base_url = "https://openrouter.ai/api/v1"
+api_key_env = "OPENROUTER_API_KEY"
+reasoning_effort = "minimal"
+
+[imece]
+agents = 17
+max_parallel = 4
+max_rounds = 2
+max_tokens = 250000
+max_output_tokens = 8192
+verification = "python"
+agent_timeout = 120
+
+[imece.seats.council_correctness]
+name = "openai"
+model = "qwen/qwen3-coder-next"
+base_url = "https://openrouter.ai/api/v1"
+
+[imece.seats.council_risk]
+name = "openai"
+model = "google/gemma-3-27b-it"
+base_url = "https://openrouter.ai/api/v1"
+
+[imece.seats.council_user_impact]
+name = "openai"
+model = "meta-llama/llama-3.3-70b-instruct"
+base_url = "https://openrouter.ai/api/v1"
+
+[imece.seats.council_cost_speed]
+name = "openai"
+model = "mistralai/mistral-small-24b-instruct-2501"
+base_url = "https://openrouter.ai/api/v1"
+
+[imece.seats.council_devils_advocate]
+name = "openai"
+model = "deepseek/deepseek-v3.2"
+base_url = "https://openrouter.ai/api/v1"
+reasoning_effort = "minimal"
+
+[imece.seats.approval]
+name = "openai"
+model = "anthropic/claude-haiku-5.5"
+base_url = "https://openrouter.ai/api/v1"

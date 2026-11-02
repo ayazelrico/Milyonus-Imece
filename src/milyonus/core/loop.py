@@ -22,19 +22,20 @@ from milyonus.providers.base import (
     ToolCall,
     ToolResult,
 )
+from milyonus.security.risk import RiskEngine
 from milyonus.tools.registry import ToolRegistry
 
-# Called before a non-safe tool runs. Returns True to allow. Default: allow all
-# (F1); the CLI supplies an interactive prompt, F4 supplies the RiskEngine.
+# Called before a non-safe tool runs. No approval handler means deny.
 ApproveFn = Callable[[ToolCall, str], Awaitable[bool]]
 
 # Streaming sinks. on_text gets assistant text chunks; on_tool announces a call.
 TextSink = Callable[[str], Awaitable[None]]
 ToolSink = Callable[[ToolCall], Awaitable[None]]
+DeniedSink = Callable[[ToolCall, str], Awaitable[None]]
 
 
-async def _allow_all(_call: ToolCall, _risk: str) -> bool:
-    return True
+async def _deny_default(_call: ToolCall, _risk: str) -> bool:
+    return False
 
 
 async def _noop_text(_s: str) -> None:  # pragma: no cover - trivial
@@ -45,19 +46,25 @@ async def _noop_tool(_c: ToolCall) -> None:  # pragma: no cover - trivial
     return None
 
 
+async def _noop_denied(_c: ToolCall, _reason: str) -> None:
+    return None
+
+
 @dataclass
 class AgentLoop:
     provider: Provider
     tools: ToolRegistry
     system_prompt: str
     budget: Budget = field(default_factory=Budget)
-    approve: ApproveFn = _allow_all
+    approve: ApproveFn = _deny_default
     on_text: TextSink = _noop_text
     on_tool: ToolSink = _noop_tool
+    on_denied: DeniedSink = _noop_denied
     max_output_tokens: int = 4096
     # Optional observability. When set, the loop records model/tool events for
     # evaluation. Passive and off by default — existing behavior is unchanged.
     tracer: object | None = None
+    risk_engine: RiskEngine = field(default_factory=RiskEngine)
 
     async def run_turn(self, history: list[Message]) -> str:
         """Advance the conversation until a final assistant message. `history`
@@ -92,9 +99,11 @@ class AgentLoop:
                     await self.on_tool(event.tool_call)
                 elif event.kind == "usage" and event.usage is not None:
                     usage_in, usage_out = event.usage.input_tokens, event.usage.output_tokens
-                    self.budget.record(input_tokens=usage_in, output_tokens=usage_out)
                 elif event.kind == "done":
                     stop_reason = event.stop_reason
+            # One iteration per request, even if a provider omits usage. Usage
+            # events may be cumulative snapshots; only count the final one.
+            self.budget.record(input_tokens=usage_in, output_tokens=usage_out)
             if self.tracer is not None:
                 self.tracer.end_model_call(
                     input_tokens=usage_in, output_tokens=usage_out, stop_reason=stop_reason
@@ -118,9 +127,11 @@ class AgentLoop:
                 tool = self.tools.get(call.name)
                 risk = tool.risk if tool else "danger"
                 approved: bool | None = None
-                if risk != "safe":
-                    approved = await self.approve(call, risk)
+                decision, reason, _findings = self.risk_engine.classify(call, risk)
+                if decision != "auto":
+                    approved = decision != "block" and await self.approve(call, risk)
                     if not approved:
+                        await self.on_denied(call, reason)
                         if self.tracer is not None:
                             self.tracer.record_tool_call(
                                 name=call.name,
@@ -132,7 +143,7 @@ class AgentLoop:
                         results.append(
                             ToolResult(
                                 call_id=call.id,
-                                content="(user denied this tool)",
+                                content=f"(tool denied: {reason})",
                                 is_error=True,
                             )
                         )

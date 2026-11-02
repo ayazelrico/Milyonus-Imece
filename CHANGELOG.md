@@ -5,6 +5,23 @@ The format follows Keep a Changelog; versions follow the Milyonus model line.
 
 ## [Unreleased] — Milyonus-Imece (experimental)
 
+### Completion and hardening — 2026-11-02
+- Real isolated Python tests (Docker and macOS development backend), exact test
+  accounting, fail-closed reviewers, re-testing revised/polished artifacts and
+  strict explicit-majority approval.
+- Bounded command cells, layered councils and bounded worker scheduling; gate
+  evidence remains visible when option text is clipped.
+- `imece benchmark` with a withheld reference oracle and separate acceptance,
+  verified success, tokens, price estimates and calibration metrics.
+- First accepted real-model `clamp` result, independently reference-checked;
+  failed and stopped trials retained alongside it. The system remains experimental.
+- Default-deny core approvals, hard RiskEngine enforcement, ACP permissions and
+  cancellation, Docker shell wiring, source-bound memory corroboration and
+  independent model verification shared by CLI/gateway/ACP.
+- Real skill replay gate; self-edit snapshot/test/doctor/rollback wiring and
+  explicit startup acknowledgement of tested core changes.
+- Evidence and remaining limits: `docs/completion.md`; next plan: `PLAN-5X.md`.
+
 ### Added — the İmece-İRADE collective (`milyonus imece`)
 - `imece/scale.py`: the 10,000-agent reference distribution scaled to any size
   (17 … 100,000) with per-block floors and largest-remainder allocation;

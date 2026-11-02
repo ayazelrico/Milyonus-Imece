@@ -1,0 +1,102 @@
+# İmece 5X — doğrulanmış sonuç başına beşte bir maliyet
+
+Durum: **yeni plan; henüz uygulanmadı**. Kapsam İmece ve ajan çekirdeğidir.
+Web ürünü ayrı kalır. Başlangıç kanıtları: [tamamlanma incelemesi](docs/completion.md).
+
+## Ölçülebilir hedef
+
+Ana hedef **aynı bütçeyle 5 kat fazla dış referans testlerini geçen kabul edilmiş
+sonuç** üretmek. Hız, fiyat veya ajan sayısı tek başına başarı sayılmaz.
+
+Mevcut tek başarılı `clamp` koşusu yaklaşık $0,546 tutmuştur; $0,109 bunun
+aritmetik beşte biridir, ancak tek örnek gerçek bir baseline değildir. Önce
+temsili veri kümesinde baseline dondurulur, sonra oran ölçülür.
+
+Korunacak koşullar: değişmeyen dış oracle; sıfır gözlenen yanlış kabul; doğrulanmış
+başarı oranında en fazla 2 yüzde puanı düşüş; belirsiz maliyetin sıfır gibi
+sayılmaması; ret/durma/yeniden deneme giderlerinin toplam maliyete katılması.
+
+## P0 — Ölçüm zemini ve bağımsız kontrol
+
+- 50 farklı görev: kod, hata düzeltme, veri dönüşümü, entegrasyon, kanıtlı analiz.
+  Her görevde kamuya açık sözleşme ve ajanlardan saklanan ayrı oracle bulunur.
+- Sabit model kimlikleri, runtime/image digest'leri, konfigürasyon, seed ve
+  sürüm kaydı; 5 tekrar. Yeni sistem ve baseline aynı şartlarda çalışır.
+- Docker izolasyonu, iptal temizliği ve bozuk sağlayıcı cevapları CI kapısı olur.
+- Aynı protokole Hermes adaptörü ve bağımsız denetçi incelemesi eklenir.
+
+**Çıkış:** yeniden üretilebilir baseline, maliyet/başarı dağılımları ve hata
+sınıfları. 250 koşuluk deney bütçesi önceden belirlenir; bu dosya deneyleri
+otomatik başlatmaz.
+
+## P1 — Bütçesi olan görev grafiği
+
+Her aşama girdileri, çıktı hash'leri, model ve doğrulama kanıtları olan kalıcı bir
+DAG düğümüne dönüşür. Kesilen koşu son tamamlanan düğümden devam eder.
+
+- Model çağrısı başlamadan input/output ve dolar rezervasyonu; paralel çağrıların
+  hepsi aynı rezervasyon defterinden yer alır. Fiyat bilinmiyorsa katı dolar
+  bütçeli koşu başlamaz.
+- Tekil çağrı kimliği, ücret durumu `known/unknown`, sağlayıcı zaman aşımı ve
+  güvenli tekrar politikası; belirsiz faturayı silip yeni çağrı gibi gösterme yok.
+- İnsan durdurduğunda bekleyen işler başlatılmaz; çalışanlar iptal edilir ve
+  tamamlanmamış işlerin durumu açıkça kaydedilir.
+
+**Çıkış:** kesintiden sonra tamamlanan işler tekrarlanmadan devam; eşzamanlı
+rezervasyon testlerinde bütçe aşımı yok; bilinmeyen ücret ayrı raporlanır.
+
+## P2 — Kanıt kimliği ve artımlı doğrulama
+
+Çözüm + oracle + çalışma ortamı + politika + kaynak sınırları tek kanıt kimliği
+oluşturur. Çıktı aynıysa geçerli kanıt yeniden kullanılır; değiştiyse etkilenen
+kontroller tekrar çalışır.
+
+- Deterministik olmayan testlerde cache kapalıdır. Ortam, oracle veya politika
+  değişirse önceki kanıt geçersizdir.
+- Kod farkı, başarısız test ve traceback üzerinden küçük onarım görevleri;
+  bütün çözümün her tur baştan yazılması azalır.
+- Çalışmayan/yanlış oracle, çözüm hatasından ayrı sınıflandırılır. Oracle değişimi
+  yeni bir doğrulama sözleşmesi sayılır; önceki sonuçla sessizce kıyaslanmaz.
+
+**Çıkış:** tekrarlanan iş yükünde doğrulama çağrılarında en az %60 düşüş;
+oracle/ortam değişikliklerinin %100 cache invalidation regresyonu.
+
+## P3 — Uyarlanan İmece
+
+120 ajanı her işe aynı biçimde dağıtmak yerine küçük bir keşif turu belirsizliği
+ölçer. Ek ajanlar ölçülen belirsizliği azaltacak işlere gider.
+
+- Ucuz üretim + güçlü bağımsız doğrulama; başarısızlık türüne göre model yükseltme.
+- Yaklaşım çeşitliliği, yeni bulunan hata ve test kapsamına göre üretim havuzunu
+  büyütme/durdurma. Marjinal faydası kalmayan yeni adaylar üretilmez.
+- Konsey önüne tam çözüm yerine sözleşme, çalıştırılmış kanıt ve gerçek karar
+  farkı gelir. Veto ve bağımsız kapılar korunur.
+- Emsaller bağlam/seçenek/kanıt kimliğine bağlıdır; soru metni aynı diye değişmiş
+  seçenekler eski kararı miras almaz. Rastgele denetim açık kalır.
+
+**Çıkış:** doğrulanmış sonuç başına token maliyeti en az yarıya iner; aynı dış
+oracle ve yanlış-kabul sınırı korunur.
+
+## P4 — Hata arşivinden doğrulanmış beceri
+
+Başarısızlıklar kısa bir hata açıklaması, minimal yeniden üretim ve onarım
+şablonuna dönüştürülür. Bir beceri birden fazla bağımsız görevde tekrar
+çalışmadan canlı beceri kitaplığına geçmez.
+
+- Beceri kaynağı, hangi görevlerde işe yaradığı ve geçersizleşme koşulları görünür.
+- Aday beceriler önce staging'de kalır; kaynak iptali bağlı becerileri de etkiler.
+- T0 yetkisi, onay politikası ve güvenlik kuralları beceri öğrenmesiyle değişmez.
+
+**Çıkış:** tekrar eden hata ailelerinde başarısız tur sayısı en az yarıya iner;
+beceri kullanan görevlerde dış oracle başarısı gerilemez.
+
+## P5 — 5X kabul kapısı
+
+Baseline ve adayın tüm koşuları (başarısızlar dahil) yayımlanabilir bir yerel
+raporda birleştirilir. Sadece başarılı örnekler seçilmez. Entegre iyileşmeler
+çarpılarak tahmini 5X ilan edilmez; toplam sonuç doğrudan ölçülür.
+
+Kabul: doğrulanmış sonuç/dolar ≥ baseline × 5; başarı oranı sınırı ve sıfır
+gözlenen yanlış kabul korunmuş; en az 250 koşu/sürüm; güven aralıkları raporlanmış;
+bağımsız denetimde açık kritik bulgu kalmamış. Sağlanmazsa sonuç ve başarısızlık
+nedeni kaydedilir, **5X iddiası yapılmaz**.

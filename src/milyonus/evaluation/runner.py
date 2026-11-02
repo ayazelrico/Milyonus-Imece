@@ -21,7 +21,6 @@ from milyonus.providers.base import Message
 from milyonus.providers.router import build_provider
 from milyonus.tools.fs.tools import make_fs_tools
 from milyonus.tools.registry import ToolRegistry
-from milyonus.tools.terminal.tools import make_shell_tool
 
 
 async def run_task(task: Task, *, provider=None, max_iterations: int = 12) -> RunTrace:
@@ -38,7 +37,11 @@ async def run_task(task: Task, *, provider=None, max_iterations: int = 12) -> Ru
         reg = ToolRegistry()
         for t in make_fs_tools(ws):
             reg.register(t)
-        reg.register(make_shell_tool(ws))
+
+        # TaskBench's built-in tasks only require confined filesystem changes.
+        # Pre-authorize those writes explicitly; never grant a host shell.
+        async def approve(call, _risk):
+            return call.name == "write_file"
 
         tracer = Tracer(task_id=task.id, model=provider.model)
         loop = AgentLoop(
@@ -48,6 +51,7 @@ async def run_task(task: Task, *, provider=None, max_iterations: int = 12) -> Ru
             budget=Budget(max_iterations=max_iterations),
             tracer=tracer,
             max_output_tokens=cfg.provider.max_output_tokens,
+            approve=approve,
         )
         history = [Message(role="user", content=task.prompt)]
         try:

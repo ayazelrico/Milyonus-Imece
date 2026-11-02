@@ -13,18 +13,19 @@ One command sends a task through **tens to thousands of real subagents**, a
 [![License](https://img.shields.io/badge/license-Apache--2.0-1E4FD8.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-35C6F4.svg)](pyproject.toml)
 [![Version](https://img.shields.io/badge/version-5.5.0-071233.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-306%20passing-22C55E.svg)](tests)
+[![Tests](https://img.shields.io/badge/tests-371%20passing-22C55E.svg)](tests)
 [![Imece](https://img.shields.io/badge/imece-experimental-F59E0B.svg)](#status--honest-trial-results)
 [![PoisonBench](https://img.shields.io/badge/PoisonBench%20ASR-0%25-22C55E.svg)](docs/benchmarks.md)
 
 </div>
 
-> **Status: experimental.** The İmece-İRADE pipeline is fully implemented and
-> covered by 35 dedicated tests (306 in the whole suite), and it has been run
-> end-to-end against real models. Those real-model trial runs have **not yet
-> produced an accepted deliverable** — they surfaced several real-world bugs that
-> are now fixed, and the gates correctly refused a broken deliverable. Read
-> [Status & honest trial results](#status--honest-trial-results) before relying on it.
+> **Status: experimental.** On 2026-11-02 a real-model run produced an accepted
+> Python deliverable, passed 12 independently designed tests in macOS isolation,
+> and passed a separate reference oracle withheld from the agents. Sandboxed
+> Python execution, hierarchical command/councils and a benchmark runner now ship.
+> This is a small proof, not production validation. See the
+> [completion assessment](docs/completion.md), [raw trial](docs/trials/2026-11-02-final-clamp.json),
+> and [next 5X plan](PLAN-5X.md).
 
 ---
 
@@ -307,8 +308,8 @@ asked for.
 **Planning (IRADE selects).**
 Every `plan` agent writes an independent plan with steps, a pre-mortem, a
 cost/time/risk estimate, early-failure signals and a Plan B with its switch
-condition. Duplicate titles are dropped and the rest (up to `max_options`) go to
-IRADE as a high-impact decision. From round 2 onward the planners also see why
+condition. Duplicate titles are dropped and all remaining plans enter bounded,
+layered IRADE cells as high-impact decisions. From round 2 onward the planners also see why
 the previous round was rejected.
 
 **Approach clusters (command).**
@@ -494,8 +495,8 @@ plans, no council rationale and no candidate history — only the original reque
 the frozen criteria, the deliverable and the evidence package (Kapı 2 pass rate,
 worst finding, unresolved findings, test list). Each approver first interprets
 the request on its own, then returns `accept · reject · conditional` with
-reasons. The deliverable is **accepted** when accepts + conditionals form a
-majority **and** accepts ≥ rejects. Rejection reasons drive the next round.
+reasons. The deliverable is **accepted** only when explicit accepts form a strict
+majority; conditional votes do not count as accepts. Rejection reasons drive the next round.
 
 Put the `approval` seat on a model **different from every council seat**:
 IRADE is a co-author of the process, so it cannot be its own judge.
@@ -682,7 +683,7 @@ Every key with its default is also in
 
 | `-n` | 17 | 60 | 120 | 500 | 2,000 | 10,000 |
 |---|---:|---:|---:|---:|---:|---:|
-| Subagent calls | 31 | 104 | 186 | 691 | 2,686 | 13,326 |
+| Subagent calls | 34 | 124 | 210 | 736 | 2,790 | 13,751 |
 
 Real runs make more calls than this: escalations to the full council, a second
 round and integrity fix passes all add calls. The real 17-agent trial below made
@@ -740,9 +741,12 @@ its mod-97 loop **never terminates** on a real, valid IBAN. Kapı 2's system
 re-test had already refused it. In other words, the trials failed honestly
 instead of shipping something broken.
 
-**Not yet verified:** a real-model run *after* the run-3 fixes, and any
-accepted deliverable from real models. Treat Milyonus-Imece as a working,
-well-tested **experimental** system, not a production one.
+**2026-11-02 follow-up:** a 17-agent-distribution real-model `clamp` run was
+accepted in one round, passed 12 executable gate tests and a separate withheld
+reference oracle, using 83,048 tokens (~$0.546 at catalog token prices). Earlier
+failed trials are retained in `docs/trials/`. See [the completion assessment](docs/completion.md)
+for fixes and limits. One accepted task is not a general success-rate estimate;
+the system remains **experimental**.
 
 ---
 
@@ -755,7 +759,7 @@ well-tested **experimental** system, not a production one.
 | Goodhart | Producers may dress packets up for the score | Fixed packet template, clipped options; scores come from the council, never the producer |
 | Council bottleneck | If tier shares don't hold, the council clogs | The observer flags a Kademe ≥ 2 share above 25%; thresholds are configurable |
 | Emergent behaviour | Unforeseen interactions at scale | Process observer; start small (`-n 17`) and grow |
-| Test execution is model-judged | Test executors *evaluate* candidates; they do not run code in a sandbox | Planned: sandboxed execution through the platform's sandbox backends |
+| Model-judged default | Model evaluations alone are not executable evidence | Select `--verification python` for actual isolated Python tests; Docker backend and macOS development backend available |
 | Calibration needs history | Confidence is corrected only after ≥ 5 outcomes per bucket | Grows automatically with use |
 | Small-scale granularity | At `-n 17`, compliance, polish and experts get 0 agents | Use `-n ≥ 60` for problems that need them |
 
@@ -1337,7 +1341,7 @@ Guides: [docs/docker.md](docs/docker.md) · [docs/production.md](docs/production
 ```bash
 make sync                  # deps (matches CI: dev + admin + discord)
 make hooks                 # enable pre-push gate (runs the CI checks locally)
-uv run pytest -q           # 306 tests, green without an API key
+uv run pytest -q           # offline suite; 371 passed locally, 1 Docker integration skipped
 make check                 # lint + format-check + test — exactly what CI runs
 ```
 
@@ -1364,10 +1368,13 @@ Extend Milyonus through the **skill**, **tool**, or **channel adapter** interfac
 - [x] Kapı 3 blind approval on separate models; multi-round feedback
 - [x] Process observer: monitors + retrospective; human stop authority; per-seat models
 - [x] Real-model trials (3 runs) and the fixes they forced
-- [ ] A real-model run that ends with an accepted deliverable
-- [ ] Sandboxed execution of tests (instead of model-judged execution)
-- [ ] Hierarchical command (7–12-agent cells, 3–4 layers) and layered councils for very large runs
-- [ ] Imece benchmark: accepted-deliverable rate, cost per accepted result, calibration error
+- [x] A real-model run that ends with an accepted deliverable (2026-11-02; separate reference oracle also passed)
+- [x] Optional sandboxed Python test execution (macOS verified locally; Docker integration added to CI)
+- [x] Hierarchical command (7–12-member cells, smaller final cell) and layered councils; 10,000-agent distribution verified with deterministic fakes
+- [x] Imece benchmark: acceptance, withheld-oracle success, cost per accepted result and calibration error
+
+Next: [5X verified results per dollar](PLAN-5X.md). Production validation,
+large repeated real-model evaluation and third-party audit remain open.
 
 **Platform**
 

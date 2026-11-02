@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import os
 import platform
+import shutil
 import stat
+import subprocess
 import sys
 from dataclasses import dataclass
 
@@ -81,11 +83,52 @@ def _provider_check() -> Check:
         "openai": "OPENAI_API_KEY",
         "local": None,
     }[name]
+    if cfg.provider.api_key_env:
+        env_key = cfg.provider.api_key_env
+    elif name == "openai" and cfg.provider.base_url and "openrouter" in cfg.provider.base_url:
+        env_key = "OPENROUTER_API_KEY"
     if env_key is None:
         return Check("Provider", True, f"{name} (local — no key required)")
     present = bool(os.environ.get(env_key))
     detail = f"{name} · {env_key} {'found' if present else 'NOT SET'}"
     return Check("Provider", present, detail)
+
+
+def _sandbox_check() -> Check:
+    try:
+        cfg = load_config()
+    except ConfigError:
+        return Check("Sandbox", False, "could not read config")
+    backend = cfg.security.sandbox_backend
+    if backend == "local":
+        return Check(
+            "Sandbox", True, "local host shell (approval required); no container isolation"
+        )
+    if backend != "docker":
+        return Check(
+            "Sandbox", False, f"{backend} adapter is not implemented; choose local or docker"
+        )
+    if not shutil.which("docker"):
+        return Check("Sandbox", False, "docker CLI is unavailable")
+    try:
+        result = subprocess.run(
+            ["docker", "image", "inspect", cfg.security.sandbox_image, "--format", "{{.Id}}"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return Check("Sandbox", False, "Docker daemon unavailable or timed out")
+    return Check(
+        "Sandbox",
+        result.returncode == 0,
+        f"docker · {cfg.security.sandbox_image} "
+        + (
+            "ready"
+            if result.returncode == 0
+            else "image/daemon unavailable; pre-pull the configured image"
+        ),
+    )
 
 
 def run_doctor() -> int:
@@ -103,6 +146,7 @@ def run_doctor() -> int:
         _config_check(),
         _env_check(),
         _provider_check(),
+        _sandbox_check(),
     ]
 
     table = Table(show_header=True, header_style=f"bold {PALETTE['chrome_200']}")

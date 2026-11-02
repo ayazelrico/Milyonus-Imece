@@ -15,6 +15,7 @@ The decision has three outcomes:
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -41,6 +42,13 @@ _IRREVERSIBLE_HINTS = (
     "transfer",
     "deploy",
 )
+_ACTION = re.compile(
+    r"\b(?:delete|remove|rm|drop|truncate|send|email|publish|post|transfer|deploy)\b", re.I
+)
+_SECRET_PATH = re.compile(
+    r"(?:^|[/\\\s])(?:\.env(?:[./\\\s]|$)|id_(?:rsa|ed25519)(?:[.\s]|$)|credentials(?:\.json|[/\\\s]|$))",
+    re.I,
+)
 
 
 @dataclass
@@ -57,7 +65,10 @@ class RiskEngine:
         # (e.g. a shell command containing "rm"). Either triggers the class.
         name = call.name.lower().replace("_", " ")
         blob = name + " " + " ".join(str(v) for v in call.arguments.values()).lower()
-        return any(h.strip() in blob for h in _IRREVERSIBLE_HINTS)
+        secret_args = any(
+            re.search(r"(?:key|token|secret|password|credential)", k, re.I) for k in call.arguments
+        )
+        return bool(_ACTION.search(blob) or _SECRET_PATH.search(blob) or secret_args)
 
     def classify(
         self, call: ToolCall, base_risk: str

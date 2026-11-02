@@ -4,7 +4,7 @@ import subprocess
 
 import pytest
 
-from milyonus.selfmod.harness import SelfModHarness
+from milyonus.selfmod.harness import GateResult, SelfModHarness
 
 
 def _init_repo(tmp_path):
@@ -56,3 +56,76 @@ async def test_apply_change_rolls_back_on_bad_mutation(tmp_path):
     assert not kept
     assert "rolled back" in msg
     assert (tmp_path / "file.txt").read_text() == "original\n"
+
+
+async def test_doctor_failure_makes_test_gate_red(tmp_path, monkeypatch):
+    h = _init_repo(tmp_path)
+    codes = iter([0, 1])
+
+    class Process:
+        def __init__(self, code):
+            self.returncode = code
+
+        async def communicate(self):
+            return b"check output", None
+
+    async def create(*args, **kwargs):
+        return Process(next(codes))
+
+    monkeypatch.setattr("asyncio.create_subprocess_exec", create)
+    assert not (await h.test_gate(run_doctor=True)).passed
+
+
+def test_snapshot_does_not_report_success_after_commit_failure(tmp_path, monkeypatch):
+    h = _init_repo(tmp_path)
+    original = h._git
+
+    def git(*args):
+        if args[0] == "commit":
+            return subprocess.CompletedProcess(args, 1, "", "commit failed")
+        return original(*args)
+
+    monkeypatch.setattr(h, "_git", git)
+    assert not h.snapshot("failure").ok
+
+
+async def test_failed_gate_removes_declared_new_file_but_preserves_ignored_user_data(
+    tmp_path, monkeypatch
+):
+    h = _init_repo(tmp_path)
+    (tmp_path / ".gitignore").write_text("private.notes\n")
+    (tmp_path / "private.notes").write_text("user data")
+    added = tmp_path / "new_module.py"
+
+    async def mutate():
+        added.write_text("broken code")
+
+    async def gate(**kwargs):
+        return GateResult(False, "failed")
+
+    monkeypatch.setattr(h, "test_gate", gate)
+    kept, _ = await h.apply_change("new file", mutate, changed_paths=(added,))
+    assert not kept and not added.exists()
+    assert (tmp_path / "private.notes").read_text() == "user data"
+
+
+async def test_successful_self_edit_requires_startup_acknowledgement(tmp_path, monkeypatch):
+    h = _init_repo(tmp_path)
+    target = tmp_path / "file.txt"
+
+    async def mutate():
+        target.write_text("tested change")
+
+    async def gate(**kwargs):
+        return GateResult(True, "passed")
+
+    monkeypatch.setattr(h, "test_gate", gate)
+    kept, _ = await h.apply_change("tested", mutate, changed_paths=(target,))
+    assert kept and h.pending()["label"] == "tested"
+    snapshot = h.pending()["snapshot"]
+    kept, _ = await h.apply_change("second tested edit", mutate, changed_paths=(target,))
+    assert kept and h.pending()["snapshot"] == snapshot
+    h.rollback(snapshot)
+    assert target.read_text() == "original\n"
+    h.accept_pending()
+    assert h.pending() is None

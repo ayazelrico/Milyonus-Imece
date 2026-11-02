@@ -21,6 +21,7 @@ from typing import Any
 from milyonus.core.budget import Budget
 from milyonus.core.loop import AgentLoop
 from milyonus.delegation.subagent import DelegationContract, _restricted_registry
+from milyonus.observability.cost import cost_of
 from milyonus.providers.base import Message, Provider
 from milyonus.tools.registry import ToolRegistry
 
@@ -51,6 +52,8 @@ class AgentSpec:
 class AgentReply:
     text: str
     tokens: int = 0
+    cost_usd: float | None = None
+    cost_estimated: bool = True
 
 
 AgentFn = Callable[[AgentSpec], Awaitable[AgentReply]]
@@ -67,15 +70,26 @@ class AgentEvent:
     seat: str
     tokens: int
     ok: bool
+    cost_usd: float | None = None
+    cost_estimated: bool = True
 
 
 class Swarm:
     """Runs agent specs concurrently against a shared token pool."""
 
-    def __init__(self, agent_fn: AgentFn, *, max_parallel: int = 8, max_tokens: int = 2_000_000):
+    def __init__(
+        self,
+        agent_fn: AgentFn,
+        *,
+        max_parallel: int = 8,
+        max_tokens: int = 2_000_000,
+        agent_timeout: float = 300.0,
+    ):
         if max_parallel < 1:
             raise ValueError("max_parallel must be >= 1")
         self._fn = agent_fn
+        self.max_parallel = max_parallel
+        self.agent_timeout = agent_timeout
         self._sem = asyncio.Semaphore(max_parallel)
         self.max_tokens = max_tokens
         self.used_tokens = 0
@@ -89,7 +103,7 @@ class Swarm:
             if self.exhausted():
                 raise PoolExhausted(f"token pool exhausted ({self.used_tokens}/{self.max_tokens})")
             try:
-                reply = await self._fn(spec)
+                reply = await asyncio.wait_for(self._fn(spec), self.agent_timeout)
             except PoolExhausted:
                 raise
             except Exception as exc:  # one failed agent must not sink the phase
@@ -100,15 +114,50 @@ class Swarm:
                 # An empty answer (e.g. a reasoning model that spent its whole
                 # output budget thinking) is a failed agent, not a candidate.
                 self.events.append(
-                    AgentEvent(spec.block, spec.role, spec.seat, reply.tokens, False)
+                    AgentEvent(
+                        spec.block,
+                        spec.role,
+                        spec.seat,
+                        reply.tokens,
+                        False,
+                        reply.cost_usd,
+                        reply.cost_estimated,
+                    )
                 )
                 return "(agent failed: empty reply)"
-            self.events.append(AgentEvent(spec.block, spec.role, spec.seat, reply.tokens, True))
+            self.events.append(
+                AgentEvent(
+                    spec.block,
+                    spec.role,
+                    spec.seat,
+                    reply.tokens,
+                    True,
+                    reply.cost_usd,
+                    reply.cost_estimated,
+                )
+            )
             return reply.text
 
     async def run(self, specs: Sequence[AgentSpec]) -> list[str]:
         """Run all specs; results come back in the same order."""
-        return list(await asyncio.gather(*(self._one(s) for s in specs)))
+        # Bounded workers, rather than one asyncio task per agent. A 100k-agent
+        # run has O(parallelism) live tasks, with deterministic output order.
+        out = [""] * len(specs)
+        jobs = iter(enumerate(specs))
+
+        async def worker() -> None:
+            for index, spec in jobs:
+                out[index] = await self._one(spec)
+
+        workers = [asyncio.create_task(worker()) for _ in range(min(len(specs), self.max_parallel))]
+        try:
+            await asyncio.gather(*workers)
+        except BaseException:
+            for task in workers:
+                task.cancel()
+            await asyncio.gather(*workers, return_exceptions=True)
+            raise
+        return out
 
     def failed_by_block(self) -> dict[str, int]:
         out: dict[str, int] = {}
@@ -143,7 +192,7 @@ def safe_registry(parent: ToolRegistry, allow: frozenset[str] = frozenset()) -> 
     restricted = _restricted_registry(parent)
     for name in restricted.names():
         tool = restricted.get(name)
-        if tool is not None and (tool.risk == "safe" or name in allow):
+        if tool is not None and (tool.risk == "safe" or (name == "web_fetch" and name in allow)):
             child.register(tool)
     return child
 
@@ -175,10 +224,20 @@ class LLMAgentFn:
             system_prompt=f"{_SUBAGENT_SYSTEM}\n\nYour role: {spec.role}.",
             budget=budget,
             max_output_tokens=self.max_output_tokens,
+            approve=self._approve_readonly,
         )
         history = [Message(role="user", content=contract.briefing())]
         text = await loop.run_turn(history)
-        return AgentReply(text=text, tokens=budget.used_tokens)
+        cost = cost_of(provider.model, budget.input_tokens, budget.output_tokens)
+        return AgentReply(
+            text=text,
+            tokens=budget.used_tokens,
+            cost_usd=cost.usd if budget.used_tokens > 0 else None,
+            cost_estimated=cost.estimated,
+        )
+
+    async def _approve_readonly(self, call, _risk: str) -> bool:
+        return call.name == "web_fetch" and call.name in self.allow_tools
 
 
 _FENCE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)

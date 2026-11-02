@@ -23,11 +23,9 @@ from milyonus.config.paths import is_first_run, mark_introduced
 from milyonus.core.budget import Budget
 from milyonus.core.loop import AgentLoop
 from milyonus.core.store import SessionStore
-from milyonus.memory.pipeline import MemoryPipeline
 from milyonus.memory.render import build_snapshot
 from milyonus.memory.store import MemoryStore
 from milyonus.memory.tool import make_memory_tools
-from milyonus.memory.verifier import ModelVerifier, RuleBasedVerifier
 from milyonus.proactive.tool import make_schedule_tool
 from milyonus.prompt.builder import build_system_prompt, skill_index_section
 from milyonus.providers.base import Message, ProviderError, ToolCall
@@ -90,11 +88,16 @@ def _handle_command(text: str, console: Console, loop, cfg, history: list) -> bo
     return False
 
 
-def _make_registry(root: Path, *extra_tool_groups: list) -> ToolRegistry:
+def _make_registry(
+    root: Path,
+    *extra_tool_groups: list,
+    sandbox_backend: str = "local",
+    sandbox_image: str = "python:3.12-slim",
+) -> ToolRegistry:
     reg = ToolRegistry()
     for tool in make_fs_tools(root):
         reg.register(tool)
-    reg.register(make_shell_tool(root))
+    reg.register(make_shell_tool(root, backend=sandbox_backend, image=sandbox_image))
     for tool in make_web_tools():
         reg.register(tool)
     for group in extra_tool_groups:
@@ -116,11 +119,6 @@ async def _run_session(root: Path) -> int:
 
     # Verified-memory wiring: a separate cheap verifier model gates promotion.
     mem_store = MemoryStore()
-    try:
-        verifier_provider = build_provider(cfg.provider, model=cfg.provider.verifier_model)
-        verifier = ModelVerifier(verifier_provider, fallback=RuleBasedVerifier())
-    except Exception:
-        verifier = RuleBasedVerifier()
     # Semantic recall layer (trust-weighted vector memory); degrades to lexical
     # if embeddings are disabled or unavailable.
     from milyonus.memory.semantic import SemanticMemory
@@ -129,7 +127,9 @@ async def _run_session(root: Path) -> int:
         semantic = SemanticMemory(mem_store, config=cfg.memory)
     except Exception:
         semantic = None
-    pipeline = MemoryPipeline(mem_store, config=cfg.memory, verifier=verifier, semantic=semantic)
+    from milyonus.memory.factory import verified_pipeline
+
+    pipeline = verified_pipeline(mem_store, cfg, semantic=semantic)
 
     store = SessionStore()
     sid = store.create_session("cli", user_ref="local")
@@ -150,6 +150,8 @@ async def _run_session(root: Path) -> int:
         make_browser_tools(),
         make_vision_tools(provider, root),
         make_research_tools(provider),
+        sandbox_backend=cfg.security.sandbox_backend,
+        sandbox_image=cfg.security.sandbox_image,
     )
 
     # External MCP servers (opt-in via config.mcp_servers). A failed server is

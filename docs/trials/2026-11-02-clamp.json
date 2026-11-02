@@ -1,0 +1,448 @@
+{
+  "schema_version": 1,
+  "source": "real-model",
+  "settings": {
+    "agents": 17,
+    "max_parallel": 4,
+    "max_tokens": 250000,
+    "max_rounds": 2,
+    "max_clusters": 9,
+    "max_options": 6,
+    "shortlist": 4,
+    "pass_threshold": 0.6,
+    "verification": "python",
+    "sandbox_backend": "macos",
+    "sandbox_image": "python:3.12-slim",
+    "test_timeout": 10.0,
+    "agent_timeout": 120.0,
+    "cell_size": 9,
+    "irade": {
+      "veto_floor": 0.5,
+      "hard_veto_floor": 0.2,
+      "spread_threshold": 0.15,
+      "min_vote_share": 0.6,
+      "min_confidence": 0.55,
+      "audit_rate": 0.05,
+      "precedent_confidence": 0.8
+    }
+  },
+  "summary": {
+    "runs": 1,
+    "accepted": 0,
+    "verified_successes": 0,
+    "accepted_deliverable_rate": 0.0,
+    "verified_success_rate": 0.0,
+    "false_accepts": 0,
+    "total_tokens": 92486,
+    "cost_usd": 0.009685,
+    "cost_estimated": false,
+    "cost_per_accepted_usd": null,
+    "cost_per_verified_success_usd": null,
+    "calibration_ece": null,
+    "calibration_samples": 0
+  },
+  "runs": [
+    {
+      "task": "clamp",
+      "repeat": 0,
+      "status": "rejected",
+      "oracle_passed": false,
+      "oracle_output": "missing Python artifacts or executable test",
+      "seconds": 551.674,
+      "tokens": 92486,
+      "cost_usd": 0.009685,
+      "cost_estimated": false,
+      "confidence": null,
+      "report": {
+        "status": "rejected",
+        "request": "Deliver solution.py containing clamp(value, low, high). All inputs are integers. Return low when value<low, high when value>high, otherwise value. Raise ValueError when low>high. Standard library only; no I/O, network, services or third party dependencies. Include a brief explanation and named code fence ```python file=solution.py. This is a purely local coding exercise; no deployment.",
+        "deliverable": "",
+        "rounds": 2,
+        "tokens": 92486,
+        "cost_usd": 0.009685,
+        "cost_estimated": false,
+        "calls_by_block": {
+          "framing": 6,
+          "recon": 1,
+          "plan": 2,
+          "command": 2,
+          "production": 4,
+          "test_design": 1,
+          "evidence_audit": 2,
+          "red_team": 2,
+          "observer": 1
+        },
+        "failed_by_block": {},
+        "warnings": [],
+        "metrics": {
+          "recon_command_layers": 0.0,
+          "candidate_similarity": 0.252,
+          "distinct_approaches": 2,
+          "agent_failure_rate": 0.0,
+          "budget_pressure": 0.361
+        },
+        "retrospective": [
+          "Cross-cell constraint distribution was uneven and contradictory, creating competing optimization targets (strict linting vs. functional-only focus, arbitrary runtime limits vs. no thresholds, differing docstring placement rules).",
+          "Lack of a unified framing priority hierarchy caused agents to interpret gates inconsistently, resulting in low candidate similarity (0.252) and repeated Kapı 2 rejections without actual agent runtime failures.",
+          "Zero recon/command processing layers meant initial framing divergences were never mapped or reconciled before candidate generation, allowing ambiguous requirements to harden into false rejection triggers.",
+          "Insert a mandatory framing synthesis step that consolidates all cell constraints into a single, weighted requirement matrix before any production begins.",
+          "Categorize and standardize non-functional requirements (performance, compliance, documentation) across cells to eliminate implicit contradictions and clarify validation boundaries.",
+          "Deploy a pre-generation divergence scanner that flags uneven or conflicting constraints across cells, requiring explicit resolution or deprecation before advancing past the framing block.",
+          "Mandate at least one dedicated recon pass for frame alignment whenever multi-cell prompts are submitted, ensuring shared interpretation precedes candidate generation and testing."
+        ],
+        "notes": [
+          "round 1: 0/2 candidates passed Kapı 2",
+          "round 2: 0/2 candidates passed Kapı 2"
+        ],
+        "decisions": [],
+        "gate_reports": [
+          {
+            "candidate_id": "R1-C1",
+            "pass_rate": 0.5,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "medium",
+                "text": "Violates the strict integer assumption by silently accepting and returning non-integral types (e.g., floats, `decimal.Decimal`) when `low <= value <= high`. This causes silent type drift that corrupts downstream pipelines expecting native `int`s. Reproduction: Run `assert isinstance(clamp(1.75, 0, 10), int)` → raises `AssertionError`; function returns raw float unchanged.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "All claims are internally sourced from the candidate specification and directly verifiable against the explicit branching implementation. Logic routing, boundary equality handling, and ValueError propagation are logically consistent and correct. The O(1) time/space assertion is mathematically sound for fixed comparison operations. Suggested benchmarking methodology is empirically valid but appropriately framed as supplementary. Evidence quality is high. No hallucinations, contradictions, or statistically invalid performance claims detected.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": true,
+                "source": "python:macos",
+                "output": "PASS: Functional correctness verified.\n",
+                "returncode": 0
+              },
+              {
+                "test": "T2",
+                "passed": true,
+                "source": "python:macos",
+                "output": "PASS: ValueError correctly propagated on inverted bounds.\n",
+                "returncode": 0
+              },
+              {
+                "test": "T3",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-9kcb02_8/oracle.py\", line 5, in <module>\n    with open('solution.py', 'r') as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'solution.py'\n",
+                "returncode": 1
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-gclpw5al/oracle.py\", line 5, in <module>\n    with open('solution.py', 'r') as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'solution.py'\n",
+                "returncode": 1
+              }
+            ]
+          },
+          {
+            "candidate_id": "R1-C2",
+            "pass_rate": 0.5,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "high",
+                "text": "Delegates range projection to `min`/`max` builtins instead of core language operators. In adversarial or sandboxed environments where `builtins.min` or `builtins.max` are monkey-patched, the function's control flow and return values are silently hijacked without raising errors. Reproduction: Execute `import builtins; builtins.min = lambda a, b: 99; result = clamp(5, 0, 10)` → assigns `99` to `result` instead of expected `5`, bypassing correctness guarantees.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claims accurately map to the functional composition approach using max/min. Clamping logic, edge-case routing, and invariant guards are logically verified and consistent with Python's builtin semantics. O(1) deterministic execution and constant memory overhead are technically accurate. Verification steps cover all specified dimensions without overreach. Evidence quality is high. No unsupported assertions, numerical drift, or hallucinated behaviors present.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": true,
+                "source": "python:macos",
+                "output": "PASS: Functional correctness verified.\n",
+                "returncode": 0
+              },
+              {
+                "test": "T2",
+                "passed": true,
+                "source": "python:macos",
+                "output": "PASS: ValueError correctly propagated on inverted bounds.\n",
+                "returncode": 0
+              },
+              {
+                "test": "T3",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-kv4osw9w/oracle.py\", line 5, in <module>\n    with open('solution.py', 'r') as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'solution.py'\n",
+                "returncode": 1
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-mb52el1o/oracle.py\", line 5, in <module>\n    with open('solution.py', 'r') as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'solution.py'\n",
+                "returncode": 1
+              }
+            ]
+          },
+          {
+            "candidate_id": "R2-C1",
+            "pass_rate": 0.5,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "medium",
+                "text": "False Performance Guarantee & CPU Denial-of-Service Vector. The candidate claims 'deterministic control flow and O(1) execution' and 'constant time complexity regardless of input magnitude'. In CPython, `int` types utilize arbitrary-precision arithmetic; comparisons scale linearly with the number of bits ($O(b)$). Supplying adversarial inputs consisting of integers with extreme bit-lengths forces the CPU to perform expensive multi-precision comparisons, violating the O(1) claim and creating a resource-exhaustion vector for downstream pipelines relying on strict latency budgets.\n\nReproduction:\n`import sys; sys.set_int_max_str_digits(0); clamp(10**1000000, 0, 10**1000000)`\nObserve significant CPU duration and memory allocation proportional to bit-length rather than constant time.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claim 1 (Interval Integrity Enforcement): Fully sourced & consistent with provided code. Unconditional ValueError raised on low>high. No hallucination or logical invalidity. Evidence quality: High.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claim 2 (Sequential Boundary Gating): Fully sourced & consistent. Implementation uses explicit if/elif/else chain with < and > operators. No hidden routing. Evidence quality: High.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claim 3 (No Builtin Delegation): Fully sourced & consistent. Code contains zero min(), max(), or stdlib helpers. Control flow remains explicit. Evidence quality: High.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claim 4 (Deterministic O(1) Performance): Fully sourced & consistent. Fixed comparison depth guarantees constant time regardless of input magnitude. No scaling factors. Evidence quality: High.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claim 5 (Strict Integer Purity): Fully sourced & consistent. Direct assignment of bound references/values preserves native int identity. Zero coercion pathways. Evidence quality: High.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": true,
+                "source": "python:macos",
+                "output": "PASS: Functional correctness verified.\n",
+                "returncode": 0
+              },
+              {
+                "test": "T2",
+                "passed": true,
+                "source": "python:macos",
+                "output": "PASS: ValueError correctly propagated on inverted bounds.\n",
+                "returncode": 0
+              },
+              {
+                "test": "T3",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-0z54o5h8/oracle.py\", line 5, in <module>\n    with open('solution.py', 'r') as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'solution.py'\n",
+                "returncode": 1
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-i04l6o7q/oracle.py\", line 5, in <module>\n    with open('solution.py', 'r') as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'solution.py'\n",
+                "returncode": 1
+              }
+            ]
+          },
+          {
+            "candidate_id": "R2-C2",
+            "pass_rate": 0.5,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "medium",
+                "text": "False Complexity Claim & Suboptimal Memory Churn. The candidate asserts a 'strict O(1) time... independent of input magnitude' profile and 'minimal instruction-cache footprint'. Similar to R2-C1, the mathematical operations ($+, -, //, abs$) are $O(b)$ for large integers. Furthermore, the branchless algebraic projection inherently computes full addition and subtraction chains ($low + value$, $abs(diff)$) for every invocation, allocating temporary large-integer objects regardless of whether clamping is needed. This imposes higher memory overhead and allocation latency compared to simple relational gating for edge-case inputs, contradicting the 'minimal overhead' and magnitude-independent claims.\n\nReproduction:\n`import sys; sys.set_int_max_str_digits(0); v = 10**500000; clamp(v, -v, v)`\nMonitor `tracemalloc` or memory usage spikes during repeated invocations to witness unnecessary bignum allocation overhead despite no logical transformation occurring.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claim 1 (Exact Boundary Routing): Fully sourced & consistent. Algebraic max/min identities ((a+b+|a-b|)//2 and (a+b-|a-b|)//2) correctly implement inclusive [low, high] routing. Mathematically validated. Evidence quality: High.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claim 2 (Invariant Enforcement): Fully sourced & consistent. Fail-fast guard clause precedes all arithmetic computation. Zero silent fallbacks. Evidence quality: High.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "medium",
+                "text": "Claim 3 (Branchless Clamping Core): Partially sourced at runtime level. Source code is syntactically branchless and uses only declared primitives, but Python's abs() builtin relies on underlying C implementations that may utilize CPU-level branching. Logically sound per specification. Evidence quality: High.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claim 4 (Complexity Profile): Fully sourced & consistent. Constant sequence of arithmetic operations guarantees strict O(1) time and O(1) auxiliary space. No recursion or iteration. Evidence quality: High.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claim 5 (Dependency Purity): Fully sourced & consistent. Zero external/stdlib imports. Relies exclusively on native builtins (abs, ValueError) and arithmetic operators. Sandboxed. Evidence quality: High.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Claim 6 (Type Discipline): Fully sourced & consistent. Parity analysis confirms (a+b±|a-b|) is always even, ensuring exact //2 division. Outputs remain strictly native int. No floating-point leakage. Evidence quality: High.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": true,
+                "source": "python:macos",
+                "output": "PASS: Functional correctness verified.\n",
+                "returncode": 0
+              },
+              {
+                "test": "T2",
+                "passed": true,
+                "source": "python:macos",
+                "output": "PASS: ValueError correctly propagated on inverted bounds.\n",
+                "returncode": 0
+              },
+              {
+                "test": "T3",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-197podid/oracle.py\", line 5, in <module>\n    with open('solution.py', 'r') as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'solution.py'\n",
+                "returncode": 1
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-qujicg4_/oracle.py\", line 5, in <module>\n    with open('solution.py', 'r') as f:\n         ^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'solution.py'\n",
+                "returncode": 1
+              }
+            ]
+          }
+        ],
+        "frame": {
+          "request": "Deliver solution.py containing clamp(value, low, high). All inputs are integers. Return low when value<low, high when value>high, otherwise value. Raise ValueError when low>high. Standard library only; no I/O, network, services or third party dependencies. Include a brief explanation and named code fence ```python file=solution.py. This is a purely local coding exercise; no deployment.",
+          "problem": "Implement a dependency-free Python utility `clamp(value, low, high)` in `solution.py` that restricts an integer input to the inclusive range `[low, high]`, returning `low` when `value < low`, `high` when `value > high`, and `value` otherwise. The function must enforce interval integrity by raising `ValueError` on inverted bounds (`low > high`) and must contain a concise explanatory comment or docstring. Implementation relies solely on built-in Python constructs without I/O, networking, external packages, or side effects, serving as a local, fail-fast defensive boundary for downstream data pipelines.",
+          "success_criteria": [
+            "Automated assertions verify exact return values for inputs strictly below, above, and within [low, high], including equality edge cases (low=value=high).",
+            "Unit tests confirm ValueError propagates uncaught when low > high, with zero silent fallback or warning emission.",
+            "Static inspection confirms zero non-standard imports, absence of I/O/system calls, and presence of a clear inline explanation within the solution.py file.",
+            "Code executes in O(1) time with minimal memory overhead per call under standard Python 3 conditions."
+          ],
+          "out_of_scope": [
+            "Type hint enforcement, non-integer input coercion, or floating-point precision handling.",
+            "CLI wrappers, file/network I/O, logging, persistent state, or deployment/CI-CD configurations.",
+            "Performance benchmarking, custom exception hierarchies, or third-party package integration.",
+            "Graceful degradation strategies or defensive typing guards beyond native int expectations."
+          ],
+          "assumptions": [
+            "All arguments are strictly typed as native Python int without implicit coercion or subclass overrides.",
+            "Execution occurs in a standard, isolated Python 3.x runtime with full access to built-ins and the standard library.",
+            "The calling workflow requires immediate, explicit failure on invalid bound ordering rather than silent correction or warning emission.",
+            "Function behavior is purely functional and stateless with no shared mutable state between invocations."
+          ],
+          "disciplines": [
+            "Software Engineering & Architecture",
+            "Defensive Programming & Boundary Validation",
+            "Python Language Semantics & Error Handling",
+            "Algorithmic Correctness & Complexity Analysis",
+            "Test-Driven Development & Static Code Quality"
+          ],
+          "divergences": [
+            "Formalization of Static/Linting Compliance: Cell 2 mandates PEP 8 alignment and zero violations via static analysis tools, while Cells 1, 3, 4, and 5 focus exclusively on functional logic and import constraints. This matters because it dictates whether linting reports must be clean during verification or if only raw execution correctness is required.",
+            "Performance Boundary Definition: Cell 2 specifies 'zero additional memory allocation per call', Cell 4 imposes an arbitrary '10ms runtime limit on baseline hardware', and the remaining cells state no quantitative performance thresholds. This matters as it shifts validation from purely logical correctness to measurable efficiency benchmarks requiring reproducible hardware baselines.",
+            "Documentation Styling Convention: Cell 1 explicitly requests 'inline explanation alongside the function definition', whereas Cell 5 emphasizes a 'concise explanatory docstring'. While both satisfy the prompt, this divergence affects where the explanation is placed (module-level vs. function-signature level) and may change how automated doc parsers interpret the deliverable."
+          ]
+        },
+        "allocation": {
+          "production": 2,
+          "domain_experts": 0,
+          "test_design": 1,
+          "test_exec": 1,
+          "recon": 1,
+          "red_team": 1,
+          "plan": 1,
+          "command": 1,
+          "integration": 1,
+          "evidence_audit": 1,
+          "framing": 5,
+          "compliance": 0,
+          "polish": 0,
+          "observer": 1,
+          "approval": 1,
+          "human_interface": 0,
+          "exploration": 0
+        }
+      }
+    }
+  ],
+  "generated_at": "2026-11-02T13:59:45.885349+00:00",
+  "models": {
+    "pool": "qwen/qwen3.7-flash",
+    "approval": "anthropic/claude-haiku-5.5",
+    "council:correctness": "qwen/qwen3.7-flash",
+    "council:risk": "google/gemma-3-27b-it",
+    "council:user_impact": "meta-llama/llama-3.3-70b-instruct",
+    "council:cost_speed": "mistralai/mistral-small-24b-instruct-2501",
+    "council:devils_advocate": "deepseek/deepseek-v3.2"
+  },
+  "independence_warnings": [],
+  "catalog_prices": {
+    "anthropic/claude-haiku-5.5": {
+      "input_per_m": 0.09999999999999999,
+      "output_per_m": 0.5
+    },
+    "qwen/qwen3.7-flash": {
+      "input_per_m": 0.03,
+      "output_per_m": 0.13
+    },
+    "deepseek/deepseek-v3.2": {
+      "input_per_m": 0.26,
+      "output_per_m": 0.38
+    },
+    "google/gemma-3-27b-it": {
+      "input_per_m": 0.08,
+      "output_per_m": 0.35
+    },
+    "mistralai/mistral-small-24b-instruct-2501": {
+      "input_per_m": 0.049999999999999996,
+      "output_per_m": 0.08
+    },
+    "meta-llama/llama-3.3-70b-instruct": {
+      "input_per_m": 0.09999999999999999,
+      "output_per_m": 0.32
+    }
+  },
+  "price_note": "Token-based catalog estimate, not a billing receipt; provider surcharges/caching/discounts may differ."
+}

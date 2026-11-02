@@ -26,7 +26,7 @@ from milyonus.gateway.adapter import (
     OutboundMessage,
 )
 from milyonus.gateway.pairing import PairingManager
-from milyonus.memory.pipeline import MemoryPipeline
+from milyonus.memory.factory import verified_pipeline
 from milyonus.memory.render import build_snapshot
 from milyonus.memory.store import MemoryStore
 from milyonus.memory.tool import make_memory_tools
@@ -92,7 +92,7 @@ class GatewayServer:
         return self._sessions.setdefault(self._session_key(msg), _UserSession())
 
     def _build_loop(self, adapter: ChannelAdapter, msg: InboundMessage) -> AgentLoop:
-        pipeline = MemoryPipeline(self.mem_store, config=self.config.memory, semantic=self.semantic)
+        pipeline = verified_pipeline(self.mem_store, self.config, semantic=self.semantic)
         # Group content is lower trust; memory proposals from groups are T3.
         default_source = "third-party" if msg.is_group else "agent-observed"
         mem_tools = make_memory_tools(
@@ -104,7 +104,13 @@ class GatewayServer:
         reg = ToolRegistry()
         for t in make_fs_tools(self.workspace):
             reg.register(t)
-        reg.register(make_shell_tool(self.workspace))
+        reg.register(
+            make_shell_tool(
+                self.workspace,
+                backend=self.config.security.sandbox_backend,
+                image=self.config.security.sandbox_image,
+            )
+        )
         for t in make_web_tools():
             reg.register(t)
         for t in make_email_tools():

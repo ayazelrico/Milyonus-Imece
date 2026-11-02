@@ -118,3 +118,13 @@ def test_irreversible_by_tool_name():
     eng = RiskEngine()
     decision, _, _ = eng.classify(_call("delete_record", id="42"), "safe")
     assert decision == "confirm"
+
+
+def test_safe_read_of_secret_still_requires_approval():
+    decision, _, _ = RiskEngine().classify(_call("read_file", path=".env"), "safe")
+    assert decision == "confirm"
+
+
+def test_action_substrings_do_not_turn_normal_reads_into_irreversible_actions():
+    decision, _, _ = RiskEngine().classify(_call("read_file", path="transform.py"), "safe")
+    assert decision == "auto"

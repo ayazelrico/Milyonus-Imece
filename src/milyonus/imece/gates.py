@@ -10,12 +10,19 @@ Kapı 3 — approval: sees ONLY the original request, the frozen criteria, the
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
 from milyonus.imece.agents import AgentSpec, Swarm, clip, parse_json
+from milyonus.imece.execution import PythonExecutor, python_files
+
+
+class GateError(ValueError):
+    """There was not enough valid independent evidence to proceed."""
+
 
 FRAMING_LENSES = (
     "literal: what exactly was asked",
@@ -99,6 +106,8 @@ async def frame(swarm: Swarm, request: str, n_agents: int) -> Frame:
     ]
     frames = [parse_json(t) for t in await swarm.run(specs)]
     frames = [f for f in frames if f]
+    if len(frames) <= n_agents / 2:
+        raise GateError("framing quorum not met")
     listing = "\n\n".join(
         f"## Cell {i + 1}\n{json.dumps(f, ensure_ascii=False)}" for i, f in enumerate(frames)
     )
@@ -142,6 +151,7 @@ class TestCase:
     id: str
     check: str
     how: str = ""
+    python: str = ""
 
 
 @dataclass
@@ -158,6 +168,8 @@ class GateReport:
     pass_rate: float = 0.0
     findings: list[Finding] = field(default_factory=list)
     passed: bool = False
+    verification: str = "model"
+    test_results: list[dict[str, Any]] = field(default_factory=list)
 
     def worst(self) -> str:
         ranks = [SEVERITIES.index(f.severity) for f in self.findings if f.severity in SEVERITIES]
@@ -172,12 +184,23 @@ class GateReport:
         )
 
     def evidence(self) -> str:
-        lines = [f"test pass rate: {self.pass_rate:.0%}", f"worst finding: {self.worst()}"]
+        lines = [
+            f"verification: {self.verification}",
+            f"test pass rate: {self.pass_rate:.0%}",
+            f"worst finding: {self.worst()}",
+        ]
         lines += [f"- [{f.source}/{f.severity}] {clip(f.text, 300)}" for f in self.findings[:12]]
+        lines += [
+            f"- FAILED {r['test']}: {clip(str(r.get('output', '')), 1200)}"
+            for r in self.test_results
+            if not r["passed"]
+        ]
         return "\n".join(lines)
 
 
-async def design_tests(swarm: Swarm, fr: Frame, n_agents: int, *, cap: int = 12) -> list[TestCase]:
+async def design_tests(
+    swarm: Swarm, fr: Frame, n_agents: int, *, cap: int = 12, executable: bool = False
+) -> list[TestCase]:
     """Test oracle design. Runs from the frame alone — it never sees a candidate."""
     specs = [
         AgentSpec(
@@ -188,10 +211,18 @@ async def design_tests(swarm: Swarm, fr: Frame, n_agents: int, *, cap: int = 12)
                 "Design tests that decide whether ANY solution meets the success criteria. "
                 "Say what 'correct' means and how to check it — include edge cases and at least "
                 "one test that would catch a solution that only looks right."
+                + (
+                    " Each test MUST include a standalone Python script in the 'python' field: "
+                    "use assertions and the standard library only, import the requested API from solution. "
+                    "Do not implement the solution, catch assertion failures, or use pytest. "
+                    "Each script is executed separately in an isolated interpreter."
+                    if executable
+                    else ""
+                )
             ),
             context=fr.brief(),
             success_criteria=[
-                'Reply with one JSON object: {"tests": [{"check": "...", "how": "..."}]}'
+                'Reply with one JSON object: {"tests": [{"check": "...", "how": "...", "python": "script (if requested)"}]}'
             ],
         )
         for _ in range(n_agents)
@@ -206,14 +237,21 @@ async def design_tests(swarm: Swarm, fr: Frame, n_agents: int, *, cap: int = 12)
             key = check.lower()
             if check and key not in seen:
                 seen.add(key)
-                tests.append(TestCase(f"T{len(tests) + 1}", check, str(t.get("how", ""))))
+                tests.append(
+                    TestCase(
+                        f"T{len(tests) + 1}",
+                        check,
+                        str(t.get("how", "")),
+                        str(t.get("python") or ""),
+                    )
+                )
     if not tests:
         tests = [TestCase(f"C{i + 1}", c) for i, c in enumerate(fr.success_criteria)]
     return tests[:cap]
 
 
 def _candidate_block(cands: Sequence[Any]) -> str:
-    return "\n\n".join(f"## Candidate {c.id}\n{clip(c.solution, 2500)}" for c in cands)
+    return "\n\n".join(f"## Candidate {c.id}\n{c.solution}" for c in cands)
 
 
 async def reality(
@@ -227,15 +265,18 @@ async def reality(
     evidence_audit: int,
     compliance: int,
     pass_threshold: float,
+    executor: PythonExecutor | None = None,
 ) -> dict[str, GateReport]:
     """Run Kapı 2 on candidates (objects with `.id` and `.solution`)."""
     reports = {c.id: GateReport(c.id) for c in candidates}
     test_list = "\n".join(f"- {t.id}: {t.check} ({t.how})" for t in tests)
     specs: list[AgentSpec] = []
     kinds: list[str] = []
+    groups: list[list[Any]] = []
 
-    for group in assign(test_exec, list(candidates)):
+    for group in assign(test_exec if executor is None else 0, list(candidates)):
         kinds.append("test")
+        groups.append(group)
         specs.append(
             AgentSpec(
                 block="test_exec",
@@ -255,13 +296,20 @@ async def reality(
             "red_team",
             red_team,
             "Attack these candidates: edge cases, overload, misuse, adversarial input, and "
-            "'what if an assumption is false'. Every finding needs a reproduction.",
+            "'what if an assumption is false'. Every finding needs a reproduction. "
+            "Distinguish contract failures from hypothetical assumption violations: "
+            "out-of-scope inputs or excluded assumptions are informational (low), never critical. "
+            "Critical means a demonstrated violation of a frozen success criterion within the stated input domain. "
+            "Do not invent requirements, report correct behavior as a flaw, or demand extra validation. "
+            "Return an empty findings list when there is no actual defect.",
         ),
         (
             "evidence_audit",
             evidence_audit,
             "Audit every claim: is it sourced, are numbers consistent, is anything hallucinated "
-            "or statistically invalid? Classify evidence quality.",
+            "or statistically invalid? Classify evidence quality. "
+            "Report defects only; verified claims do not need findings. "
+            "Return an empty findings list when claims are supported.",
         ),
         (
             "compliance",
@@ -272,6 +320,7 @@ async def reality(
     ):
         for group in assign(n, list(candidates)):
             kinds.append(block)
+            groups.append(group)
             specs.append(
                 AgentSpec(
                     block=block,
@@ -283,21 +332,62 @@ async def reality(
                         'Reply with one JSON object: {"findings": [{"candidate": "id", '
                         '"severity": "low|medium|high|critical", "text": "...", '
                         '"needs_human": false}]}'
+                        " Use exact candidate IDs from the briefing; at most 3 findings per candidate, each text under 500 characters. "
+                        'No Markdown fences or prose outside the JSON. Valid clean report: {"findings": []}. '
+                        "Do not include test code blocks inside text; give a concise reproduction and the violated criterion."
                     ],
                 )
             )
 
     results = await swarm.run(specs)
     tallies: dict[str, list[bool]] = {c.id: [] for c in candidates}
-    for kind, text in zip(kinds, results, strict=True):
-        data = parse_json(text) or {}
+    for kind, text, group in zip(kinds, results, groups, strict=True):
+        data = parse_json(text)
+        expected_ids = {c.id for c in group}
         if kind == "test":
-            for r in data.get("results") or []:
-                if isinstance(r, dict) and r.get("candidate") in tallies:
-                    tallies[r["candidate"]].append(bool(r.get("pass")))
+            rows = data.get("results", []) if data else []
+            seen: dict[tuple[str, str], list[bool]] = {}
+            for r in rows if isinstance(rows, list) else []:
+                if (
+                    isinstance(r, dict)
+                    and isinstance(r.get("candidate"), str)
+                    and isinstance(r.get("test"), str)
+                ):
+                    key = (r["candidate"], r["test"])
+                    seen.setdefault(key, []).append(r.get("pass") is True)
+            # Missing, duplicate, string/number booleans cannot raise pass rate.
+            for cid in expected_ids:
+                for t in tests:
+                    votes = seen.get((cid, t.id), [])
+                    ok = len(votes) == 1 and votes[0]
+                    tallies[cid].append(ok)
+                    reports[cid].test_results.append(
+                        {"test": t.id, "passed": ok, "source": "model"}
+                    )
             continue
-        for f in data.get("findings") or []:
-            if not isinstance(f, dict) or f.get("candidate") not in reports:
+        findings = data.get("findings") if data else None
+        valid = isinstance(findings, list) and all(
+            isinstance(f, dict)
+            and isinstance(f.get("candidate"), str)
+            and f["candidate"] in expected_ids
+            and f.get("severity") in SEVERITIES
+            and isinstance(f.get("text"), str)
+            and bool(f["text"].strip())
+            and isinstance(f.get("needs_human", False), bool)
+            for f in findings
+        )
+        if not valid:
+            for cid in expected_ids:
+                reports[cid].findings.append(
+                    Finding(
+                        kind,
+                        "critical",
+                        "Independent reviewer failed or returned an invalid report.",
+                    )
+                )
+            continue
+        for f in findings:
+            if f["candidate"] not in expected_ids:
                 continue
             sev = str(f.get("severity", "low")).lower()
             reports[f["candidate"]].findings.append(
@@ -308,10 +398,43 @@ async def reality(
                     needs_human=bool(f.get("needs_human")),
                 )
             )
+    if executor is not None:
+
+        async def execute(c: Any) -> None:
+            rep = reports[c.id]
+            rep.verification = f"python:{executor.backend}"
+            try:
+                files = python_files(c.solution)
+            except ValueError as exc:
+                rep.findings.append(Finding("execution", "critical", str(exc)))
+                files = {}
+            for t in tests:
+                outcome = await executor.run(files, t.python)
+                tallies[c.id].append(outcome.passed)
+                rep.test_results.append(
+                    {
+                        "test": t.id,
+                        "passed": outcome.passed,
+                        "source": rep.verification,
+                        "output": outcome.output[:2000],
+                        "returncode": outcome.returncode,
+                    }
+                )
+
+        await asyncio.gather(*(execute(c) for c in candidates))
     for cid, rep in reports.items():
         votes = tallies[cid]
         rep.pass_rate = sum(votes) / len(votes) if votes else 0.0
-        rep.passed = rep.pass_rate >= pass_threshold and rep.worst() != "critical"
+        rep.passed = (
+            bool(tests)
+            and bool(votes)
+            and rep.pass_rate >= pass_threshold
+            and rep.worst() != "critical"
+        )
+        if executor is not None:
+            # Executable correctness is all-or-nothing; the model threshold
+            # must not permit a known failing Python test.
+            rep.passed = rep.passed and all(votes)
     return reports
 
 
@@ -371,5 +494,5 @@ async def approve(
         if verdict != "accept":
             v.reasons += _str_list(data.get("reasons"), 5)
             v.unmet_criteria += _str_list(data.get("unmet_criteria"), 5)
-    v.accepted = (v.accepts + v.conditional) > n_agents / 2 and v.accepts >= v.rejects
+    v.accepted = v.accepts > n_agents / 2
     return v

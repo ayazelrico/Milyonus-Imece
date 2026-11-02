@@ -20,6 +20,7 @@ import sqlite3
 import time
 import uuid
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from milyonus.config.paths import state_db
 from milyonus.memory.model import (
@@ -77,6 +78,13 @@ CREATE TABLE IF NOT EXISTS negative_memory (
     reason     TEXT NOT NULL,
     source_uri TEXT,
     created_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS memory_confirmations (
+    item_id TEXT NOT NULL,
+    source_uri TEXT NOT NULL,
+    source_key TEXT NOT NULL,
+    evidence_hash TEXT NOT NULL,
+    PRIMARY KEY(item_id, source_key)
 );
 """
 
@@ -368,6 +376,9 @@ class MemoryStore:
 
     def mark_rejected(self, item_id: str, *, reason: str) -> None:
         self._set_state(item_id, "rejected", "reject", {"reason": reason})
+        self._conn.execute(
+            "UPDATE memory SET verdict=?, verified_at=? WHERE id=?", (reason, _now(), item_id)
+        )
         self._conn.commit()
 
     def revoke_by_source(self, source_uri: str) -> list[str]:
@@ -376,8 +387,9 @@ class MemoryStore:
         revoked: list[str] = []
         # Direct hits.
         rows = self._conn.execute(
-            "SELECT id FROM memory WHERE source_uri=? AND state IN ('active','pending')",
-            (source_uri,),
+            "SELECT DISTINCT m.id FROM memory m LEFT JOIN memory_confirmations c ON c.item_id=m.id "
+            "WHERE (m.source_uri=? OR c.source_uri=?) AND m.state IN ('active','pending')",
+            (source_uri, source_uri),
         ).fetchall()
         frontier = [r["id"] for r in rows]
         while frontier:
@@ -395,7 +407,7 @@ class MemoryStore:
     def expire_due(self, now: float | None = None) -> list[str]:
         now = now or _now()
         rows = self._conn.execute(
-            "SELECT id FROM memory WHERE state='active' AND expires_at IS NOT NULL "
+            "SELECT id FROM memory WHERE state IN ('active','pending') AND expires_at IS NOT NULL "
             "AND expires_at < ?",
             (now,),
         ).fetchall()
@@ -410,11 +422,38 @@ class MemoryStore:
         self._conn.execute("UPDATE memory SET expires_at=? WHERE id=?", (expires_at, item_id))
         self._conn.commit()
 
-    def add_confirmation(self, item_id: str) -> int:
-        self._conn.execute(
-            "UPDATE memory SET confirmations = confirmations + 1 WHERE id=?",
-            (item_id,),
+    def add_confirmation(self, item_id: str, *, source_uri: str, evidence: str) -> int:
+        """One attested observation per source family, never per processing pass.
+        Distinct domains are a conservative proxy for source independence, not
+        proof of independent ownership. Callers must supply observed evidence.
+        """
+        parsed = urlsplit(source_uri)
+        host = (parsed.hostname or "").lower().rstrip(".")
+        if parsed.scheme not in ("http", "https") or not host or parsed.username:
+            raise ValueError("confirmation needs an HTTP(S) source URI")
+        # Treat subdomains as the same source; intentionally conservative for
+        # public suffixes such as co.uk (which can undercount, never overcount).
+        key = ".".join(host.split(".")[-2:])
+        item = self.get(item_id)
+        if item is None or item.state != "pending" or evidence != item.content:
+            raise ValueError("confirmation must match a pending claim exactly")
+        cursor = self._conn.execute(
+            "INSERT OR IGNORE INTO memory_confirmations VALUES(?,?,?,?)",
+            (item_id, source_uri, key, hashlib.sha256(evidence.encode()).hexdigest()),
         )
+        self._conn.execute(
+            "UPDATE memory SET confirmations = (SELECT COUNT(*) FROM memory_confirmations WHERE item_id=?) WHERE id=?",
+            (item_id, item_id),
+        )
+        if cursor.rowcount:
+            self._ledger_append(
+                "corroborate",
+                item_id,
+                {
+                    "source": source_uri,
+                    "evidence_hash": hashlib.sha256(evidence.encode()).hexdigest(),
+                },
+            )
         row = self._conn.execute(
             "SELECT confirmations FROM memory WHERE id=?", (item_id,)
         ).fetchone()

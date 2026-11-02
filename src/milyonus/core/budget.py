@@ -15,10 +15,14 @@ class Budget:
     max_tokens: int = 500_000
     used_iterations: int = 0
     used_tokens: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
 
     def record(self, *, input_tokens: int = 0, output_tokens: int = 0) -> None:
         self.used_iterations += 1
         self.used_tokens += input_tokens + output_tokens
+        self.input_tokens += input_tokens
+        self.output_tokens += output_tokens
 
     def exhausted(self) -> bool:
         return self.used_iterations >= self.max_iterations or self.used_tokens >= self.max_tokens

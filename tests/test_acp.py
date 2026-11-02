@@ -10,7 +10,7 @@ import pytest
 from milyonus.acp.server import ACPServer
 from milyonus.config.schema import MilyonusConfig
 from milyonus.memory.store import MemoryStore
-from milyonus.providers.base import CompletionRequest, StreamEvent, Usage
+from milyonus.providers.base import CompletionRequest, StreamEvent, ToolCall, Usage
 
 pytestmark = pytest.mark.asyncio
 
@@ -135,3 +135,119 @@ async def test_prompt_unknown_session(tmp_path):
         ],
     )
     assert "error" in out[0]
+
+
+@pytest.mark.parametrize(
+    "decision,exists", [("allow_once", True), ("reject_once", False), ("forged", False)]
+)
+async def test_permission_roundtrip_is_required_before_writing(tmp_path, decision, exists):
+    class WritingProvider:
+        name = model = "fake"
+
+        async def stream(self, request):
+            if any(m.role == "tool" for m in request.messages):
+                yield StreamEvent(kind="text", delta="done")
+            else:
+                yield StreamEvent(
+                    kind="tool_call",
+                    tool_call=ToolCall(
+                        "c", "write_file", {"path": "approved.txt", "content": "ok"}
+                    ),
+                )
+            yield StreamEvent(kind="usage", usage=Usage(3, 2))
+            yield StreamEvent(kind="done")
+
+    server = _server(tmp_path)
+    server.provider = WritingProvider()
+    sid = server._session_new({"cwd": str(tmp_path)})["sessionId"]
+    reader = asyncio.StreamReader()
+    written = []
+
+    class Writer:
+        def write(self, data):
+            msg = json.loads(data)
+            written.append(msg)
+            if msg.get("method") == "session/request_permission":
+                assert not (tmp_path / "approved.txt").exists()
+                reader.feed_data(
+                    (
+                        json.dumps(
+                            {
+                                "jsonrpc": "2.0",
+                                "id": msg["id"],
+                                "result": {
+                                    "outcome": {"outcome": "selected", "optionId": decision}
+                                },
+                            }
+                        )
+                        + "\n"
+                    ).encode()
+                )
+            if msg.get("id") == 2 and "result" in msg:
+                reader.feed_eof()
+
+        async def drain(self):
+            pass
+
+    reader.feed_data(
+        (
+            json.dumps(
+                {
+                    "id": 2,
+                    "method": "session/prompt",
+                    "params": {"sessionId": sid, "prompt": [{"type": "text", "text": "write"}]},
+                }
+            )
+            + "\n"
+        ).encode()
+    )
+    await asyncio.wait_for(server.serve(reader, Writer()), 3)
+    assert (tmp_path / "approved.txt").exists() is exists
+    assert not server._permissions
+
+
+async def test_cancel_interrupts_a_live_provider(tmp_path):
+    reader = asyncio.StreamReader()
+    server = _server(tmp_path)
+    sid = server._session_new({"cwd": str(tmp_path)})["sessionId"]
+    stopped = asyncio.Event()
+
+    class SlowProvider:
+        name = model = "fake"
+
+        async def stream(self, request):
+            reader.feed_data(
+                (
+                    json.dumps({"method": "session/cancel", "params": {"sessionId": sid}}) + "\n"
+                ).encode()
+            )
+            try:
+                await asyncio.sleep(10)
+                yield StreamEvent(kind="done")
+            finally:
+                stopped.set()
+
+    server.provider = SlowProvider()
+    written = []
+
+    class Writer:
+        def write(self, data):
+            msg = json.loads(data)
+            written.append(msg)
+            if msg.get("id") == 2:
+                reader.feed_eof()
+
+        async def drain(self):
+            pass
+
+    reader.feed_data(
+        (
+            json.dumps(
+                {"id": 2, "method": "session/prompt", "params": {"sessionId": sid, "prompt": []}}
+            )
+            + "\n"
+        ).encode()
+    )
+    await asyncio.wait_for(server.serve(reader, Writer()), 3)
+    assert stopped.is_set()
+    assert any(m.get("result", {}).get("stopReason") == "cancelled" for m in written)

@@ -26,7 +26,7 @@ from pathlib import Path
 from milyonus.config.schema import MilyonusConfig
 from milyonus.core.budget import Budget
 from milyonus.core.loop import AgentLoop
-from milyonus.memory.pipeline import MemoryPipeline
+from milyonus.memory.factory import verified_pipeline
 from milyonus.memory.render import build_snapshot
 from milyonus.memory.store import MemoryStore
 from milyonus.memory.tool import make_memory_tools
@@ -62,12 +62,16 @@ class ACPServer:
         self.mem_store = mem_store or MemoryStore()
         self._sessions: dict[str, _Session] = {}
         self._writer: asyncio.StreamWriter | None = None
+        self._turns: dict[str, asyncio.Task] = {}
+        self._permissions: dict[str, asyncio.Future] = {}
+        self._closing = False
 
     # --- transport ------------------------------------------------------
 
     async def serve(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         """Read newline-delimited JSON-RPC until EOF, dispatching each message."""
         self._writer = writer
+        self._closing = False
         while True:
             line = await reader.readline()
             if not line:
@@ -79,9 +83,90 @@ class ACPServer:
                 msg = json.loads(line)
             except ValueError:
                 continue
+            if not isinstance(msg, dict):
+                continue
+            mid = msg.get("id")
+            if (mid is not None and not isinstance(mid, (str, int))) or not isinstance(
+                msg.get("params", {}), dict
+            ):
+                await self._write(_error(None, -32600, "invalid JSON-RPC request"))
+                continue
+            if "method" not in msg and msg.get("id") in self._permissions:
+                future = self._permissions[msg["id"]]
+                if not future.done():
+                    result = msg.get("result")
+                    outcome = result.get("outcome", {}) if isinstance(result, dict) else {}
+                    future.set_result(
+                        isinstance(outcome, dict)
+                        and outcome.get("outcome") == "selected"
+                        and outcome.get("optionId") == "allow_once"
+                    )
+                continue
+            if "method" not in msg:
+                continue  # late/unknown responses must not elicit another response
+            if msg.get("method") == "session/prompt":
+                sid = msg.get("params", {}).get("sessionId", "")
+                if sid in self._turns:
+                    if msg.get("id") is not None:
+                        await self._write(
+                            _error(msg["id"], -32600, "session already has an active prompt")
+                        )
+                    continue
+                task = asyncio.create_task(self._respond(msg))
+                self._turns[sid] = task
+                task.add_done_callback(lambda _t, key=sid: self._turns.pop(key, None))
+                # Let the prompt start while the reader continues accepting
+                # permission responses and session/cancel notifications.
+                await asyncio.sleep(0)
+                continue
             response = await self._dispatch(msg)
             if response is not None:
                 await self._write(response)
+        self._closing = True
+        for future in self._permissions.values():
+            if not future.done():
+                future.set_result(False)
+        if self._turns:
+            await asyncio.gather(*list(self._turns.values()), return_exceptions=True)
+
+    async def _respond(self, msg: dict) -> None:
+        response = await self._dispatch(msg)
+        if response is not None:
+            await self._write(response)
+
+    async def _permission(self, session: _Session, call: ToolCall) -> bool:
+        if self._closing or self._writer is None:
+            return False
+        rid = "permission_" + uuid.uuid4().hex
+        future = asyncio.get_running_loop().create_future()
+        self._permissions[rid] = future
+        try:
+            await self._write(
+                {
+                    "jsonrpc": "2.0",
+                    "id": rid,
+                    "method": "session/request_permission",
+                    "params": {
+                        "sessionId": session.id,
+                        "toolCall": {
+                            "toolCallId": call.id,
+                            "title": call.name,
+                            "kind": "other",
+                            "status": "pending",
+                            "rawInput": call.arguments,
+                        },
+                        "options": [
+                            {"optionId": "allow_once", "name": "Allow once", "kind": "allow_once"},
+                            {"optionId": "reject_once", "name": "Deny", "kind": "reject_once"},
+                        ],
+                    },
+                }
+            )
+            return await asyncio.wait_for(future, 60)
+        except (TimeoutError, ConnectionError):
+            return False
+        finally:
+            self._permissions.pop(rid, None)
 
     async def _write(self, obj: dict) -> None:
         assert self._writer is not None
@@ -134,16 +219,24 @@ class ACPServer:
         return {"sessionId": sid}
 
     def _session_cancel(self, params: dict) -> dict:
-        # Best-effort: sessions are single-turn here, so nothing to interrupt yet.
+        task = self._turns.get(params.get("sessionId", ""))
+        if task is not None:
+            task.cancel()
         return {}
 
     def _build_loop(self, session: _Session) -> AgentLoop:
-        pipeline = MemoryPipeline(self.mem_store, config=self.config.memory)
+        pipeline = verified_pipeline(self.mem_store, self.config)
         mem_tools = make_memory_tools(pipeline, session_id=session.id, user_ref="editor")
         reg = ToolRegistry()
         for t in make_fs_tools(session.cwd):
             reg.register(t)
-        reg.register(make_shell_tool(session.cwd))
+        reg.register(
+            make_shell_tool(
+                session.cwd,
+                backend=self.config.security.sandbox_backend,
+                image=self.config.security.sandbox_image,
+            )
+        )
         for t in make_web_tools():
             reg.register(t)
         for t in mem_tools:
@@ -178,6 +271,9 @@ class ACPServer:
                 },
             )
 
+        async def approve(call: ToolCall, _risk: str) -> bool:
+            return await self._permission(session, call)
+
         return AgentLoop(
             provider=self.provider,
             tools=reg,
@@ -185,6 +281,7 @@ class ACPServer:
             budget=session.budget,
             on_text=on_text,
             on_tool=on_tool,
+            approve=approve,
             max_output_tokens=self.config.provider.max_output_tokens,
         )
 
@@ -211,6 +308,8 @@ class ACPServer:
                 },
             )
             return {"stopReason": "refusal"}
+        except asyncio.CancelledError:
+            return {"stopReason": "cancelled"}
 
 
 def _extract_text(prompt_blocks: list) -> str:

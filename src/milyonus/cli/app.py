@@ -47,6 +47,19 @@ def _main(
 ) -> None:
     """Milyonus Agent command-line interface. Starts an interactive session
     when called with no arguments."""
+    from pathlib import Path
+
+    from milyonus.selfmod.harness import SelfModHarness
+
+    core = Path(__file__).resolve().parents[2]
+    repo = next((p for p in core.parents if (p / ".git").exists()), None)
+    if repo is not None and ctx.invoked_subcommand not in ("selfmod", "doctor"):
+        h = SelfModHarness(repo)
+        if h.pending() is not None:
+            console.print(
+                f"Core changed after a test-gated self-edit. Review it in {repo}; run 'milyonus selfmod accept' there, or 'milyonus selfmod rollback'."
+            )
+            raise typer.Exit(1)
     # No subcommand -> start the interactive session (the default surface).
     if ctx.invoked_subcommand is None:
         from milyonus.cli.tui import run_tui

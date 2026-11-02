@@ -1,0 +1,1127 @@
+{
+  "schema_version": 1,
+  "source": "real-model",
+  "settings": {
+    "agents": 17,
+    "max_parallel": 4,
+    "max_tokens": 250000,
+    "max_rounds": 2,
+    "max_clusters": 9,
+    "max_options": 6,
+    "shortlist": 4,
+    "pass_threshold": 0.6,
+    "verification": "python",
+    "sandbox_backend": "macos",
+    "sandbox_image": "python:3.12-slim",
+    "test_timeout": 10.0,
+    "agent_timeout": 120.0,
+    "cell_size": 9,
+    "irade": {
+      "veto_floor": 0.5,
+      "hard_veto_floor": 0.2,
+      "spread_threshold": 0.15,
+      "min_vote_share": 0.6,
+      "min_confidence": 0.55,
+      "audit_rate": 0.05,
+      "precedent_confidence": 0.8
+    }
+  },
+  "summary": {
+    "runs": 3,
+    "accepted": 0,
+    "verified_successes": 0,
+    "accepted_deliverable_rate": 0.0,
+    "verified_success_rate": 0.0,
+    "false_accepts": 0,
+    "total_tokens": 71119,
+    "cost_usd": null,
+    "cost_estimated": true,
+    "cost_per_accepted_usd": null,
+    "cost_per_verified_success_usd": null,
+    "calibration_ece": null,
+    "calibration_samples": 0
+  },
+  "runs": [
+    {
+      "task": "clamp",
+      "repeat": 0,
+      "status": "rejected",
+      "oracle_passed": false,
+      "oracle_output": "missing Python artifacts or executable test",
+      "seconds": 112.196,
+      "tokens": 32674,
+      "cost_usd": null,
+      "cost_estimated": true,
+      "confidence": null,
+      "report": {
+        "status": "rejected",
+        "request": "Deliver solution.py containing clamp(value, low, high). All inputs are integers. Return low when value<low, high when value>high, otherwise value. Raise ValueError when low>high. Standard library only; no I/O, network, services or third party dependencies. Include a brief explanation and named code fence ```python file=solution.py. This is a purely local coding exercise; no deployment.",
+        "deliverable": "",
+        "rounds": 2,
+        "tokens": 32674,
+        "cost_usd": null,
+        "cost_estimated": true,
+        "calls_by_block": {
+          "framing": 6,
+          "recon": 1,
+          "plan": 2,
+          "command": 2,
+          "production": 4,
+          "test_design": 1,
+          "evidence_audit": 2,
+          "red_team": 2,
+          "observer": 1
+        },
+        "failed_by_block": {
+          "red_team": 1
+        },
+        "warnings": [],
+        "metrics": {
+          "recon_command_layers": 0.0,
+          "candidate_similarity": 0.304,
+          "distinct_approaches": 2,
+          "agent_failure_rate": 0.05,
+          "budget_pressure": 0.128
+        },
+        "retrospective": [],
+        "notes": [
+          "round 1: 0/2 candidates passed Kapı 2",
+          "round 2: 0/2 candidates passed Kapı 2"
+        ],
+        "decisions": [],
+        "gate_reports": [
+          {
+            "candidate_id": "R1-C1",
+            "pass_rate": 0.0,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "critical",
+                "text": "Independent reviewer failed or returned an invalid report.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "The ValueError message \"low must not exceed high\" is not required by spec; spec only requires raising ValueError, not specific message content. However, this is non-critical as messages are informational only and do not affect behavior.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T2",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T3",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T5",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T6",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T7",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T8",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T9",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T10",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T11",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              }
+            ]
+          },
+          {
+            "candidate_id": "R1-C2",
+            "pass_rate": 0.0,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "critical",
+                "text": "Independent reviewer failed or returned an invalid report.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "The ValueError is raised without a message (`raise ValueError`)—acceptable per spec, but slightly less informative than including a message. Not a functional issue, just minimal style preference.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T2",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T3",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T5",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T6",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T7",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T8",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T9",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T10",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T11",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              }
+            ]
+          },
+          {
+            "candidate_id": "R2-C1",
+            "pass_rate": 0.0,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "critical",
+                "text": "Independent reviewer failed or returned an invalid report.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "The explanation correctly describes behavior but contains a hallucinated verification example: 'clamp(3, 5, 10) raises ValueError' is stated as a test, but 3 < 5 does not imply low > high; this is factually incorrect. The correction ('clamp(1, 5, 3) should raise ValueError') is accurate, but the initial error misrepresents the error condition and could mislead verification.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T2",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T3",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T5",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T6",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T7",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T8",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T9",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T10",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T11",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              }
+            ]
+          },
+          {
+            "candidate_id": "R2-C2",
+            "pass_rate": 0.0,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "critical",
+                "text": "Independent reviewer failed or returned an invalid report.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "Verification test 'print(clamp(1, 5, 5))' expects 5, but spec requires low ≤ value ≤ high ⇒ return value; here value=1, low=5, high=5, so 1 < low ⇒ should return 5 (correct), but explanation incorrectly implies the test verifies boundary inclusion rather than clamping to lower bound. Not statistically invalid, but imprecise justification.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T2",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T3",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T5",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T6",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T7",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T8",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T9",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T10",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T11",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              }
+            ]
+          }
+        ],
+        "frame": {
+          "request": "Deliver solution.py containing clamp(value, low, high). All inputs are integers. Return low when value<low, high when value>high, otherwise value. Raise ValueError when low>high. Standard library only; no I/O, network, services or third party dependencies. Include a brief explanation and named code fence ```python file=solution.py. This is a purely local coding exercise; no deployment.",
+          "problem": "Design a minimal, pure-functional Python utility `clamp(value, low, high)` that restricts an integer `value` to the inclusive range `[low, high]`, returning `low` if `value < low`, `high` if `value > high`, and `value` itself otherwise, while rigorously validating range integrity by raising `ValueError` exactly when `low > high`; the implementation must be fully local (no I/O, network, or external dependencies), use only Python standard library (builtins only), and assume all inputs are integers as per specification.",
+          "success_criteria": [
+            "clamp(value, low, high) returns low iff value < low, high iff value > high, and value iff low ≤ value ≤ high for all integer triples (value, low, high)",
+            "clamp(value, low, high) raises ValueError if and only if low > high, with no other exceptions or side effects",
+            "solution.py is a standalone file containing only the function definition (no top-level code) and uses no imports beyond builtins",
+            "Function behavior is deterministic, pure (no statemutation or side effects), and compatible with standard Python 3.x interpreters"
+          ],
+          "out_of_scope": [
+            "Input validation beyond low > high (e.g., type checking for non-integers, NaN, infinity, or overflow)",
+            "Handling floats, strings, None, or other non-integer types",
+            "Unit tests, test harnesses, or documentation beyond the required brief explanation",
+            "Performance benchmarks, optimization, or alternative algorithmic strategies",
+            "Deployment, concurrency, platform-specific behavior, or system integration"
+          ],
+          "assumptions": [
+            "All parameters (value, low, high) are guaranteed to be integers at call time (per specification)",
+            "Range bounds are inclusive: [low, high] includes both endpoints",
+            "ValueError is the only required exception type for invalid ranges—no custom exceptions needed",
+            "Python’s arbitrary-precision integers are supported (no overflow constraints)",
+            "The function is intended for deterministic use in larger systems where bounds consistency is assumed but not externally enforced"
+          ],
+          "disciplines": [
+            "Algorithm design (minimal clamping logic with boundary correctness)",
+            "Defensive programming (robust input validation only at specified failure point)",
+            "Python language mastery (idiomatic, standard-library-only implementation)",
+            "Specification engineering (surface real disagreements between framings)"
+          ],
+          "divergences": [
+            "Cells 2 and 4 emphasize *whether* clamping is a symptom of broader system flaws (e.g., invalid data flows, contract enforcement), whereas Cells 1, 3, and 5 treat it as a self-contained algorithmic problem—this matters because it affects whether validation scope should extend beyond low > high (e.g., type checks). Agreement: all cells accept low > high → ValueError as sufficient, so divergence is purely framing, not functional.",
+            "Cell 2 questions if input validation *beyond* low > high is needed (e.g., type checking), but all cells explicitly assume inputs are guaranteed integers, so no functional divergence—only interpretive tension about requirement clarity.",
+            "Cell 4 mentions static type checking under CPython 3.10+, while others omit static analysis; all accept runtime correctness as primary metric—no conflict, just differing emphasis.",
+            "All cells agree on core behavior and constraints; no disagreement on *what* the function must do—only on *why* it matters or what broader context it fits in. This makes the task a framing synthesis, not a technical correction."
+          ]
+        },
+        "allocation": {
+          "production": 2,
+          "domain_experts": 0,
+          "test_design": 1,
+          "test_exec": 1,
+          "recon": 1,
+          "red_team": 1,
+          "plan": 1,
+          "command": 1,
+          "integration": 1,
+          "evidence_audit": 1,
+          "framing": 5,
+          "compliance": 0,
+          "polish": 0,
+          "observer": 1,
+          "approval": 1,
+          "human_interface": 0,
+          "exploration": 0
+        }
+      }
+    },
+    {
+      "task": "merge_intervals",
+      "repeat": 0,
+      "status": "rejected",
+      "oracle_passed": false,
+      "oracle_output": "missing Python artifacts or executable test",
+      "seconds": 156.741,
+      "tokens": 36496,
+      "cost_usd": 0.01406,
+      "cost_estimated": false,
+      "confidence": null,
+      "report": {
+        "status": "rejected",
+        "request": "Deliver solution.py with merge_intervals(intervals). Input is a list of integer (start,end) pairs with start<=end. Return a sorted list of tuples with overlapping or touching intervals merged. Empty input returns []. Do not mutate input. Standard library only, no I/O or deployment. Include a brief explanation and a named code fence ```python file=solution.py.",
+        "deliverable": "",
+        "rounds": 2,
+        "tokens": 36496,
+        "cost_usd": 0.01406,
+        "cost_estimated": false,
+        "calls_by_block": {
+          "framing": 6,
+          "recon": 1,
+          "plan": 2,
+          "command": 2,
+          "production": 4,
+          "test_design": 1,
+          "evidence_audit": 2,
+          "red_team": 2,
+          "observer": 1
+        },
+        "failed_by_block": {},
+        "warnings": [],
+        "metrics": {
+          "recon_command_layers": 0.0,
+          "candidate_similarity": 0.148,
+          "distinct_approaches": 2,
+          "agent_failure_rate": 0.0,
+          "budget_pressure": 0.144
+        },
+        "retrospective": [
+          "No candidates passed Kapı 2 in either round, indicating framing layer outputs failed to meet required quality or relevance thresholds for downstream processing",
+          "Review framing prompts and constraints to ensure they properly align with the expected input format and content expectations of Kapı 2; introduce validation or self-check steps within the framing layer to filter low-quality outputs before submission; increase iteration fidelity by allowing framing to receive feedback from Kapı 2 rejections and adapt accordingly"
+        ],
+        "notes": [
+          "round 1: 0/2 candidates passed Kapı 2",
+          "round 2: 0/2 candidates passed Kapı 2"
+        ],
+        "decisions": [],
+        "gate_reports": [
+          {
+            "candidate_id": "R1-C1",
+            "pass_rate": 0.9,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "critical",
+                "text": "Independent reviewer failed or returned an invalid report.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "critical",
+                "text": "Independent reviewer failed or returned an invalid report.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T2",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T3",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T4",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T5",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T6",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T7",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T8",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-j1cn49dw/oracle.py\", line 7, in <module>\n    assert result == (1, 3)  # tuple comparison\n           ^^^^^^^^^^^^^^^^\nAssertionError\n",
+                "returncode": 1
+              },
+              {
+                "test": "T9",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T10",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              }
+            ]
+          },
+          {
+            "candidate_id": "R1-C2",
+            "pass_rate": 0.0,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "critical",
+                "text": "Independent reviewer failed or returned an invalid report.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "critical",
+                "text": "Independent reviewer failed or returned an invalid report.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-368xusqc/oracle.py\", line 1, in <module>\n    from solution import merge_intervals\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-368xusqc/code/solution.py\", line 1\n    ```python\n    ^\nSyntaxError: invalid syntax\n",
+                "returncode": 1
+              },
+              {
+                "test": "T2",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-f1hyps4x/oracle.py\", line 1, in <module>\n    from solution import merge_intervals\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-f1hyps4x/code/solution.py\", line 1\n    ```python\n    ^\nSyntaxError: invalid syntax\n",
+                "returncode": 1
+              },
+              {
+                "test": "T3",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-kj2uro3t/oracle.py\", line 1, in <module>\n    from solution import merge_intervals\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-kj2uro3t/code/solution.py\", line 1\n    ```python\n    ^\nSyntaxError: invalid syntax\n",
+                "returncode": 1
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-6guypiw4/oracle.py\", line 1, in <module>\n    from solution import merge_intervals\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-6guypiw4/code/solution.py\", line 1\n    ```python\n    ^\nSyntaxError: invalid syntax\n",
+                "returncode": 1
+              },
+              {
+                "test": "T5",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-h51rec57/oracle.py\", line 1, in <module>\n    from solution import merge_intervals\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-h51rec57/code/solution.py\", line 1\n    ```python\n    ^\nSyntaxError: invalid syntax\n",
+                "returncode": 1
+              },
+              {
+                "test": "T6",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-_3dlsv4q/oracle.py\", line 1, in <module>\n    from solution import merge_intervals\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-_3dlsv4q/code/solution.py\", line 1\n    ```python\n    ^\nSyntaxError: invalid syntax\n",
+                "returncode": 1
+              },
+              {
+                "test": "T7",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-xmbmhhlv/oracle.py\", line 1, in <module>\n    from solution import merge_intervals\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-xmbmhhlv/code/solution.py\", line 1\n    ```python\n    ^\nSyntaxError: invalid syntax\n",
+                "returncode": 1
+              },
+              {
+                "test": "T8",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-_rx_t9_1/oracle.py\", line 1, in <module>\n    from solution import merge_intervals\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-_rx_t9_1/code/solution.py\", line 1\n    ```python\n    ^\nSyntaxError: invalid syntax\n",
+                "returncode": 1
+              },
+              {
+                "test": "T9",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-v1tksg3x/oracle.py\", line 1, in <module>\n    from solution import merge_intervals\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-v1tksg3x/code/solution.py\", line 1\n    ```python\n    ^\nSyntaxError: invalid syntax\n",
+                "returncode": 1
+              },
+              {
+                "test": "T10",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-x1ayox9u/oracle.py\", line 1, in <module>\n    from solution import merge_intervals\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-x1ayox9u/code/solution.py\", line 1\n    ```python\n    ^\nSyntaxError: invalid syntax\n",
+                "returncode": 1
+              }
+            ]
+          },
+          {
+            "candidate_id": "R2-C1",
+            "pass_rate": 0.5,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "critical",
+                "text": "R2-C1 fails to handle negative interval lengths correctly due to incorrect touch detection: `start <= current_end + 1` assumes integer adjacency but doesn't account for overlapping intervals that extend *before* current_end due to earlier merged intervals (e.g., input [(0,5), (-1,2)]). After sorting: [(-1,2), (0,5)], current becomes (-1,2), then for (0,5): start=0 <= 2+1=3 → merge to (-1, max(2,5)=5) → (-1,5) — this works. But for [(0,5), (-2,-1)], sorted: [(-2,-1), (0,5)], current = (-2,-1), next start=0 <= -1+1=0 → condition holds, merges to (-2, max(-1,5)=5) = (-2,5), which is wrong because (-2,-1) and (0,5) are NOT touching or overlapping (gap of 1 at -1 to 0). The bug: `start <= current_end + 1` merges when `start == current_end + 1`, which correctly merges [a,b] and [b+1,c] → [a,c], but fails when `current_end < start - 1`, i.e., when there is a gap. In this example, current_end = -1, start = 0 ⇒ 0 <= -1 + 1 = 0 ⇒ true, merges incorrectly. Reproduction: merge_intervals([(-2,-1), (0,5)]) returns [(-2,5)], but should be [(-2,-1), (0,5)].",
+                "needs_human": false
+              },
+              {
+                "source": "red_team",
+                "severity": "medium",
+                "text": "R2-C1 does not verify output is a list of *tuples* — it uses `.append((current_start, current_end))`, which is correct, but the logic could break if `sorted_intervals[0]` were a list (though assumption says it's a tuple). More critically, the code assumes the first element is unpackable and non-empty. However, since we assume well-formed input, the bigger issue is boundary case handling: what if all intervals collapse to points? Example: [(2,2), (2,2)] → merged to (2,2), correct. But [(1,1), (1,2)] → sorted: [(1,1), (1,2)], current=(1,1), then start=1 <= 1+1=2 → merge to (1, max(1,2)=2) = (1,2), correct. Still, no explicit handling for intervals where end < start *after merge* (e.g., if logic error), but under assumptions, this is less likely. Reproduction: edge case with degenerate intervals works. However, more severe issue: input [(5,6), (1,2)] returns [(1,2), (5,6)] — sorted by start, correct. But if sorted were stable and input order mattered? No — sorting is explicit. The real risk: mutation. Code copies via `sorted(...)`, so input is safe — but if `intervals` were a numpy array or generator, `sorted(...)` still works. No direct mutation observed. Still, a subtle flaw: no check for `intervals` containing `None` or non-tuples, but out of scope per spec. Verdict: medium severity due to *critical* bug already listed; this is additional risk.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "low",
+                "text": "The implementation correctly handles merging touching and overlapping intervals, sorts by start, returns tuples, and preserves input. However, the comment 'next.start <= current.end + 1' misattributes logic — it should read 'start <= current_end + 1' to match variable names. This is minor but could confuse review. No actual bug — logic is sound.",
+                "needs_human": false
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T2",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T3",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-jbhq4in_/oracle.py\", line 4, in <module>\n    assert merge_intervals([(1,2),(2,3),(4,5),(5,6)]) == [(1,3),(4,6)]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+                "returncode": 1
+              },
+              {
+                "test": "T5",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T6",
+                "passed": true,
+                "source": "python:macos",
+                "output": "",
+                "returncode": 0
+              },
+              {
+                "test": "T7",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-jqlnx01x/oracle.py\", line 7, in <module>\n    assert result == [(1,2),(3,4)]  # sorted output\n           ^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+                "returncode": 1
+              },
+              {
+                "test": "T8",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-wxz7vhta/oracle.py\", line 7, in <module>\n    assert result == (1, 3)  # tuple comparison\n           ^^^^^^^^^^^^^^^^\nAssertionError\n",
+                "returncode": 1
+              },
+              {
+                "test": "T9",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-j5q0a9v2/oracle.py\", line 4, in <module>\n    assert merge_intervals([(5,6),(1,2),(3,4)]) == [(1,2),(3,4),(5,6)]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+                "returncode": 1
+              },
+              {
+                "test": "T10",
+                "passed": false,
+                "source": "python:macos",
+                "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/private/var/folders/dk/nhlf8cts0wl0jrtp04gvxpww0000gn/T/milyonus-exec-4exphml3/oracle.py\", line 4, in <module>\n    assert merge_intervals([(1,2),(3,4)]) == [(1,2),(3,4)]\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+                "returncode": 1
+              }
+            ]
+          },
+          {
+            "candidate_id": "R2-C2",
+            "pass_rate": 0.0,
+            "findings": [
+              {
+                "source": "red_team",
+                "severity": "high",
+                "text": "R2-C2 describes an event-sweep approach but provides *no actual executable code* — only pseudocode-style explanation. While claims and verification steps are thorough, the requirement is to deliver `solution.py`, and R2-C2 contains no Python implementation. Without a function body, the candidate cannot satisfy success criteria (e.g., no code to test for input immutability or return type). Reproduction: Attempt to import/execute any code from R2-C2 fails: no `def merge_intervals(...):` exists. The JSON itself is malformed: `how_to_veri…` suggests truncation, further indicating incomplete output.",
+                "needs_human": false
+              },
+              {
+                "source": "evidence_audit",
+                "severity": "high",
+                "text": "The candidate does not provide a solution.py file — it describes an alternative line-sweep algorithm and lists claims, but fails the core task requirement: deliver a working solution.py with merge_intervals(intervals). The description contains plausible reasoning, but without executable code, it cannot be validated for correctness or compliance with success criteria. This is a critical shortfall — no implementation, no audit of correctness possible.",
+                "needs_human": true
+              }
+            ],
+            "passed": false,
+            "verification": "python:macos",
+            "test_results": [
+              {
+                "test": "T1",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T2",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T3",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T4",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T5",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T6",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T7",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T8",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T9",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              },
+              {
+                "test": "T10",
+                "passed": false,
+                "source": "python:macos",
+                "output": "missing Python artifacts or executable test",
+                "returncode": null
+              }
+            ]
+          }
+        ],
+        "frame": {
+          "request": "Deliver solution.py with merge_intervals(intervals). Input is a list of integer (start,end) pairs with start<=end. Return a sorted list of tuples with overlapping or touching intervals merged. Empty input returns []. Do not mutate input. Standard library only, no I/O or deployment. Include a brief explanation and a named code fence ```python file=solution.py.",
+          "problem": "Given a list of intervals represented as (start, end) integer tuples where start ≤ end, produce a new list of non-overlapping, non-touching intervals sorted by start time, formed by merging any intervals that overlap or are adjacent (i.e., where end of one equals start of another); the input must remain unmodified, and the output must be sorted in ascending order by start value. Empty input yields empty list.",
+          "success_criteria": [
+            "The function returns intervals sorted strictly by start value",
+            "No overlapping or touching intervals remain in the output",
+            "Input list is not mutated during processing",
+            "Output is a list of tuples (not lists or other structures)",
+            "Edge cases such as empty input, single interval, or fully nested intervals are handled correctly"
+          ],
+          "out_of_scope": [
+            "Handling invalid inputs (e.g., start > end, non-integer values, None)",
+            "Parallelization or performance optimization beyond standard library efficiency",
+            "I/O operations, file handling, or user interaction",
+            "Error messages, logging, or exception handling beyond standard behavior"
+          ],
+          "assumptions": [
+            "Input is a list of well-formed (start, end) tuples with integers satisfying start ≤ end",
+            "Intervals are closed [start, end], so (1,2) and (2,3) are considered touching and must be merged",
+            "Sorting is in ascending lexicographic order by the start coordinate only",
+            "Tuples are immutable and may be reconstructed but not modified in-place"
+          ],
+          "disciplines": [
+            "Algorithm design (interval merging with greedy strategy)",
+            "Python data structure manipulation (lists, tuples)",
+            "Input/output contract adherence (no mutation, type consistency)",
+            "Edge-case analysis (empty list, single element, overlaps, touches)"
+          ],
+          "divergences": []
+        },
+        "allocation": {
+          "production": 2,
+          "domain_experts": 0,
+          "test_design": 1,
+          "test_exec": 1,
+          "recon": 1,
+          "red_team": 1,
+          "plan": 1,
+          "command": 1,
+          "integration": 1,
+          "evidence_audit": 1,
+          "framing": 5,
+          "compliance": 0,
+          "polish": 0,
+          "observer": 1,
+          "approval": 1,
+          "human_interface": 0,
+          "exploration": 0
+        }
+      }
+    },
+    {
+      "task": "iban_tr",
+      "repeat": 0,
+      "status": "rejected",
+      "oracle_passed": false,
+      "oracle_output": "missing Python artifacts or executable test",
+      "seconds": 10.081,
+      "tokens": 1949,
+      "cost_usd": null,
+      "cost_estimated": true,
+      "confidence": null,
+      "report": {
+        "status": "rejected",
+        "request": "Deliver solution.py with is_valid_tr_iban(value). Return bool; accept only strings. Remove ASCII spaces, uppercase ASCII letters, then require TR followed by exactly 24 ASCII digits (26 total chars). Apply ISO 13616 mod97: move first4 chars to end, convert A..Z to 10..35, remainder must equal1. Reject malformed inputs and nonstrings without raising. Do not impose extra bank-code/reserved-digit rules. Use a terminating streaming remainder algorithm. Standard library only, no network/I/O. Include explanation and named code fence ```python file=solution.py.",
+        "deliverable": "",
+        "rounds": 0,
+        "tokens": 1949,
+        "cost_usd": null,
+        "cost_estimated": true,
+        "calls_by_block": {
+          "framing": 5,
+          "observer": 1
+        },
+        "failed_by_block": {
+          "framing": 3
+        },
+        "warnings": [
+          "60% of agent runs failed — check providers/keys"
+        ],
+        "metrics": {
+          "agent_failure_rate": 0.6,
+          "budget_pressure": 0.006
+        },
+        "retrospective": [
+          "framing quorum not met indicates insufficient agreement among framing agents",
+          "60% agent failure rate suggests systemic issues with framing providers or keys",
+          "Verify and rotate API keys/providers used by framing agents",
+          "Increase quorum threshold tolerance or agent redundancy in framing tier",
+          "Add health checks and retry logic for framing calls"
+        ],
+        "notes": [
+          "framing quorum not met"
+        ],
+        "decisions": [],
+        "gate_reports": [],
+        "allocation": {
+          "production": 2,
+          "domain_experts": 0,
+          "test_design": 1,
+          "test_exec": 1,
+          "recon": 1,
+          "red_team": 1,
+          "plan": 1,
+          "command": 1,
+          "integration": 1,
+          "evidence_audit": 1,
+          "framing": 5,
+          "compliance": 0,
+          "polish": 0,
+          "observer": 1,
+          "approval": 1,
+          "human_interface": 0,
+          "exploration": 0
+        }
+      }
+    }
+  ],
+  "generated_at": "2026-11-02T13:58:35.011772+00:00",
+  "models": {
+    "pool": "qwen/qwen3-coder-next",
+    "approval": "anthropic/claude-haiku-5.5",
+    "council:correctness": "qwen/qwen3-coder-next",
+    "council:risk": "google/gemma-3-27b-it",
+    "council:user_impact": "meta-llama/llama-3.3-70b-instruct",
+    "council:cost_speed": "mistralai/mistral-small-24b-instruct-2501",
+    "council:devils_advocate": "deepseek/deepseek-v3.2"
+  },
+  "independence_warnings": [],
+  "catalog_prices": {
+    "anthropic/claude-haiku-5.5": {
+      "input_per_m": 0.09999999999999999,
+      "output_per_m": 0.5
+    },
+    "qwen/qwen3-coder-next": {
+      "input_per_m": 0.12,
+      "output_per_m": 0.7999999999999999
+    },
+    "deepseek/deepseek-v3.2": {
+      "input_per_m": 0.26,
+      "output_per_m": 0.38
+    },
+    "google/gemma-3-27b-it": {
+      "input_per_m": 0.08,
+      "output_per_m": 0.35
+    },
+    "mistralai/mistral-small-24b-instruct-2501": {
+      "input_per_m": 0.049999999999999996,
+      "output_per_m": 0.08
+    },
+    "meta-llama/llama-3.3-70b-instruct": {
+      "input_per_m": 0.09999999999999999,
+      "output_per_m": 0.32
+    }
+  },
+  "price_note": "Token-based catalog estimate, not a billing receipt; provider surcharges/caching/discounts may differ."
+}

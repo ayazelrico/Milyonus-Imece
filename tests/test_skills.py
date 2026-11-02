@@ -1,5 +1,7 @@
 """Skill system: parsing, progressive disclosure, scanner, and the repro gate."""
 
+import sys
+
 import pytest
 
 from milyonus.skills.engine import SkillEngine
@@ -84,11 +86,44 @@ async def test_repro_gate_blocks_promotion(tmp_path):
 
 @pytest.mark.asyncio
 async def test_repro_gate_allows_valid(tmp_path):
-    mgr = SkillManager(live_dir=tmp_path / "live", staging_dir=tmp_path / "stg")
+    async def verified_replay(meta, body):
+        return True
+
+    mgr = SkillManager(
+        live_dir=tmp_path / "live", staging_dir=tmp_path / "stg", gate=verified_replay
+    )
     meta = SkillMeta(name="ok", description="d")
     result = await mgr.create(meta, "# body\nadım 1 adım 2")
     assert result.ok
     assert (tmp_path / "live" / "ok" / "SKILL.md").exists()
+
+
+async def test_missing_replay_cannot_promote_skill(tmp_path):
+    mgr = SkillManager(live_dir=tmp_path / "live")
+    result = await mgr.create(
+        SkillMeta(name="unverified", description="d"), "Just claims, no replay."
+    )
+    assert not result.ok
+    assert not (tmp_path / "live" / "unverified").exists()
+    assert (tmp_path / "live" / "_staging" / "unverified" / "SKILL.md").exists()
+
+
+@pytest.mark.parametrize("name", ["../outside", "/tmp/outside", ".", "a/b", "_staging"])
+async def test_skill_management_cannot_escape_roots(tmp_path, name):
+    mgr = SkillManager(live_dir=tmp_path / "live")
+    assert not (await mgr.create(SkillMeta(name=name, description="d"), "body")).ok
+    assert not mgr.delete(name).ok
+    assert not (await mgr.patch(name, "body")).ok
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="actual macOS skill replay")
+async def test_default_repro_gate_executes_the_skill_example(tmp_path):
+    body = "```python file=solution.py\ndef twice(n): return n*2\n```\n\n```python test=skill\nfrom solution import twice\nassert twice(3)==6\n```"
+    manager = SkillManager(live_dir=tmp_path / "live")
+    assert (await manager.create(SkillMeta(name="twice", description="Double a number"), body)).ok
+    bad = body.replace("==6", "==7")
+    assert not (await manager.patch("twice", bad)).ok
+    assert "==6" in (tmp_path / "live" / "twice" / "SKILL.md").read_text()
 
 
 @pytest.mark.asyncio

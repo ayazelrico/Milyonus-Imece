@@ -21,6 +21,7 @@ from typing import Literal
 
 from milyonus.imece import gates
 from milyonus.imece.agents import AgentFn, AgentSpec, PoolExhausted, Swarm, clip, parse_json
+from milyonus.imece.execution import PythonExecutor
 from milyonus.imece.irade import (
     Calibrator,
     Decision,
@@ -48,10 +49,13 @@ FALLBACK_APPROACHES = (
 )
 CANDIDATE_FORMAT = (
     "Use exactly these sections: ## Solution, ## Claims (each checkable), "
-    "## How to verify, ## Known weaknesses."
+    "## How to verify, ## Known weaknesses. "
+    "For Python artifacts use fenced blocks with the EXACT opening line "
+    "```python file=solution.py (or the requested module path), then the full file, then ```. "
+    "Preserve these named fences in every revision and delivery."
 )
 
-PLAIN_DELIVERABLE = "Return the deliverable itself as plain Markdown (code in fenced blocks) — never wrapped in JSON."
+PLAIN_DELIVERABLE = "Return the deliverable itself as plain Markdown — never wrapped in JSON. For Python files preserve named fences: ```python file=solution.py followed by the full code and a closing fence."
 
 Status = Literal["accepted", "rejected", "stopped", "budget"]
 
@@ -63,10 +67,27 @@ class ImeceSettings:
     max_tokens: int = 2_000_000
     max_rounds: int = 2
     max_clusters: int = 9
-    max_options: int = 6
+    max_options: int = 12
     shortlist: int = 4
     pass_threshold: float = 0.6
+    verification: Literal["model", "python"] = "model"
+    sandbox_backend: Literal["docker", "macos"] = "docker"
+    sandbox_image: str = "python:3.12-slim"
+    test_timeout: float = 10.0
+    agent_timeout: float = 300.0
+    cell_size: int = 9
     irade: IradeSettings = field(default_factory=IradeSettings)
+
+    def __post_init__(self) -> None:
+        if self.max_parallel < 1 or self.max_tokens < 1 or self.max_rounds < 1:
+            raise ValueError("parallelism, token pool and rounds must be positive")
+        if not 7 <= self.cell_size <= 12 or self.max_options < 2:
+            raise ValueError("cell_size must be 7..12 and max_options at least 2")
+        if self.verification not in ("model", "python") or self.sandbox_backend not in (
+            "docker",
+            "macos",
+        ):
+            raise ValueError("unsupported verification mode or sandbox backend")
 
 
 @dataclass
@@ -92,6 +113,8 @@ class RunResult:
     calls_by_block: dict[str, int] = field(default_factory=dict)
     failed_by_block: dict[str, int] = field(default_factory=dict)
     tokens: int = 0
+    cost_usd: float | None = None
+    cost_estimated: bool = True
     warnings: list[str] = field(default_factory=list)
     metrics: dict[str, float] = field(default_factory=dict)
     retrospective: list[str] = field(default_factory=list)
@@ -104,6 +127,8 @@ class RunResult:
             "deliverable": self.deliverable,
             "rounds": self.rounds,
             "tokens": self.tokens,
+            "cost_usd": self.cost_usd,
+            "cost_estimated": self.cost_estimated,
             "calls_by_block": self.calls_by_block,
             "failed_by_block": self.failed_by_block,
             "warnings": self.warnings,
@@ -142,7 +167,12 @@ class Imece:
     ):
         self.s = settings or ImeceSettings()
         self.alloc = allocate(self.s.agents)
-        self.swarm = Swarm(agent_fn, max_parallel=self.s.max_parallel, max_tokens=self.s.max_tokens)
+        self.swarm = Swarm(
+            agent_fn,
+            max_parallel=self.s.max_parallel,
+            max_tokens=self.s.max_tokens,
+            agent_timeout=self.s.agent_timeout,
+        )
         self.irade = Irade(
             self.swarm,
             settings=self.s.irade,
@@ -152,6 +182,16 @@ class Imece:
             rng=rng,
         )
         self.observer = Observer()
+        self.executor = (
+            PythonExecutor(
+                backend=self.s.sandbox_backend,
+                image=self.s.sandbox_image,
+                timeout=self.s.test_timeout,
+                max_parallel=self.s.max_parallel,
+            )
+            if self.s.verification == "python"
+            else None
+        )
         self._should_stop = should_stop or (lambda: False)
         self._on_phase = on_phase or (lambda _p: None)
 
@@ -181,6 +221,42 @@ class Imece:
         return "\n\n".join(blocks)
 
     # ── phases ─────────────────────────────────────────────────────────────
+    async def _summarize(self, fr: gates.Frame, notes: list[str], label: str) -> str:
+        """Hierarchical command: bounded 7–12 member cells, then parent cells.
+        The final partial cell may have fewer members. No independent gate is
+        pooled into this tree. Original agent events remain in the run ledger.
+        """
+        level = 0
+        size = self.s.cell_size
+        while len(notes) > 1:
+            specs = []
+            for start in range(0, len(notes), size):
+                cell = notes[start : start + size]
+                specs.append(
+                    AgentSpec(
+                        block="command",
+                        role=f"{label} cell coordinator level {level}",
+                        goal="Summarize every member's useful evidence. Preserve disagreements, source qualifications, risks and minority alternatives; never silently discard a member.",
+                        context=self._ctx(
+                            fr,
+                            (
+                                "Cell contributions",
+                                "\n\n".join(
+                                    f"## Member {start + i + 1}\n{clip(n, 1200)}"
+                                    for i, n in enumerate(cell)
+                                ),
+                            ),
+                        ),
+                        success_criteria=[
+                            "A concise evidence-bearing summary with disagreements and unknowns."
+                        ],
+                    )
+                )
+            notes = await self.swarm.run(specs)
+            level += 1
+        self.observer.metrics[f"{label}_command_layers"] = float(level)
+        return "\n\n".join(notes)
+
     async def _recon(self, fr: gates.Frame) -> str:
         specs = [
             AgentSpec(
@@ -198,7 +274,7 @@ class Imece:
             for i in range(self.alloc["recon"])
         ]
         notes = await self.swarm.run(specs)
-        return clip("\n\n".join(clip(n, 800) for n in notes), 8000)
+        return clip(await self._summarize(fr, notes, "recon"), 12000)
 
     async def _experts(self, fr: gates.Frame) -> str:
         n = self.alloc["domain_experts"]
@@ -223,12 +299,12 @@ class Imece:
         per_field: dict[str, list[str]] = {}
         for i, b in enumerate(briefs):
             per_field.setdefault(fields[i % len(fields)], []).append(b)
-        return clip(
-            "\n\n".join(
-                f"## {f}\n" + "\n".join(clip(b, 700) for b in bs[:2]) for f, bs in per_field.items()
-            ),
-            6000,
-        )
+        sections = []
+        per_field_budget = max(300, 6000 // max(1, len(per_field)) - 100)
+        for index, (name, notes) in enumerate(per_field.items()):
+            summary = await self._summarize(fr, notes, f"expert_{index}")
+            sections.append(f"## {name}\n{clip(summary, per_field_budget)}")
+        return "\n\n".join(sections)
 
     async def _plan(self, fr: gates.Frame, intel: str, experts: str, feedback: list[str]) -> str:
         schema = {
@@ -259,23 +335,27 @@ class Imece:
         plans: list[tuple[str, str]] = []
         seen: set[str] = set()
         for text in await self.swarm.run(specs):
+            if not text.strip() or text.startswith("(agent failed"):
+                continue
             data = parse_json(text)
             title = str((data or {}).get("title") or text[:60]).strip()
             if title.lower() in seen:
                 continue
             seen.add(title.lower())
             plans.append((title, json.dumps(data, ensure_ascii=False) if data else text))
-        plans = plans[: self.s.max_options]
+        if not plans:
+            raise gates.GateError("No planner produced a usable plan.")
         if len(plans) == 1:
             return plans[0][1]
-        decision = await self.irade.decide(
+        decision = await self.irade.decide_layered(
             DecisionRequest(
                 kind="plan_selection",
                 question="Which plan should the imece execute?",
                 options=[Option(f"P{i + 1}", body) for i, (_t, body) in enumerate(plans)],
                 context=fr.brief(),
                 impact="high",
-            )
+            ),
+            cell_size=min(self.s.cell_size, self.s.max_options),
         )
         if decision.stopped:
             raise Stopped("IRADE could not select a plan: " + "; ".join(decision.escalations))
@@ -300,7 +380,31 @@ class Imece:
             for _ in range(self.alloc["command"])
         ]
         found: dict[str, str] = {}
-        for text in await self.swarm.run(specs):
+        responses = await self.swarm.run(specs)
+        level = 0
+        while len(responses) > 1:
+            cells = []
+            for start in range(0, len(responses), self.s.cell_size):
+                group = responses[start : start + self.s.cell_size]
+                cells.append(
+                    AgentSpec(
+                        block="command",
+                        role=f"approach coordinator level {level}",
+                        goal=f"Merge the approaches proposed by ALL these command cells into at most {cap} distinct core ideas. Preserve useful minority alternatives and remove conceptual duplicates.",
+                        context=self._ctx(
+                            fr,
+                            ("Selected plan", plan),
+                            ("Command cell proposals", "\n\n".join(clip(r, 1500) for r in group)),
+                        ),
+                        success_criteria=[
+                            'Reply with one JSON object: {"approaches": [{"name": "...", "idea": "..."}]}'
+                        ],
+                    )
+                )
+            responses = await self.swarm.run(cells)
+            level += 1
+        self.observer.metrics["approach_command_layers"] = float(level)
+        for text in responses:
             for a in (parse_json(text) or {}).get("approaches") or []:
                 if isinstance(a, dict) and str(a.get("name", "")).strip():
                     found.setdefault(str(a["name"]).strip().lower(), str(a.get("idea", "")))
@@ -368,7 +472,9 @@ class Imece:
             if text.strip() and not text.startswith("(agent failed")
         ]
 
-    async def _cross_critique(self, survivors: list[Candidate]) -> list[Candidate]:
+    async def _cross_critique(
+        self, survivors: list[Candidate], fr: gates.Frame | None = None
+    ) -> list[Candidate]:
         """Role rotation: every candidate is critiqued by a builder from another
         approach (never its author), then its author revises — borrowing from
         the best other survivor (crossover)."""
@@ -381,8 +487,10 @@ class Imece:
                     block="production",
                     role=f"cross-critic from approach '{critic_approach}' (not the author)",
                     seat="pool",
-                    goal="Critique this candidate hard: what is wrong, missing or weaker than it claims?",
-                    context=clip(c.solution, 6000),
+                    goal="Critique this candidate against the frozen contract. Identify concrete within-scope failures; do not invent requirements or demand handling of inputs explicitly excluded by assumptions. Say no issues if none are demonstrable.",
+                    context=self._ctx(fr, ("Candidate", c.solution))
+                    if fr is not None
+                    else c.solution,
                     success_criteria=["Bullet list of concrete flaws, most serious first."],
                 )
             )
@@ -399,7 +507,8 @@ class Imece:
                         "Revise your candidate: fix every valid criticism, and adopt any strictly "
                         f"better idea from the other candidate. {CANDIDATE_FORMAT}"
                     ),
-                    context=(
+                    context=(fr.brief() + "\n\n" if fr is not None else "")
+                    + (
                         f"# Your candidate\n{clip(c.solution, 6000)}\n\n# Criticism\n{clip(crit, 2000)}"
                         + (
                             f"\n\n# Another candidate (for crossover)\n{clip(donor.solution, 3000)}"
@@ -407,7 +516,11 @@ class Imece:
                             else ""
                         )
                     ),
-                    success_criteria=["Return the full revised candidate, not a diff."],
+                    success_criteria=[
+                        *(fr.success_criteria if fr is not None else ()),
+                        "Preserve the original scope and assumptions. Only adopt criticism that applies to the contract.",
+                        "Return the full revised candidate, not a diff.",
+                    ],
                 )
             )
         revised = await self.swarm.run(revisers)
@@ -537,6 +650,7 @@ class Imece:
                 evidence_audit=cap(a["evidence_audit"]),
                 compliance=min(a["compliance"], 1) if not full else a["compliance"],
                 pass_threshold=self.s.pass_threshold,
+                executor=self.executor,
             )
         finally:
             self.alloc.release_loans()
@@ -546,6 +660,8 @@ class Imece:
         res = RunResult(status="rejected", request=request, allocation=self.alloc)
         prev_reasons: list[str] = []
         try:
+            if self.executor is not None and not self.executor.available():
+                raise gates.GateError(f"sandbox unavailable: {self.s.sandbox_backend}")
             self._phase("Kapı 1 — independent framing")
             fr = await gates.frame(self.swarm, request, self.alloc["framing"])
             res.frame = fr
@@ -565,7 +681,12 @@ class Imece:
                 if tests is None:
                     cands, tests = await asyncio.gather(
                         self._produce(rnd, fr, plan, intel, experts, approaches, feedback),
-                        gates.design_tests(self.swarm, fr, self.alloc["test_design"]),
+                        gates.design_tests(
+                            self.swarm,
+                            fr,
+                            self.alloc["test_design"],
+                            executable=self.executor is not None,
+                        ),
                     )
                 else:
                     cands = await self._produce(rnd, fr, plan, intel, experts, approaches, feedback)
@@ -589,9 +710,7 @@ class Imece:
                 )
                 if not passed:
                     worst = sorted(cands, key=lambda c: reports[c.id].pass_rate, reverse=True)[:3]
-                    feedback = [f.text for c in worst for f in reports[c.id].findings[:3]] or [
-                        "No candidate passed the tests."
-                    ]
+                    feedback = [reports[c.id].evidence() for c in worst]
                     continue
                 # Keep approach diversity in the shortlist: best per approach first.
                 shortlist: list[Candidate] = []
@@ -602,7 +721,17 @@ class Imece:
                 shortlist = shortlist[: self.s.shortlist]
 
                 self._phase(f"Round {rnd}: cross-critique + evolutionary revision")
-                revised = await self._cross_critique(shortlist)
+                revised = await self._cross_critique(shortlist, fr)
+                self._phase(f"Round {rnd}: re-test revised candidates")
+                revised_reports = await self._gate2(fr, revised, tests, full=False)
+                res.gate_reports.extend(revised_reports.values())
+                revised = [c for c in revised if revised_reports[c.id].passed]
+                reports = revised_reports
+                if not revised:
+                    feedback = ["All revised candidates failed independent re-testing."] + [
+                        r.evidence() for r in revised_reports.values()
+                    ]
+                    continue
 
                 self._phase(f"Round {rnd}: IRADE synthesis decision")
                 decision = await self.irade.decide(
@@ -610,8 +739,7 @@ class Imece:
                         kind="synthesis",
                         question="Which candidate should be the primary basis of the final deliverable?",
                         options=[
-                            Option(c.id, f"{c.solution}\n\n[Kapı 2] {reports[c.id].evidence()}")
-                            for c in revised
+                            Option(c.id, c.solution, reports[c.id].evidence()) for c in revised
                         ],
                         context=fr.brief(),
                         impact="strategic" if rnd > 1 else "high",
@@ -636,9 +764,7 @@ class Imece:
                 final_rep = (await self._gate2(fr, [final], tests, full=False))["FINAL"]
                 res.final_gate, res.deliverable = final_rep, deliverable
                 if not final_rep.passed:
-                    feedback = [f.text for f in final_rep.findings[:6]] or [
-                        "Integrated deliverable failed the tests."
-                    ]
+                    feedback = [final_rep.evidence()]
                     res.notes.append(
                         f"round {rnd}: integrated deliverable failed the system re-test"
                     )
@@ -647,6 +773,31 @@ class Imece:
                 self._phase(f"Round {rnd}: polish + Kapı 3 blind approval")
                 deliverable = await self._polish(fr, deliverable)
                 res.deliverable = deliverable
+                if deliverable != final.solution:
+                    self._phase(f"Round {rnd}: re-test polished deliverable")
+                    final = Candidate(
+                        "FINAL-POLISHED", primary.approach, primary.author, deliverable
+                    )
+                    final_rep = (await self._gate2(fr, [final], tests, full=False))[final.id]
+                    res.final_gate = final_rep
+                    if not final_rep.passed:
+                        feedback = ["Polished deliverable failed re-testing."] + [
+                            f.text for f in final_rep.findings[:6]
+                        ]
+                        continue
+                if final_rep.needs_human():
+                    self._phase(f"Round {rnd}: human review of final findings")
+                    final_decision = await self.irade.decide(
+                        DecisionRequest(
+                            kind="final_delivery",
+                            question="Approve delivery with the flagged irreversible risks?",
+                            options=[Option("deliver", deliverable)],
+                            context=final_rep.evidence(),
+                            reversible=False,
+                        )
+                    )
+                    if final_decision.stopped:
+                        raise Stopped("Final deliverable has findings that require human review.")
                 evidence = (
                     final_rep.evidence()
                     + "\n\nTests:\n"
@@ -677,13 +828,16 @@ class Imece:
         except Stopped as exc:
             res.status = "stopped"
             res.notes.append(str(exc))
+        except gates.GateError as exc:
+            res.status = "rejected"
+            res.notes.append(str(exc))
 
         self.observer.check_decisions(self.irade.tier_counts())
         self.observer.check_swarm(self.swarm)
         res.decisions = list(self.irade.log)
         res.warnings = list(self.observer.warnings)
         res.metrics = dict(self.observer.metrics)
-        if res.status != "budget":
+        if res.status in ("accepted", "rejected") and self.swarm.events and not self._should_stop():
             try:
                 summary = {
                     "status": res.status,
@@ -704,4 +858,11 @@ class Imece:
         res.calls_by_block = self.swarm.calls_by_block()
         res.failed_by_block = self.swarm.failed_by_block()
         res.tokens = self.swarm.used_tokens
+        events = self.swarm.events
+        res.cost_usd = (
+            round(sum(e.cost_usd or 0.0 for e in events), 6)
+            if events and all(e.cost_usd is not None for e in events)
+            else None
+        )
+        res.cost_estimated = res.cost_usd is None or any(e.cost_estimated for e in events)
         return res
