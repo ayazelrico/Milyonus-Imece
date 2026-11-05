@@ -30,6 +30,16 @@ Bir rapordaki başarısız kontrolleri tekrar incelemek için aşağıdaki komut
 uv run python -m evals.imece.failures run.json --out failure-families.json
 ```
 
+Arşiv, aile başına farklı görev ve görev/tekrar sayılarını da verir. Tam
+çıktısı kayıtlı, Python kaynağı eşleşen ve dönüş kodu 1 olan çalışma zamanı
+hatası varsa `repair_template` altında inceleme taslağı üretir. Taslak önce
+hatalı tarafın aday mı kontrol mü olduğunun belirlenmesini, küçük onarımı,
+bağımsız yeniden yürütmeyi ve kaynak geçersizleşme koşullarını içerir.
+Altyapı hataları ve eksik/kesilmiş çıktı için şablon üretilmez. Aynı tanı
+satırı ortak neden kanıtı değildir; farklı görev sayısı bağımsız doğrulama
+yerine geçmez. Bu taslak doğrulanmış onarım veya canlı beceri değildir;
+beceri dosyası yazmaz ve yükseltme kapısını çalıştırmaz.
+
 Ajanın oluşturduğu veya güncellediği beceri, kendi örneği çalıştıktan sonra hazırlık dizininde bekler. Operatör, ayrı görevleri temsil eden en az iki bağımsız kontrol dosyası seçer. Görevlerin bağımsızlığı operatörün sorumluluğundadır. Sistem farklı görev etiketleri, farklı Python kontrol kodları ve çalıştırılabilir doğrulama ifadeleri arar.
 
 Örnek bir manifest:

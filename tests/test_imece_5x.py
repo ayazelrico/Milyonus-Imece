@@ -66,6 +66,7 @@ def reports():
                 "oracle_passed": True,
                 "tokens": 10,
                 "cost_usd": 1,
+                "cost_estimated": False,
                 "confidence": None,
             }
             for t in load_tasks()

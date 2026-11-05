@@ -7,6 +7,9 @@ Karşılaştırmalı 250 koşu + bağımsız denetim + fatura mutabakatı dış 
 gerektirir — `accepted_5x` yalnızca `evals.imece.compare` ile ilan edilir.
 Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 
+Madde bazında uygulama ve açık kabul koşulları:
+[kabul kaydı](docs/plan-5x-acceptance.md).
+
 Yerel uygulamada sürümlü görev kümesi, gizli yürütülebilir oracle, deney manifesti
 ve rapor karşılaştırma kapısı; bütçe rezervasyon defteri, kalıcı aşama/çağrı
 günlüğü ve tamamlanan yanıtları yeniden kullanarak devam etme; deterministik,

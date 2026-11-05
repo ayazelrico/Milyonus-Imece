@@ -1,5 +1,12 @@
 # Codex CLI ile İmece deneyini hazırlama
 
+Çift hazırlama aracı `--seat-model SEAT=MODEL` seçeneklerini iki tarafa aynı
+uygular. `--declared-budget-usd`, `--failure-families`, `--agents` ve
+`--max-tokens` da ortak olarak aktarılır. Böylece koltuk kökeni incelemesi,
+makbuz karşılaştırması ve hata ailesi ölçümü için gereken ön bildirimler
+eşleşmiş protokole girer. Dolar tavanı CLI harcamasını anlık sınırlamaz;
+sonradan fatura denetimi içindir. Model adları bağımsızlık kanıtı değildir.
+
 Bir CLI çağrısı hata, iptal veya geçersiz yanıt nedeniyle belirsiz kalırsa
 görev/tekrar çifti aynı süreç içinde hemen engellenir. Sonraki gönderimler
 uzlaştırma gerektirir; engel yalnızca yeniden başlatmada uygulanmaz. Daha önce

@@ -17,6 +17,11 @@ def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument("--engine", choices=("codex",), default="codex")
     parser.add_argument("--model", required=True, help="explicit CLI model for every seat")
+    parser.add_argument("--seat-model", action="append", default=[], metavar="SEAT=MODEL")
+    parser.add_argument("--declared-budget-usd")
+    parser.add_argument("--failure-families", type=Path)
+    parser.add_argument("--agents", type=int, default=17)
+    parser.add_argument("--max-tokens", type=int, default=250_000)
     parser.add_argument("--out-dir", required=True, type=Path, help="must not already exist")
     parser.add_argument("--baseline-config", required=True, type=Path)
     parser.add_argument("--candidate-config", required=True, type=Path)
@@ -132,9 +137,15 @@ async def main(args) -> int:
                 ("--image", args.image),
                 ("--max-cli-calls", args.max_cli_calls),
                 ("--executable", args.executable),
+                ("--declared-budget-usd", args.declared_budget_usd),
+                ("--failure-families", args.failure_families),
+                ("--agents", args.agents),
+                ("--max-tokens", args.max_tokens),
             ):
                 if value is not None:
                     argv.extend((flag, str(value)))
+            for override in args.seat_model:
+                argv.extend(("--seat-model", override))
             prepared_args = run.make_parser().parse_args(argv)
             if await run.main(prepared_args) != 0:
                 raise ValueError(f"{role} preparation failed")

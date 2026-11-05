@@ -11,7 +11,7 @@ from milyonus.security.redact import redact
 
 
 def archive(report: dict) -> list[dict]:
-    # Group the same frozen check across distinct trials. The full transcript and
+    # Group diagnostic similarities, not proven common causes. The transcript and
     # private reference oracle never become part of a suggested skill.
     families: dict[tuple[str, str, str | None], dict] = {}
     for row in report["runs"]:
@@ -42,9 +42,42 @@ def archive(report: dict) -> list[dict]:
                     "check": observation["test"],
                     "returncode": observation.get("returncode"),
                     "failure_class": failure_class,
+                    "output_truncated": observation.get("output_truncated"),
+                    "source": observation.get("source"),
                 }
                 if example not in family["examples"]:
                     family["examples"].append(example)
+    for family in families.values():
+        examples = family["examples"]
+        family["distinct_tasks"] = len({e["task"] for e in examples})
+        family["distinct_trials"] = len({(e["task"], e["repeat"]) for e in examples})
+        eligible = family["failure_class"] == "candidate_or_oracle_runtime" and any(
+            type(e["returncode"]) is int
+            and e["returncode"] == 1
+            and e["output_truncated"] is False
+            and e["source"] == family["backend"]
+            for e in examples
+        )
+        family["repair_template"] = (
+            {
+                "status": "draft_requires_operator_review",
+                "symptom": family["diagnostic"],
+                "steps": [
+                    "Preserve the frozen public contract and the original candidate files.",
+                    "Reproduce the failed generated check in the recorded isolated environment.",
+                    "Determine whether candidate code or the check violates the contract.",
+                    "Repair the smallest demonstrated candidate defect; retain unrelated behavior.",
+                    "Replay the original check and independent tasks before proposing a skill.",
+                ],
+                "invalidation": [
+                    "Changed or revoked oracle, contract, runtime or execution policy.",
+                    "Failure cannot be reproduced or the generated check is incorrect.",
+                ],
+                "promotion": "staging only; two independent operator-supplied task replays required",
+            }
+            if eligible
+            else None
+        )
     return list(families.values())
 
 
