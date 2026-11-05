@@ -23,6 +23,27 @@ def execution_controls(settings: dict) -> dict:
     return {k: v for k, v in settings.items() if k not in TREATMENT_SETTINGS}
 
 
+def describe_treatments(baseline: dict, candidate: dict) -> dict:
+    factors = [
+        k
+        for k in sorted(TREATMENT_SETTINGS)
+        if baseline.get("settings", {}).get(k) != candidate.get("settings", {}).get(k)
+    ]
+    builtin = {"kind": "builtin", "instructions_hash": None}
+    if baseline.get("cli_prompt_treatment", builtin) != candidate.get(
+        "cli_prompt_treatment", builtin
+    ):
+        factors.append("cli_prompt")
+    if baseline.get("implementation_hash") != candidate.get("implementation_hash"):
+        factors.append("implementation")
+    return {
+        "factors": factors,
+        "single_factor": len(factors) == 1,
+        "isolated_compact_prompt": factors == ["cli_prompt"],
+        "note": "Joint treatment results cannot be attributed to an individual factor.",
+    }
+
+
 def digest(value: Any) -> str:
     return hashlib.sha256(
         json.dumps(value, sort_keys=True, ensure_ascii=True, separators=(",", ":")).encode()
@@ -394,6 +415,7 @@ def compare(
             ]
     return {
         "accepted_5x": not blockers,
+        "treatments": describe_treatments(baseline["manifest"], candidate["manifest"]),
         "blockers": list(dict.fromkeys(blockers)),
         "gain": gain,
         "receipt_hashes": {k: v["receipts_hash"] for k, v in settlements.items()},

@@ -1,0 +1,44 @@
+{
+  "kind": "paired_cli_health_diagnostic_not_task_benchmark",
+  "model": "gpt-6.1-sol",
+  "instructions_hash": "86ec300ee8526ba441c1162c7b2c54ebd73f24fea1289c8dd030535ac62c2c5a",
+  "observations": [
+    {
+      "call_id": "9a9367194fab4d74a40f03ddc00dcdfb",
+      "compact": false,
+      "state": "completed",
+      "cost_usd": null,
+      "response": "READY",
+      "tokens": 9349,
+      "seconds": 6.041
+    },
+    {
+      "call_id": "a5ce6382a54a4528996680cb9168dd19",
+      "compact": true,
+      "state": "completed",
+      "cost_usd": null,
+      "response": "READY",
+      "tokens": 5316,
+      "seconds": 6.177
+    },
+    {
+      "call_id": "044f4dd3f8b44765b2330e849456e88e",
+      "compact": false,
+      "state": "completed",
+      "cost_usd": null,
+      "response": "READY",
+      "tokens": 9347,
+      "seconds": 5.548
+    },
+    {
+      "call_id": "df3dc360778c435f99d53ec5ad47c5a3",
+      "compact": true,
+      "state": "completed",
+      "cost_usd": null,
+      "response": "READY",
+      "tokens": 5314,
+      "seconds": 4.682
+    }
+  ],
+  "cost_usd": null
+}

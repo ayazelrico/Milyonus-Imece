@@ -209,3 +209,43 @@ Her aday için tüm kontrollerin eksiksiz, benzersiz Python yürütme kaydı ve 
 Duruşta sonuç `rejected`, son gerçek turun sonucu `production_gate_rejected` kalır. `notes` açık duruş nedenini ve `stagnation SHA-256` parmak izini içerir; çalıştırılmamış tur veya kabul başarısı kaydedilmez. Varsayılan uyarlamasız davranış, bağımsız onay, insan incelemesi ve veto kapıları değişmez.
 
 Bu, davranış eşdeğerliği veya gelecekte ilerleme olmayacağının kanıtı değil, tutucu bir sezgiseldir. Çalışma zamanı hatası aday ile oracle kusurunu ayıramaz; sözdizimi geçerli bir oracle anlamsal olarak yanlış olabilir. Raporlanan çıktı kapıda 2000 karakterle sınırlıdır. Yürütücüde veya kapıda kesilen çıktı `output_truncated=true` taşır ve durgunluk kararına katılmaz; bu alanın eksik olduğu eski kayıtlar da tam çıktı kanıtı sayılmaz. Geçici yollar veya deterministik olmayan çıktılar eşleşmeyi engelleyebilir; farklı kaynak kodların aynı davranışı göstermesi eşleşme sayılmaz. Duruş olası sonraki iyileşmeyi kaçırabilir. Bu değişiklik için ölçülmüş performans veya maliyet kazancı iddiası yoktur.
+
+## Deneysel kısa Codex talimat profili
+
+`evals.imece.run --compact-cli-instructions`, yalnızca Codex motorunda yerleşik
+ajan talimatlarını sürümlü, araç kullanmayan uzman talimatıyla değiştirir.
+Codex'in `model_instructions_file` ayarı kullanılır; dosya her çağrının geçici
+dizininde oluşturulur ve çağrı kapanınca kaldırılır. Oracle için OS erişim
+engeli, kapalı araç özellikleri, kullanım doğrulaması ve araç öğelerini
+reddeden JSONL ayrıştırıcısı aynı kalır. Model davranışı değişebileceğinden
+özellik varsayılan olarak kapalıdır; kapı veya insan onayı atlanmaz.
+
+Manifestte `cli_prompt_treatment.kind` ve `instructions_hash` saklanır.
+`--resume` bu alanları da karşılaştırır. Çift hazırlama aracındaki
+`--candidate-compact-cli-instructions`, yalnızca adaya bu profili verir.
+İki çekirdek ayarı aynı olduğunda bile açık bir talimat profili farkı varsa
+çift hazırlanabilir. `--task ID` iki tarafa aynı görev alt kümesini uygular.
+Karşılaştırılan güvenlik/çalıştırma kontrolleri yine eşleşmelidir; talimat
+profili açıkça ilan edilmiş algoritma değişkenidir.
+Hazırlık ve karşılaştırma çıktısındaki `treatments`, değişen etkenleri ve
+`isolated_compact_prompt` değerini verir. Uyarlamalı üretim veya uygulama
+kodu da değişmişse sonuç yalnızca kısa profile yüklenemez.
+
+```sh
+uv run python -m evals.imece.prepare_pair --model gpt-6.1-sol \
+  --baseline-config docs/imece-codex-baseline.toml \
+  --candidate-config docs/imece-codex-baseline.toml \
+  --candidate-compact-cli-instructions --suite core-v2 --task stable_unique \
+  --repeats 1 --max-tokens 500000 --max-cli-calls 80 \
+  --backend docker --image python@sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e \
+  --out-dir experiments/compact-calibration-example
+```
+
+5 Kasım'da aynı `READY` tanısı için normal profil 9349/9347, kısa profil
+5316/5314 token bildirdi. Bu yalnızca ikişer çağrılık tanıdır; görev başarısı,
+genel hızlanma, dolar tasarrufu veya 5X kanıtı değildir. Tam görev başarısı
+ayrı, önceden dondurulmuş koşularla değerlendirilmelidir. Çağrı bazında USD
+maliyeti bilinmiyor kalır.
+
+Yapılandırma kaynağı: [resmi Codex referansı](https://learn.chatgpt.com/docs/config-file/config-reference),
+`model_instructions_file` alanı. Bu seçenek kullanıcı/global Codex ayarını değiştirmez.

@@ -28,6 +28,7 @@ from milyonus.imece.antigravity import AntigravityAgentFn
 from milyonus.imece.benchmark import TASKS, run_benchmark, summarize, trial_identity
 from milyonus.imece.codex import (
     POLICY_VERSION,
+    TEXT_ONLY_INSTRUCTIONS,
     CodexAgentFn,
     cli_environment,
     discover_codex,
@@ -410,6 +411,13 @@ async def run(args) -> int:
     frozen["protocol_hash"] = digest(frozen["protocol"])
     frozen["capture_reproductions"] = getattr(args, "capture_reproductions", False)
     frozen["engine"] = args.engine
+    compact = getattr(args, "compact_cli_instructions", False)
+    if compact and args.engine != "codex":
+        raise ValueError("compact CLI instructions require the Codex engine")
+    frozen["cli_prompt_treatment"] = {
+        "kind": "compact-text-only" if compact else "builtin",
+        "instructions_hash": digest(TEXT_ONLY_INSTRUCTIONS) if compact else None,
+    }
     frozen["max_output_tokens"] = None  # CLI has no enforced per-call output token flag
     frozen["catalog_prices"] = None
     frozen["shared_model_limitation"] = limitation
@@ -561,6 +569,7 @@ async def run(args) -> int:
                 protected_paths=protected,
                 timeout=settings.agent_timeout,
                 max_parallel=settings.max_parallel,
+                compact_instructions=compact,
             )
         else:
             adapters[model] = AntigravityAgentFn(
@@ -685,6 +694,11 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument("--out", type=Path, default=Path("imece-benchmark.json"))
     parser.add_argument("--engine", choices=("codex", "antigravity"), required=True)
     parser.add_argument("--model", required=True, help="explicit fallback CLI model identifier")
+    parser.add_argument(
+        "--compact-cli-instructions",
+        action="store_true",
+        help="Codex-only explicit prompt treatment: replace built-in instructions with a frozen text-only brief",
+    )
     parser.add_argument(
         "--seat-model",
         action="append",

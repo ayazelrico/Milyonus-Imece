@@ -22,10 +22,12 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument("--failure-families", type=Path)
     parser.add_argument("--agents", type=int, default=17)
     parser.add_argument("--max-tokens", type=int, default=250_000)
+    parser.add_argument("--candidate-compact-cli-instructions", action="store_true")
     parser.add_argument("--out-dir", required=True, type=Path, help="must not already exist")
     parser.add_argument("--baseline-config", required=True, type=Path)
     parser.add_argument("--candidate-config", required=True, type=Path)
     parser.add_argument("--suite", choices=("smoke", "core-v1", "core-v2"), default="core-v2")
+    parser.add_argument("--task", action="append", help="same explicit task subset for both arms")
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--backend", choices=("docker", "macos"), default="docker")
@@ -103,7 +105,7 @@ async def main(args) -> int:
     # Use the runner's parser and preparation branch rather than duplicating its
     # settings/model mapping, task selection, runtime discovery or report writer.
     from evals.imece import run
-    from evals.imece.protocol import digest
+    from evals.imece.protocol import describe_treatments, digest
 
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=f".{output.name}.prepare-", dir=output.parent) as tmp:
@@ -146,6 +148,10 @@ async def main(args) -> int:
                     argv.extend((flag, str(value)))
             for override in args.seat_model:
                 argv.extend(("--seat-model", override))
+            for task in args.task or []:
+                argv.extend(("--task", task))
+            if role == "candidate" and args.candidate_compact_cli_instructions:
+                argv.append("--compact-cli-instructions")
             prepared_args = run.make_parser().parse_args(argv)
             if await run.main(prepared_args) != 0:
                 raise ValueError(f"{role} preparation failed")
@@ -167,13 +173,21 @@ async def main(args) -> int:
             for key in sorted(baseline["settings"].keys() | candidate["settings"].keys())
             if baseline["settings"].get(key) != candidate["settings"].get(key)
         }
-        if not differences:
+        prompt_difference = baseline["cli_prompt_treatment"] != candidate["cli_prompt_treatment"]
+        if not differences and not prompt_difference:
             raise ValueError("baseline and candidate settings are identical")
-        if (
-            baseline["settings"]["adaptive_production"] is not False
-            or candidate["settings"]["adaptive_production"] is not True
-        ):
-            raise ValueError("expected baseline adaptive_production=false and candidate=true")
+        adaptive_pair = (
+            baseline["settings"]["adaptive_production"] is False
+            and candidate["settings"]["adaptive_production"] is True
+        )
+        same_adaptive = (
+            baseline["settings"]["adaptive_production"]
+            == candidate["settings"]["adaptive_production"]
+        )
+        if not adaptive_pair and not (same_adaptive and prompt_difference):
+            raise ValueError(
+                "expected adaptive false/true pair or an explicit CLI prompt treatment"
+            )
         if any(baseline[key] != candidate[key] for key in ("revision", "implementation_hash")):
             raise ValueError("implementation changed during pair preparation")
         pair = {
@@ -182,6 +196,10 @@ async def main(args) -> int:
             "engine": "codex",
             "protocol_hash": baseline["protocol_hash"],
             "settings_differences": differences,
+            "treatments": describe_treatments(baseline, candidate),
+            "cli_prompt_treatments": {
+                role: report["manifest"]["cli_prompt_treatment"] for role, report in reports.items()
+            },
             "reports": {
                 role: {
                     "path": f"{role}.json",
