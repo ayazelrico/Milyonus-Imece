@@ -285,10 +285,13 @@ class WebStore:
         return out
 
     def turn_belongs_to(self, turn_id: str, session_id: str) -> bool:
-        return self._conn.execute(
-            "SELECT 1 FROM turns WHERE id=? AND session_id=?",
-            (turn_id, session_id),
-        ).fetchone() is not None
+        return (
+            self._conn.execute(
+                "SELECT 1 FROM turns WHERE id=? AND session_id=?",
+                (turn_id, session_id),
+            ).fetchone()
+            is not None
+        )
 
     def latest_turn(self, session_id: str) -> str | None:
         row = self._conn.execute(
@@ -384,8 +387,13 @@ class WebStore:
             )
 
     def reserve_quota(
-        self, tenant_id: str, *, tokens: int, cost: float,
-        token_limit: int, cost_limit: float,
+        self,
+        tenant_id: str,
+        *,
+        tokens: int,
+        cost: float,
+        token_limit: int,
+        cost_limit: float,
     ) -> str:
         """Charge an upper bound before dispatch; crashes keep the charge.
 
@@ -405,7 +413,8 @@ class WebStore:
             )
             c.execute(
                 "UPDATE quotas SET period=?, tokens_used=0, cost_usd=0, turns=0 "
-                "WHERE tenant_id=? AND period<>?", (period, tenant_id, period),
+                "WHERE tenant_id=? AND period<>?",
+                (period, tenant_id, period),
             )
             row = c.execute("SELECT * FROM quotas WHERE tenant_id=?", (tenant_id,)).fetchone()
             if row["tokens_used"] + tokens > token_limit:
@@ -414,7 +423,8 @@ class WebStore:
                 raise RuntimeError("monthly cost quota exceeded")
             c.execute(
                 "UPDATE quotas SET tokens_used=tokens_used+?, cost_usd=cost_usd+?, "
-                "updated_at=? WHERE tenant_id=?", (tokens, cost, _now(), tenant_id),
+                "updated_at=? WHERE tenant_id=?",
+                (tokens, cost, _now(), tenant_id),
             )
         return period
 

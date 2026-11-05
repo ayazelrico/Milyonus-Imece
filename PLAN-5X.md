@@ -10,6 +10,10 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
+5 Kasım yerel doğrulaması: **447 test geçti, gerçek Docker testi atlandı**.
+Kurtarma ve önbellek regresyonları dahil; canlı kıyaslama kullanıcı tercihiyle
+çalıştırılmadı. Bu sonuç 5X performans kabulü değildir.
+
 Yerel uygulamada sürümlü görev kümesi, gizli yürütülebilir oracle, deney manifesti
 ve rapor karşılaştırma kapısı; bütçe rezervasyon defteri, kalıcı aşama/çağrı
 günlüğü ve tamamlanan yanıtları yeniden kullanarak devam etme; deterministik,

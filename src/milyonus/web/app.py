@@ -73,7 +73,9 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
     if os.environ.get("MILYONUS_WEB_DEV_AUTH", "0") != "1":
         if len(os.environ.get("MILYONUS_WEB_SECRET", "")) < 32:
-            raise RuntimeError("Production requires MILYONUS_WEB_SECRET with at least 32 characters")
+            raise RuntimeError(
+                "Production requires MILYONUS_WEB_SECRET with at least 32 characters"
+            )
         if os.environ.get("MILYONUS_WEB_SECURE") != "1":
             raise RuntimeError("Production requires MILYONUS_WEB_SECURE=1")
     store = WebStore(root / "web.db")
@@ -172,9 +174,7 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
 
         ss = SessionStore(home / "state.db")
         messages = []
-        row = ss.find_session(
-            channel="web", user_ref=principal.user_id, title=f"web:{session_id}"
-        )
+        row = ss.find_session(channel="web", user_ref=principal.user_id, title=f"web:{session_id}")
         if row is not None:
             for m in ss.history(row.id):
                 messages.append(

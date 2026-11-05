@@ -43,7 +43,12 @@ def test_upload_limits_and_tenant_scope(client):
     assert c.post("/v1/attachments", content=b"x" * 1_000_001).status_code == 413
     _login(c, "other@example.com")
     sid = c.post("/v1/sessions", json={}).json()["id"]
-    assert c.post(f"/v1/sessions/{sid}/messages", json={"text": "read", "attachments": [aid]}).status_code == 404
+    assert (
+        c.post(
+            f"/v1/sessions/{sid}/messages", json={"text": "read", "attachments": [aid]}
+        ).status_code
+        == 404
+    )
 
 
 def test_rate_limit_concurrent_load(tmp_path):
@@ -54,7 +59,9 @@ def test_rate_limit_concurrent_load(tmp_path):
     store = WebStore(tmp_path / "load.db")
     try:
         with ThreadPoolExecutor(max_workers=16) as pool:
-            results = list(pool.map(lambda _: store.rate_limit("tenant-a", limit=30, window=60), range(200)))
+            results = list(
+                pool.map(lambda _: store.rate_limit("tenant-a", limit=30, window=60), range(200))
+            )
         assert sum(results) == 30
         assert store.rate_limit("tenant-b", limit=30, window=60)
     finally:

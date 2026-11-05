@@ -19,9 +19,9 @@ jobs:
       - name: Sync
         run: uv sync --extra dev --extra admin --extra discord
       - name: Lint
-        run: uv run ruff check src tests
+        run: uv run ruff check src tests evals
       - name: Format check
-        run: uv run ruff format --check src tests
+        run: uv run ruff format --check src tests evals
       - name: Test
         run: uv run pytest -q
       - name: Prepare isolated Python execution image

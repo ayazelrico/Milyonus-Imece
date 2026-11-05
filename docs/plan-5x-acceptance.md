@@ -7,7 +7,7 @@ veya bağımsız denetim belgesi değildir.
 | Aşama | Uygulanan akış | Açık kabul koşulu |
 | --- | --- | --- |
 | P0 | 50 görev, v2 hatalı başlangıç programları, dondurulmuş protokol, çift hazırlık, hata arşivi | Temsil gücü incelemesi; baseline ve aday için 250'şer gerçek koşu; Hermes komutunun gerçek kurulumla doğrulanması; CI sonucu |
-| P1 | Çağrı kimliği, günlükten tekrar kullanma, belirsiz çağrı engeli, durdurma, çağrı kotası, sağlayıcı rezervasyon defteri | CLI için çağrı öncesi katı dolar rezervasyonu sağlanmıyor; kesinti ve eşzamanlılık kabul testleri çalıştırılmadı |
+| P1 | Çağrı kimliği, günlükten tekrar kullanma, belirsiz çağrı engeli, durdurma, çağrı kotası, sağlayıcı rezervasyon defteri; yerel kesinti ve rezervasyon regresyonları geçti | CLI için çağrı öncesi katı dolar rezervasyonu sağlanmıyor; gerçek servis kesintisi kabulü açık |
 | P2 | Donmuş ortam ve kanıt kimliği, operatör izinli önbellek, hedefli onarım, hata sınıfları | Sabit Docker imajında cache invalidation ve yüzde 60 süreç azalması kanıtı |
 | P3 | Uyarlanan üretim genişliği, ayrı onarım koltuğu, sınırlı sentez bağlamı, emsal kimliği, durgunluk duruşu | Bağımsız model kökenleri; token başına doğrulanmış sonuçta iki kat iyileşme ölçümü; davranış regresyonları |
 | P4 | Sınırlı yeniden üretim paketi, inceleme şablonu, staging, iki görevle yükseltme, kalıcı kaynak iptali | Paketler otomatik küçültülmüş minimal örnek değildir; bağımsız görevlerde gerçek beceri kabulü ve hata turu azalması ölçümü |
@@ -16,8 +16,17 @@ veya bağımsız denetim belgesi değildir.
 Çift hazırlama `evals.imece.prepare_pair`, koşu inceleme
 `evals.imece.inspect_run`, hata arşivi `evals.imece.failures`, fatura eşleştirme
 `evals.imece.billing` ve nihai karşılaştırma `evals.imece.compare` ile yapılır.
-Hazırlık araçları model çağrısı yapmaz. Kullanıcının test ve canlı kıyaslama
-atlama talimatı bu çalışma sırasında korunmuştur.
+Hazırlık araçları model çağrısı yapmaz. Kullanıcı 5 Kasım'daki devamda yerel
+testlerin çalıştırılmasına izin verdi; canlı kıyaslamayı atlama talimatını korudu.
+Tam yerel testler ve yeni kurtarma/önbellek regresyonları çalıştırıldı.
+`tests/test_imece_evidence.py` yürütme sınırında sahte sandbox sonucu kullanır;
+bu testlerin geçmesi gerçek Docker izolasyonunun doğrulandığı anlamına gelmez.
+CI artık `evals` kodunu da lint ve biçim kontrolüne dahil eder.
+
+Son tam yerel koşu: **447 geçti, 1 atlandı** (`uv run pytest -q`). Atlanan
+test gerçek Docker yürütücüsü içindir. Starlette/httpx kullanımı için bir
+bağımlılık kullanım dışı bırakma uyarısı bildirildi. `ruff check src tests
+evals`, `ruff format --check src tests evals` ve `git diff --check` geçti.
 
 Mevcut ortamda Docker çalıştırılabilir dosyası bulunamadı. Codex ve Antigravity
 Gemini çağrıları son denemelerde kota hatası verdi. Başka bir CLI kopyası

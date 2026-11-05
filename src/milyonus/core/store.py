@@ -120,7 +120,8 @@ class SessionStore:
         """Resolve a surface's persistent session without a recent-list cutoff."""
         row = self._conn.execute(
             "SELECT * FROM sessions WHERE channel=? AND user_ref=? AND title=? "
-            "ORDER BY created_at, id LIMIT 1", (channel, user_ref, title),
+            "ORDER BY created_at, id LIMIT 1",
+            (channel, user_ref, title),
         ).fetchone()
         return SessionRow(**dict(row)) if row else None
 

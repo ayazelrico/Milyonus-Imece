@@ -35,8 +35,11 @@ class QuotaProvider:
         reserved = inputs + outputs
         cost = (inputs * self.input_price + outputs * self.output_price) / 1_000_000
         period = self.store.reserve_quota(
-            self.tenant_id, tokens=reserved, cost=cost,
-            token_limit=self.token_limit, cost_limit=self.cost_limit,
+            self.tenant_id,
+            tokens=reserved,
+            cost=cost,
+            token_limit=self.token_limit,
+            cost_limit=self.cost_limit,
         )
         used_in = used_out = 0
         got_usage = completed = False
@@ -55,12 +58,15 @@ class QuotaProvider:
             if completed and got_usage:
                 actual = (used_in * self.input_price + used_out * self.output_price) / 1_000_000
                 self.store.refund_quota(
-                    self.tenant_id, period=period,
-                    tokens=max(0, reserved - used_in - used_out), cost=max(0, cost - actual),
+                    self.tenant_id,
+                    period=period,
+                    tokens=max(0, reserved - used_in - used_out),
+                    cost=max(0, cost - actual),
                 )
                 if used_in + used_out > reserved or actual > cost:
                     self.store.bump_quota(
-                        self.tenant_id, tokens=max(0, used_in + used_out - reserved),
+                        self.tenant_id,
+                        tokens=max(0, used_in + used_out - reserved),
                         cost=max(0, actual - cost),
                     )
                 self.cost_usd += actual
