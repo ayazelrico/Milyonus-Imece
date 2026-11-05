@@ -1,5 +1,13 @@
 # PLAN-5X kabul kaydı
 
+Son devam: kullanıcı canlı kıyaslama ve denetim için izin verdi. Canlı
+kampanyada baseline ve adayda dörder sonuç satırı kaydedildi; iki tarafta
+birer belirsiz çağrı oluştuğunda gözetmen durdu. Kullanıcı çağrı başına ücret
+dökümü bulunmadığını bildirdi. Ayrı Codex oturumlarının teknik bulguları ve
+düzeltmeleri [kampanya kaydında](audits/2026-11-05-campaign.md) bulunur.
+Son tam yerel koşu Docker dahil **479 geçti, atlanan test yok** sonucunu verdi.
+Önceki aşamaların test sayıları aşağıda tarihçe olarak korunur.
+
 5 Kasım 2026 itibarıyla plan tamamlanmış değildir. Aşağıdaki ayrım, kod
 bulunmasını kabul edilmiş sonuç olarak saymayı önler. Bu kayıt deney sonucu
 veya bağımsız denetim belgesi değildir.

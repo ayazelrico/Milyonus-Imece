@@ -54,7 +54,12 @@ DISABLED_FEATURES = (
     "in_app_browser",
     "in_app_local_automation",
 )
-POLICY_VERSION = "text-only-seatbelt-oracle-deny-v1"
+POLICY_VERSION = "text-only-seatbelt-oracle-deny-v2"
+DISABLED_CODE_MODE_NOTICE = (
+    "Code Mode is unavailable because code-mode host is disabled. "
+    "Code mode will fail closed; enable `features.code_mode_host` "
+    "and install `codex-code-mode-host`."
+)
 
 
 def discover_codex(executable: str | None = None) -> dict:
@@ -166,6 +171,7 @@ def parse_codex_jsonl(output: bytes) -> AgentReply:
     messages = []
     usage = None
     completed = False
+    started = False
     for event in events:
         if not isinstance(event, dict) or not isinstance(event.get("type"), str):
             raise CodexError("invalid Codex event")
@@ -178,9 +184,23 @@ def parse_codex_jsonl(output: bytes) -> AgentReply:
             item = event.get("item")
             if not isinstance(item, dict):
                 raise CodexError("invalid Codex item")
+            # This exact CLI startup diagnostic confirms our disabled host. It
+            # precedes the turn and cannot stand in for tool execution or usage.
+            if (
+                not started
+                and kind == "item.completed"
+                and item.get("type") == "error"
+                and item.get("message") == DISABLED_CODE_MODE_NOTICE
+            ):
+                continue
             # Fail closed on tool activity and future unknown item types.
             if item.get("type") not in ("agent_message", "reasoning"):
-                raise CodexError("tool activity or unsupported Codex item; result rejected")
+                from milyonus.security.redact import redact
+
+                detail = redact(str(item.get("message", item.get("type"))))[:1000]
+                raise CodexError(
+                    f"tool activity or unsupported Codex item; result rejected: {detail}"
+                )
             if kind == "item.completed" and item["type"] == "agent_message":
                 message = item.get("text")
                 if not isinstance(message, str):
@@ -188,6 +208,8 @@ def parse_codex_jsonl(output: bytes) -> AgentReply:
                 messages.append(message)
         elif kind == "turn.completed":
             completed, usage = True, event.get("usage")
+        elif kind == "turn.started":
+            started = True
         elif kind not in ("thread.started", "turn.started"):
             raise CodexError(f"unsupported Codex event type: {kind}")
     if not completed or not isinstance(usage, dict) or not messages or not messages[-1].strip():
@@ -251,11 +273,6 @@ class CodexAgentFn:
                     "forced_login_method": "chatgpt",
                     "project_doc_max_bytes": 0,
                     "mcp_servers": {},
-                    "tools": {
-                        "web_search": False,
-                        "experimental_request_user_input": False,
-                        "update_plan": False,
-                    },
                     "features": dict.fromkeys(DISABLED_FEATURES, False),
                 }
 
@@ -290,11 +307,15 @@ class CodexAgentFn:
                         proc.stdin.write(build_agy_prompt(spec).encode("utf-8"))
                         await proc.stdin.drain()
                         proc.stdin.close()
-                        stdout, _stderr = await asyncio.gather(*tasks)
+                        stdout, stderr = await asyncio.gather(*tasks)
                         await proc.wait()
                         if proc.returncode:
+                            from milyonus.security.redact import redact
+
+                            diagnostic = redact(bytes(stderr).decode("utf-8", "replace"))[-1500:]
                             raise CodexError(
-                                f"Codex exited {proc.returncode}; usage/charge unknown"
+                                f"Codex exited {proc.returncode}; usage/charge unknown; "
+                                f"diagnostic: {diagnostic}"
                             )
                         return parse_codex_jsonl(bytes(stdout))
                 except TimeoutError as exc:

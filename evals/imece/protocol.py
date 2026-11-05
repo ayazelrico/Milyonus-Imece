@@ -14,6 +14,14 @@ from typing import Any
 from evals.imece.efficiency import paired_efficiency, repair_family_outcomes
 from milyonus.imece.benchmark import BenchmarkTask, _matches, _score_artifact, summarize
 
+TREATMENT_SETTINGS = frozenset(
+    {"adaptive_production", "approved_evidence", "repair_skill", "repair_skill_sha256"}
+)
+
+
+def execution_controls(settings: dict) -> dict:
+    return {k: v for k, v in settings.items() if k not in TREATMENT_SETTINGS}
+
 
 def digest(value: Any) -> str:
     return hashlib.sha256(
@@ -34,10 +42,15 @@ def manifest(
     if repeats < 1 or not tasks or len({t.id for t in tasks}) != len(tasks):
         raise ValueError("nonempty unique tasks and positive repeats required")
     protocol = {
-        "schema_version": 1,
+        "schema_version": 2,
         "scorer_hash": digest([inspect.getsource(_score_artifact), inspect.getsource(_matches)]),
         "tasks": [
-            {"id": t.id, "contract": digest(t.request), "oracle": digest([t.oracle, t.cases])}
+            {
+                "id": t.id,
+                "contract": digest(t.request),
+                "oracle": digest([t.oracle, t.cases]),
+                "scoring_mode": "host_cases" if t.cases else "uncertified_script",
+            }
             for t in tasks
         ],
         "models": models,
@@ -45,6 +58,7 @@ def manifest(
         "seed": seed,
         "repeats": repeats,
         "limits": {k: getattr(settings, k) for k in ("max_tokens", "max_rounds", "test_timeout")},
+        "execution_controls": execution_controls(asdict(settings)),
     }
     return {
         "protocol": protocol,
@@ -130,6 +144,12 @@ def validate_report(report: dict) -> list[dict]:
     engine = p.get("runtime", {}).get("engine")
     if engine is not None and report.get("source") != engine:
         raise ValueError("report source differs from engine manifest")
+    if (
+        engine in ("codex", "antigravity") or report.get("source") in ("codex", "antigravity")
+    ) and report.get("ledger") is not None:
+        raise ValueError("CLI report cannot contain a provider ledger; external receipts required")
+    if "execution_controls" in p and p["execution_controls"] != execution_controls(m["settings"]):
+        raise ValueError("settings differ from frozen execution controls")
     return validate_rows(report["runs"], p, complete=True)
 
 
@@ -261,6 +281,10 @@ def compare(
     b, c = summarize(base), summarize(cand)
     blockers = []
     protocol = baseline["manifest"]["protocol"]
+    if "execution_controls" not in protocol:
+        blockers.append("shared execution controls were not frozen")
+    if any(t.get("scoring_mode") != "host_cases" for t in protocol["tasks"]):
+        blockers.append("host-side case scoring required for certification")
     audit_valid = (
         isinstance(audit, dict)
         and audit.get("baseline_hash") == digest(baseline)

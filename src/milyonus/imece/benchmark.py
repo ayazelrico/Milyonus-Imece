@@ -62,8 +62,10 @@ def _matches(actual: Any, expected: Any) -> bool:
 async def _score_artifact(executor: PythonExecutor, task: BenchmarkTask, deliverable: str):
     files = python_files(deliverable)
     if not task.cases:
-        result = await executor.run(files, task.oracle)
-        return result.passed, result.output
+        return (
+            False,
+            "assertion-only oracle cannot certify untrusted candidate code; host cases required",
+        )
     # Send inputs only. Untrusted Python can exit(0), shadow imports or inspect
     # the driver, so assertions inside its own interpreter cannot certify success.
     inputs = json.dumps([c["input"] for c in task.cases], allow_nan=False)

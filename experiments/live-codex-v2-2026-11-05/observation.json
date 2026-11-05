@@ -1,0 +1,42 @@
+{
+  "observed_at": "2026-11-05T15:44:33.161653+00:00",
+  "status": "incomplete",
+  "accepted_5x": false,
+  "billing_status": "unavailable_user_has_no_per_call_receipts",
+  "review_status": "separate_session_model_review_not_human_or_vendor_independent_certification",
+  "reports": {
+    "baseline": {
+      "path": "baseline.json",
+      "file_sha256": "c6a3472403e4bc495174dc98b9e5240cab92e173f51e7303c840871b2aec648c",
+      "state": "partial",
+      "recorded_rows": 4,
+      "expected_rows": 250,
+      "calls": 90,
+      "completed_calls": 89,
+      "unknown_calls": 1,
+      "verified_successes": 0,
+      "observed_tokens_lower_bound": 932487,
+      "cost_usd": null
+    },
+    "candidate": {
+      "path": "candidate.json",
+      "file_sha256": "fc4f6b2e179bb4f3f56299fb7747e9b41dd1f5789962c2388d5bee49a93cfad2",
+      "state": "partial",
+      "recorded_rows": 4,
+      "expected_rows": 250,
+      "calls": 84,
+      "completed_calls": 83,
+      "unknown_calls": 1,
+      "verified_successes": 0,
+      "observed_tokens_lower_bound": 874210,
+      "cost_usd": null
+    }
+  },
+  "blockers": [
+    "incomplete 50x5 matrix",
+    "uncertain calls require reconciliation before retry",
+    "per-call USD receipts unavailable",
+    "model seats share the same alias and lack independent vendor provenance",
+    "no independent human report/invoice attestation"
+  ]
+}

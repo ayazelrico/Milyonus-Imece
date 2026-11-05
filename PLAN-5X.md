@@ -10,10 +10,12 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-5 Kasım son yerel doğrulaması: **459 test geçti, atlanan test yok**.
+5 Kasım son yerel doğrulaması: **479 test geçti, atlanan test yok**.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
-canlı kıyaslama kullanıcı tercihiyle
-çalıştırılmadı. Bu sonuç 5X performans kabulü değildir.
+Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
+satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
+mevcut değil. Bu sonuç 5X performans kabulü değildir. Ayrıntılar:
+[canlı kampanya ve inceleme](docs/audits/2026-11-05-campaign.md).
 
 Yerel uygulamada sürümlü görev kümesi, gizli yürütülebilir oracle, deney manifesti
 ve rapor karşılaştırma kapısı; bütçe rezervasyon defteri, kalıcı aşama/çağrı

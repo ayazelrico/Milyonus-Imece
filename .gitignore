@@ -23,3 +23,6 @@ experiments/*.nohup
 experiments/*.journal/
 experiments/*.calls/
 docs/experiments/**/*.lock
+experiments/**/*.lock
+experiments/**/*.journal/
+experiments/**/*.calls/

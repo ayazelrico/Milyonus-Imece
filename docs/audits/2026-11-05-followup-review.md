@@ -1,0 +1,9 @@
+Two remediations are complete; the CLI ledger fix remains partial.
+
+- **Assertion-only oracle: fixed.** [benchmark.py:64](/Users/ayazelrico/Desktop/Milyonus-Imece/src/milyonus/imece/benchmark.py:64) returns failure without executing the oracle when cases are absent. `os._exit(0)` cannot pass this path. The regression covers that branch.
+- **Concurrency/timeout controls: fixed for new manifests.** [protocol.py:61](/Users/ayazelrico/Desktop/Milyonus-Imece/evals/imece/protocol.py:61) hashes all settings except four explicit treatment fields; line 149 checks reported settings against them. This includes `max_parallel` and `agent_timeout`.
+- **Remaining ledger bypass:** [protocol.py:144](/Users/ayazelrico/Desktop/Milyonus-Imece/evals/imece/protocol.py:144) rejects CLI ledgers only when `runtime.engine` identifies the CLI. With that field absent, `source="codex"` or `"antigravity"` plus a ledger passes this guard. [protocol.py:334](/Users/ayazelrico/Desktop/Milyonus-Imece/evals/imece/protocol.py:334) then accepts zero `unknown_calls`/`overruns`, bypassing the receipt and declared-budget branch. Reject ledgers based on **source or engine**.
+- **Legacy qualification:** unchanged legacy manifests missing execution controls or scoring modes cannot obtain `accepted_5x`, because [protocol.py:282](/Users/ayazelrico/Desktop/Milyonus-Imece/evals/imece/protocol.py:282) adds blockers. However, engine-less manifests containing those new fields retain the ledger bypass; schema version is not enforced.
+- **Coverage gap:** [tests/test_imece_audit.py:27](/Users/ayazelrico/Desktop/Milyonus-Imece/tests/test_imece_audit.py:27) covers only an explicit Codex engine. Missing-engine ledgers, legacy comparison blockers, and settings tampering are untested there.
+
+Static review only. No edits, tests, subagents, model calls, or commits; no certification of live results, bills, or vendor/human provenance.
