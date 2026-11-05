@@ -1,5 +1,22 @@
 # Codex CLI ile İmece deneyini hazırlama
 
+Yerel hashing hafıza gömmesi `hashing-blake2b-v1-DIM` imzasını kullanır.
+Eski `hashing-DIM` imzasıyla kaydedilmiş vektörler Python süreç tohumuna bağlı
+olduğundan yeni sorgularla karşılaştırılmaz. Hashing hafıza kullanan mevcut
+kurulumda `milyonus memory reindex` ile aktif kayıtları yeniden indeksleyin.
+Bellek metinleri ve güven seviyeleri bu geçişle değiştirilmez.
+
+Rapor özeti başarısızlar dahil tüm koşular için `status_counts`,
+`gate_failure_classes` ve süre/token/maliyet dağılımlarını içerir. Dağılımda
+bilinen ve bilinmeyen koşu sayısı, minimum, medyan, yüzde 95 ve maksimum
+bulunur. Yüzdelikler sıralı değerler arasında doğrusal ara değerle hesaplanır.
+Herhangi bir koşunun ilgili ölçümü eksikse nüfus yüzdelikleri boş kalır;
+yalnızca bilinen koşulardan düşük maliyet veya gecikme sonucu çıkarılmaz.
+Maliyet dağılımı tahmini değerler içerebilir; `cost_estimated` ayrıca
+incelenmelidir ve P5 doğrulanmış fatura koşulunu kaldırmaz. Hata sınıfları
+yalnızca Python kapı kontrollerindeki başarısız gözlemleri sayar; aynı
+koşunun birden çok başarısız kontrolü ayrı gözlemdir.
+
 Çift hazırlama aracı `--seat-model SEAT=MODEL` seçeneklerini iki tarafa aynı
 uygular. `--declared-budget-usd`, `--failure-families`, `--agents` ve
 `--max-tokens` da ortak olarak aktarılır. Böylece koltuk kökeni incelemesi,

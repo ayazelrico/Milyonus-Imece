@@ -1,6 +1,10 @@
 """Vector/embedding memory layer: hashing embedder, persistent index, and
 trust-weighted semantic recall."""
 
+import json
+import os
+import subprocess
+import sys
 import time
 
 from milyonus.config.schema import MemoryConfig
@@ -47,6 +51,33 @@ def test_hashing_embedder_overlap_beats_disjoint():
 def test_build_embedder_modes():
     assert build_embedder(MemoryConfig(embedder="none")) is None
     assert isinstance(build_embedder(MemoryConfig(embedder="hashing")), HashingEmbedder)
+
+
+def test_hashing_vectors_survive_process_hash_seed_changes():
+    script = (
+        "import json; from milyonus.memory.embed import HashingEmbedder; "
+        "print(json.dumps(HashingEmbedder(dim=256).embed(['temporary fact about widgets'])))"
+    )
+    outputs = [
+        subprocess.check_output(
+            [sys.executable, "-c", script],
+            env=dict(os.environ, PYTHONHASHSEED=seed),
+            text=True,
+            timeout=10,
+        )
+        for seed in ("1", "2", "random")
+    ]
+    assert all(json.loads(output) == json.loads(outputs[0]) for output in outputs)
+
+
+def test_old_process_dependent_vectors_require_reindex(tmp_path):
+    index = VectorIndex(tmp_path / "vectors.db")
+    try:
+        index.upsert("old", [1.0] * 256, model="hashing-256")
+        embedder = HashingEmbedder(dim=256)
+        assert index.search(embedder.embed(["widgets"])[0], model=embedder.signature) == []
+    finally:
+        index.close()
 
 
 # --- vector index -----------------------------------------------------------

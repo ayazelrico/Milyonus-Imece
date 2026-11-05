@@ -91,6 +91,13 @@ def validate_rows(rows: list[dict], protocol: dict, *, complete: bool = False) -
         tokens = row.get("tokens")
         if tokens is not None and (type(tokens) is not int or tokens < 0):
             raise ValueError("invalid tokens")
+        for field in ("seconds", "elapsed_s"):
+            if field in row and (
+                type(row[field]) not in (int, float)
+                or not math.isfinite(row[field])
+                or row[field] < 0
+            ):
+                raise ValueError(f"invalid {field}")
         for field in ("unknown_usage_calls", "observed_tokens"):
             if field in row and (type(row[field]) is not int or row[field] < 0):
                 raise ValueError(f"invalid {field}")

@@ -29,7 +29,7 @@ bağımlılık kullanım dışı bırakma uyarısı bildirildi. `ruff check src 
 evals`, `ruff format --check src tests evals` ve `git diff --check` geçti.
 
 Docker CLI ve Colima kuruldu; `imece-tests` profiliyle gerçek izolasyon testi
-geçti. Son tam koşuda **453 test geçti, atlanan test yok**; gerçek Docker
+geçti. Son tam koşuda **459 test geçti, atlanan test yok**; gerçek Docker
 dosya azaltma testi de bu koşuya dahildir. Kullanılan
 Python imajı `python:3.12-slim`, indirilen digest
 `sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e`.

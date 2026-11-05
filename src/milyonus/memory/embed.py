@@ -10,7 +10,7 @@ The embedding layer is deliberately pluggable and dependency-free by default:
   - OpenAIEmbedder (optional): calls an OpenAI-compatible `/embeddings` endpoint
     for true semantic vectors when a model + key are configured.
 
-Every embedder exposes a `signature` (e.g. "hashing-256", "openai-text-embedding-3-small")
+Every embedder exposes a `signature` (e.g. "hashing-blake2b-v1-256", "openai-text-embedding-3-small")
 so the vector index never compares vectors produced by different embedders; a
 change of embedder simply requires `milyonus memory reindex`.
 
@@ -22,6 +22,7 @@ outrank a trusted one. The embedding layer cannot be a poison-amplification path
 
 from __future__ import annotations
 
+import hashlib
 import math
 import os
 from typing import Protocol, runtime_checkable
@@ -55,15 +56,19 @@ class HashingEmbedder:
     -> higher similarity, without any model or network call."""
 
     def __init__(self, dim: int = 256) -> None:
+        if type(dim) is not int or dim < 1:
+            raise ValueError("embedding dimension must be a positive integer")
         self.dim = dim
-        self.signature = f"hashing-{dim}"
+        # Old Python hash() vectors varied by process seed. Never compare those
+        # persisted vectors against the new stable mapping; reindex is required.
+        self.signature = f"hashing-blake2b-v1-{dim}"
 
     def _hash(self, token: str) -> tuple[int, float]:
-        # Two independent hashes: one for the bucket, one for the sign, so
-        # collisions cancel on average (the signed feature-hashing trick).
-        h = hash((self.signature, token))
-        bucket = (h & 0x7FFFFFFF) % self.dim
-        sign = 1.0 if (h >> 31) & 1 else -1.0
+        digest = hashlib.blake2b(
+            (self.signature + "\0" + token).encode("utf-8"), digest_size=16
+        ).digest()
+        bucket = int.from_bytes(digest[:8], "big") % self.dim
+        sign = 1.0 if digest[8] & 1 else -1.0
         return bucket, sign
 
     def embed(self, texts: list[str]) -> list[list[float]]:

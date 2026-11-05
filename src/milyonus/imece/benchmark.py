@@ -8,8 +8,10 @@ verified success, and unavailable cost is never reported as zero.
 from __future__ import annotations
 
 import json
+import math
 import random
 import time
+from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -144,6 +146,28 @@ TASKS = (
 )
 
 
+def _distribution(values: list[int | float | None]) -> dict[str, Any]:
+    known = sorted(v for v in values if type(v) in (int, float) and math.isfinite(v) and v >= 0)
+    complete = bool(values) and len(known) == len(values)
+
+    def percentile(fraction):
+        if not complete:
+            return None
+        position = fraction * (len(known) - 1)
+        lo = int(position)
+        hi = min(lo + 1, len(known) - 1)
+        return known[lo] + (known[hi] - known[lo]) * (position - lo)
+
+    return {
+        "known_runs": len(known),
+        "unknown_runs": len(values) - len(known),
+        "min": known[0] if complete else None,
+        "median": percentile(0.5),
+        "p95": percentile(0.95),
+        "max": known[-1] if complete else None,
+    }
+
+
 def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     n = len(rows)
     unknown_usage = sum(r.get("unknown_usage_calls", 0) for r in rows)
@@ -176,6 +200,26 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     )
     return {
         "runs": n,
+        "status_counts": dict(sorted(Counter(r["status"] for r in rows).items())),
+        "distributions": {
+            "seconds": _distribution([r.get("seconds", r.get("elapsed_s")) for r in rows]),
+            "tokens": _distribution(
+                [r.get("tokens") if not r.get("unknown_usage_calls") else None for r in rows]
+            ),
+            "cost_usd": _distribution([r.get("cost_usd") for r in rows]),
+        },
+        "gate_failure_classes": dict(
+            sorted(
+                Counter(
+                    check.get("failure_class") or "unknown"
+                    for r in rows
+                    for gate in (r.get("report") or {}).get("gate_reports", [])
+                    if gate.get("verification", "").startswith("python:")
+                    for check in gate.get("test_results", [])
+                    if check.get("passed") is False
+                ).items()
+            )
+        ),
         "accepted": accepted,
         "verified_successes": verified,
         "accepted_deliverable_rate": accepted / n if n else None,

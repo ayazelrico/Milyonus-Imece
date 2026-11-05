@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-5 Kasım son yerel doğrulaması: **453 test geçti, atlanan test yok**.
+5 Kasım son yerel doğrulaması: **459 test geçti, atlanan test yok**.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 canlı kıyaslama kullanıcı tercihiyle
 çalıştırılmadı. Bu sonuç 5X performans kabulü değildir.
