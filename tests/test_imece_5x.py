@@ -298,3 +298,30 @@ async def test_precedents_bind_full_context_options_evidence_and_policy(change):
     else:
         council.s.veto_floor = 0.9
     assert council.initial_tier(req)[0] == 2
+
+
+@pytest.mark.parametrize(
+    "ledger",
+    [False, [], "", {"unknown_calls": False, "overruns": 0}, {"unknown_calls": 0, "overruns": []}],
+)
+def test_malformed_ledger_cannot_attest_zero_unresolved_charges(ledger):
+    base, cand = reports()
+    cand["ledger"] = ledger
+    audit = {
+        "baseline_hash": digest(base),
+        "candidate_hash": digest(cand),
+        "critical_findings": 0,
+        "reviewer": "independent",
+        "reference": "report",
+    }
+    result = compare(base, cand, audit=audit)
+    assert not result["accepted_5x"]
+    assert "unresolved charges or reservation overruns" in result["blockers"]
+
+
+@pytest.mark.parametrize("state", ["prepared", "running", "partial", "interrupted"])
+def test_complete_matrix_in_unfinished_checkpoint_is_not_final_evidence(state):
+    base, _ = reports()
+    base["state"] = state
+    with pytest.raises(ValueError, match="not complete"):
+        validate_report(base)

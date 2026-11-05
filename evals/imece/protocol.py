@@ -121,6 +121,8 @@ def validate_rows(rows: list[dict], protocol: dict, *, complete: bool = False) -
 
 
 def validate_report(report: dict) -> list[dict]:
+    if "state" in report and report["state"] != "complete":
+        raise ValueError("report is not complete")
     m = report["manifest"]
     p = m["protocol"]
     if digest(p) != m["protocol_hash"]:
@@ -323,7 +325,10 @@ def compare(
                 if ceiling is None or money(settlement["total_usd"]) > money(ceiling):
                     blockers.append("predeclared experiment budget missing or exceeded")
         else:
-            if ledger.get("unknown_calls", 1) or ledger.get("overruns", 1):
+            if not isinstance(ledger, dict) or any(
+                type(ledger.get(field)) is not int or ledger[field] != 0
+                for field in ("unknown_calls", "overruns")
+            ):
                 blockers.append("unresolved charges or reservation overruns")
     gain = None
     if b["cost_estimated"] or c["cost_estimated"]:

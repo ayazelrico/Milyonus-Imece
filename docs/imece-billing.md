@@ -28,6 +28,12 @@ Hazırlık aşamasında `--max-cli-calls N` ile tüm deney için bir çağrı sa
 
 ## Tahmini maliyet ve kabul
 
+Ücret defterinde `unknown_calls` ve `overruns` alanları gerçek tamsayı sıfır
+olmalıdır. Boole değerler, boş koleksiyonlar, eksik alanlar veya defter yerine
+başka bir veri türü “borç yok” belgesi sayılmaz. Durum alanı taşıyan raporun
+durumu `complete` olmalıdır; tüm satırların bulunması kesintiye uğramış bir
+kontrol noktasını kendiliğinden nihai rapora dönüştürmez.
+
 Makbuz ve çağrı dökümleri nesne/liste türleri denetlenerek okunur. Her ücret
 satırı tam olarak `call_id`, `line_reference`, `usd` alanlarını içermelidir.
 Eksik, yanlış türde veya fazladan alanlı ücret satırı eşleştirmeyi reddettirir;

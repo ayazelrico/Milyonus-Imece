@@ -35,6 +35,12 @@ Python imajı `python:3.12-slim`, indirilen digest
 `sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e`.
 Bu test koşusu 250 görevlik model kıyaslaması değildir.
 
+Son P5 veri türü ve tamamlanma durumu regresyonları eklendikten sonraki
+yerel koşu: **466 geçti, 2 Docker opt-in testi atlandı**. Bu devamda Docker
+VM kapalı tutuldu; önceki gerçek Docker doğrulamaları yukarıda kaydedilmiştir.
+Dokuz yeni regresyon bozuk ücret defterlerinin ve bitmemiş kontrol noktalarının
+5X kanıtı olarak kabul edilmesini engeller. Lint ve biçim kontrolleri geçti.
+
 Codex ve Antigravity
 Gemini çağrıları son denemelerde kota hatası verdi. Başka bir CLI kopyası
 aynı hesap kotasını otomatik olarak kaldırmaz. Harici fiyat, model bağımsızlığı
