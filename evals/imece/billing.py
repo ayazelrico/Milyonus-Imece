@@ -26,6 +26,8 @@ def money(value: object) -> Decimal:
 def reconcile(report: dict, receipts: dict) -> dict:
     rows = validate_report(report)
     report_hash = digest(report)
+    if not isinstance(receipts, dict):
+        raise ValueError("receipts must be an object")
     if receipts.get("report_hash") != report_hash or receipts.get("currency") != "USD":
         raise ValueError("receipts must identify the exact report and use USD")
     if (
@@ -35,13 +37,19 @@ def reconcile(report: dict, receipts: dict) -> dict:
         raise ValueError("missing external billing statement reference")
     row_keys = {(r["task"], r["repeat"]) for r in rows}
     calls = {}
-    for entry in report["transcripts"]:
+    transcripts = report.get("transcripts")
+    if not isinstance(transcripts, list):
+        raise ValueError("report must contain CLI transcripts")
+    for entry in transcripts:
+        if not isinstance(entry, dict):
+            raise ValueError("CLI call record must be an object")
         call_id = entry.get("call_id")
         trial = (entry.get("task"), entry.get("repeat"))
         if (
             not isinstance(call_id, str)
             or not call_id
             or call_id in calls
+            or not isinstance(trial[0], str)
             or type(trial[1]) is not int
             or trial not in row_keys
         ):
@@ -51,11 +59,16 @@ def reconcile(report: dict, receipts: dict) -> dict:
         raise ValueError("no recorded CLI calls")
     seen, references = set(), set()
     totals = Counter()
-    for line in receipts["charges"]:
-        call_id = line["call_id"]
-        ref = line["line_reference"]
+    charges = receipts.get("charges")
+    if not isinstance(charges, list):
+        raise ValueError("receipt charges must be a list")
+    for line in charges:
+        if not isinstance(line, dict) or set(line) != {"call_id", "line_reference", "usd"}:
+            raise ValueError("each charge requires call_id, line_reference and usd")
+        call_id, ref = line["call_id"], line["line_reference"]
         if (
-            call_id not in calls
+            not isinstance(call_id, str)
+            or call_id not in calls
             or call_id in seen
             or not isinstance(ref, str)
             or not ref.strip()
@@ -68,7 +81,7 @@ def reconcile(report: dict, receipts: dict) -> dict:
     if seen != calls.keys():
         raise ValueError("every attempted call needs a receipt, including failures")
     total = sum(totals.values(), Decimal(0))
-    if total != money(receipts["total_usd"]):
+    if total != money(receipts.get("total_usd")):
         raise ValueError("sum of itemized charges differs from statement total")
     return {
         "source_report_hash": report_hash,

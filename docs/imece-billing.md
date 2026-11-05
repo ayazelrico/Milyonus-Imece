@@ -28,6 +28,11 @@ Hazırlık aşamasında `--max-cli-calls N` ile tüm deney için bir çağrı sa
 
 ## Tahmini maliyet ve kabul
 
+Makbuz ve çağrı dökümleri nesne/liste türleri denetlenerek okunur. Her ücret
+satırı tam olarak `call_id`, `line_reference`, `usd` alanlarını içermelidir.
+Eksik, yanlış türde veya fazladan alanlı ücret satırı eşleştirmeyi reddettirir;
+bilinmeyen ve yinelenen çağrı/satır kimlikleri de kabul edilmez.
+
 Sayısal toplamın bulunması tek başına P5 için yeterli değildir. İki rapordan
 birinin maliyeti tahmini olarak işaretliyse `accepted_5x` reddedilir. Ham
 raporda tahmin işareti eksikse de doğrulanmış fatura varsayılmaz. CLI için
