@@ -1,5 +1,24 @@
 # İmece onarım akışı
 
+Tek bir yakalanmış yeniden üretim nesnesindeki yardımcı dosyaları azaltmak için:
+
+```sh
+uv run python -m evals.imece.reduce_reproduction bundle.json \
+  --max-attempts 32 --out reduced.json
+```
+
+Bu komut model çağırmaz; kaydedilmiş sandbox backend, imaj ve süreyle gerçek
+yerel yürütme yapar. Başlangıç hatası iki kez aynı son tanı satırıyla
+üremelidir. Kontrol metni ve `solution.py` korunur; diğer dosyalar sırayla
+çıkarılır ve yalnızca aynı tanı sürerse değişiklik tutulur. Kesilmiş çıktı,
+altyapı hatası veya zaman aşımı eşleşme sayılmaz. İlk iki doğrulama da
+deneme sınırına dahildir. Kaynak özeti, azaltılmış paket, kaldırılan dosyalar
+ve sınır durumu ayrı çıktıda tutulur; kaynak paket değiştirilmez.
+
+Aynı son tanı satırı aynı kök nedenin kanıtı değildir. Bu dosya düzeyinde
+sınırlı bir küçültmedir; fonksiyon/ifade veya kontrol küçültmez, küresel
+minimaliteyi kanıtlamaz ve beceri yükseltme doğrulaması yerine geçmez.
+
 Python doğrulamasında hiçbir aday kapıdan geçemezse sistem bir sonraki turda en iyi üç adayı inceler. Kısmen geçen, çalıştırılmış bir kontrolü hata kodu 1 ile biten, insan kararı gerektirmeyen ve metni 16.000 karakteri aşmayan bir aday varsa bir üreticiye önceki çözümle hata çıktısı verilir. Onarılan çözüm de bağımsız kapılardan geçer.
 
 Yürütülebilir kontrollerin `failure_class` alanı bağımsız kanıtta ve hata arşivinde taşınır:

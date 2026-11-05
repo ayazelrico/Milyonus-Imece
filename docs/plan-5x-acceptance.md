@@ -10,7 +10,7 @@ veya bağımsız denetim belgesi değildir.
 | P1 | Çağrı kimliği, günlükten tekrar kullanma, belirsiz çağrı engeli, durdurma, çağrı kotası, sağlayıcı rezervasyon defteri; yerel kesinti ve rezervasyon regresyonları geçti | CLI için çağrı öncesi katı dolar rezervasyonu sağlanmıyor; gerçek servis kesintisi kabulü açık |
 | P2 | Donmuş ortam ve kanıt kimliği, operatör izinli önbellek, hedefli onarım, hata sınıfları | Sabit Docker imajında cache invalidation ve yüzde 60 süreç azalması kanıtı |
 | P3 | Uyarlanan üretim genişliği, ayrı onarım koltuğu, sınırlı sentez bağlamı, emsal kimliği, durgunluk duruşu | Bağımsız model kökenleri; token başına doğrulanmış sonuçta iki kat iyileşme ölçümü; davranış regresyonları |
-| P4 | Sınırlı yeniden üretim paketi, inceleme şablonu, staging, iki görevle yükseltme, kalıcı kaynak iptali | Paketler otomatik küçültülmüş minimal örnek değildir; bağımsız görevlerde gerçek beceri kabulü ve hata turu azalması ölçümü |
+| P4 | Sınırlı yeniden üretim paketi, sandbox içinde dosya azaltma, inceleme şablonu, staging, iki görevle yükseltme, kalıcı kaynak iptali | Dosya azaltma küresel minimalite kanıtı değildir; bağımsız görevlerde gerçek beceri kabulü ve hata turu azalması ölçümü |
 | P5 | Tam matris, yanlış kabul ve başarı sınırı, fatura eşleştirme, denetim kökeni ve 5X karşılaştırma kapısı | Gerçek koşu raporları, doğrulanmış ücretler, bağımsız denetçi ve ölçülmüş en az 5X kazanç |
 
 Çift hazırlama `evals.imece.prepare_pair`, koşu inceleme
@@ -28,7 +28,14 @@ test gerçek Docker yürütücüsü içindir. Starlette/httpx kullanımı için 
 bağımlılık kullanım dışı bırakma uyarısı bildirildi. `ruff check src tests
 evals`, `ruff format --check src tests evals` ve `git diff --check` geçti.
 
-Mevcut ortamda Docker çalıştırılabilir dosyası bulunamadı. Codex ve Antigravity
+Docker CLI ve Colima kuruldu; `imece-tests` profiliyle gerçek izolasyon testi
+geçti. Son tam koşuda **453 test geçti, atlanan test yok**; gerçek Docker
+dosya azaltma testi de bu koşuya dahildir. Kullanılan
+Python imajı `python:3.12-slim`, indirilen digest
+`sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e`.
+Bu test koşusu 250 görevlik model kıyaslaması değildir.
+
+Codex ve Antigravity
 Gemini çağrıları son denemelerde kota hatası verdi. Başka bir CLI kopyası
 aynı hesap kotasını otomatik olarak kaldırmaz. Harici fiyat, model bağımsızlığı
 ve denetçi onayı uydurularak bu koşullar tamamlanamaz.

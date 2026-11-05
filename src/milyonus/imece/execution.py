@@ -99,6 +99,22 @@ class PythonExecutor:
             return shutil.which("docker") is not None
         return sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").exists()
 
+    def _client_environment(self) -> dict[str, str]:
+        environment = {"PATH": os.defpath, "LANG": "C.UTF-8"}
+        if self.backend == "docker":
+            # These configure the trusted Docker client, never container env.
+            for key in (
+                "HOME",
+                "DOCKER_CONTEXT",
+                "DOCKER_HOST",
+                "DOCKER_CONFIG",
+                "DOCKER_TLS_VERIFY",
+                "DOCKER_CERT_PATH",
+            ):
+                if key in os.environ:
+                    environment[key] = os.environ[key]
+        return environment
+
     def _argv(self, root: Path, container: str) -> list[str]:
         # Resource limits run before importing any untrusted code. Every test
         # starts a fresh interpreter; candidate and oracle mounts are read-only.
@@ -111,7 +127,7 @@ class PythonExecutor:
         )
         if self.backend == "docker":
             return [
-                "docker",
+                shutil.which("docker") or "docker",
                 "run",
                 "--rm",
                 "--pull=never",
@@ -258,7 +274,7 @@ class PythonExecutor:
                     proc = await asyncio.create_subprocess_exec(
                         *self._argv(root, container),
                         cwd=root / "code",
-                        env={"PATH": os.defpath, "LANG": "C.UTF-8"},
+                        env=self._client_environment(),
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.STDOUT,
                         start_new_session=True,
@@ -326,10 +342,11 @@ class PythonExecutor:
 
     async def _remove_container(self, container: str) -> None:
         cleanup = await asyncio.create_subprocess_exec(
-            "docker",
+            shutil.which("docker") or "docker",
             "rm",
             "-f",
             container,
+            env=self._client_environment(),
             stdout=asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.DEVNULL,
         )

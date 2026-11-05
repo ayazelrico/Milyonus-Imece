@@ -29,4 +29,4 @@ jobs:
       - name: Verify real Docker isolation and execution
         env:
           MILYONUS_TEST_DOCKER: "1"
-        run: uv run pytest tests/test_imece_completion.py -q -k real_docker
+        run: uv run pytest tests/test_imece_completion.py tests/test_imece_reduction.py -q -k real_docker
