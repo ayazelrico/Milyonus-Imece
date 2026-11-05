@@ -76,12 +76,14 @@ def inspect_run(path: Path) -> dict:
     }
 
 
-def main() -> None:
+def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("checkpoint", type=Path)
     args = parser.parse_args()
-    print(json.dumps(inspect_run(args.checkpoint), ensure_ascii=False, indent=2))
+    result = inspect_run(args.checkpoint)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0 if result["journal_scan_complete"] else 2
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

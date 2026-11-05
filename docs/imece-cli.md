@@ -1,5 +1,12 @@
 # Codex CLI ile İmece deneyini hazırlama
 
+Bir CLI çağrısı hata, iptal veya geçersiz yanıt nedeniyle belirsiz kalırsa
+görev/tekrar çifti aynı süreç içinde hemen engellenir. Sonraki gönderimler
+uzlaştırma gerektirir; engel yalnızca yeniden başlatmada uygulanmaz. Daha önce
+başlatılmış eşzamanlı çağrılar kendi kayıtlarında tamamlanır veya iptal edilir.
+Geçersiz tamamlanma yanıtı kalıcı durum hatasıdır ve koşuyu keser. Belirsiz
+kayıt ile bilinen kullanım sayıları korunur; sıfır maliyet varsayılmaz.
+
 Günlük bütünlüğü veya kalıcı kayıt yazma hatası `FatalAgentStateError` ile
 çalışmayı keser. Ajan havuzu bu hatayı sıradan başarısız yanıt metnine
 çevirmez; aynı havuzun paralel partilerindeki çalışanlar iptal edilip beklenir.
@@ -12,6 +19,8 @@ hataları ve sonucu bilinmeyen çağrıların otomatik tekrarlanmaması ayrı ka
 `inspect_run`, okuyamadığı veya kimliği eksik günlükleri `journal_errors`
 alanında gösterir; `journal_scan_complete=false` taramanın eksik olduğunu
 belirtir. Bu tarama tam günlük bütünlüğü denetimi değildir.
+Günlük taraması eksikse komut çıkış kodu `2` döndürür; boş bir hata listesi
+gibi yorumlanarak otomasyonun başarıyla devam etmesi önlenir.
 
 Devam işlemi ana transkriptleri hem yan kayıtlar birleştirilmeden önce hem sonra
 doğrular. Modern kayıtlarda benzersiz çağrı ve günlük düğümü kimliği, kesintisiz

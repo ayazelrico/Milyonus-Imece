@@ -83,3 +83,9 @@ referans değerlendirmesi, kesilmiş sandbox sonucunu reddeder. P5 kapısı
 tahmini maliyetlerle kabul üretmez; doğrulanmış çağrı makbuzları ayrı
 eşleştirme akışında kullanılabilir. Ruff ve biçim kontrolleri geçti;
 testler ve canlı kıyaslama çalıştırılmadı.
+
+Çağrı hatası sonrasında belirsiz görev/tekrar engeli artık aynı süreçte de
+hemen uygulanır. Daha önce bu engel yalnızca devam kaydı yüklenirken
+oluşturuluyordu. CLI yanıt doğrulaması hata kaydı kapsamına alındı; geçersiz
+yanıt sessizce başarısız ajan metnine dönüşmeden koşuyu keser. Önceden
+gönderilmiş çağrılar ayrı kimlikleriyle muhasebede kalır.

@@ -603,13 +603,19 @@ async def run(args) -> int:
         try:
             async with dispatch_slots:
                 reply = await adapters[model](spec)
+            try:
+                payload = asdict(reply)
+                output_hash = fingerprint(payload)
+                validated_reply(payload, output_hash)
+            except (ValueError, TypeError, OverflowError) as exc:
+                raise FatalAgentStateError("invalid completed CLI reply") from exc
         except BaseException as exc:
+            # Freeze this trial immediately, not only after a process restart.
+            # Other calls already in flight remain accounted for independently.
+            uncertain_trials.add((binding["task"], binding["repeat"]))
             entry.update(state="unknown", error=redact(f"{type(exc).__name__}: {exc}"))
             persist_call(entry)
             raise
-        payload = asdict(reply)
-        output_hash = fingerprint(payload)
-        validated_reply(payload, output_hash)
         entry.update(state="completed", reply=payload, output_hash=output_hash)
         persist_call(entry)
         return reply
