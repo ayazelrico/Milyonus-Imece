@@ -1,0 +1,16 @@
+{
+  "updated_at": "2026-11-03T14:54:35.129062+00:00",
+  "engine": "antigravity",
+  "model": "gemini-3.8-flash-high",
+  "watcher_pid": 36808,
+  "watcher_log": "experiments/antigravity-lean.watch.log",
+  "lean_out": "experiments/antigravity-lean.json",
+  "smoke_partial": "experiments/antigravity-smoke.json",
+  "core_prepared": "experiments/antigravity-core-v1.json",
+  "quota": "RESOURCE_EXHAUSTED on all listed agy models; gemini reset ~74h, claude/gpt ~89h",
+  "fixes": [
+    "evals/imece/run.py: JSON-normalize manifest compare on resume",
+    "antigravity adapter: exponential backoff on RESOURCE_EXHAUSTED",
+    "scripts/run_antigravity_until_done.sh: poll+resume lean clamp trial"
+  ]
+}

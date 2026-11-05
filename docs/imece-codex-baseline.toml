@@ -1,0 +1,6 @@
+# CLI engine/model mapping is explicit in prepare_pair; no provider configuration.
+[imece]
+max_parallel = 1
+max_rounds = 4
+adaptive_production = false
+agent_timeout = 300

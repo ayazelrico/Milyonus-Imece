@@ -1,11 +1,9 @@
 # Milyonus Agent 5.5 — Web Plan (Surface #7)
 
-> Status: **plan only — nothing implemented.**
-> Scope: turning Milyonus Agent 5.5 into a product an end user can open in a
-> browser and talk to, the way they talk to ChatGPT — without giving up a single
-> guarantee the agent core already makes.
-> Companion to [PLAN.md](PLAN.md) (the agent core plan) and
-> `~/Documents/Milyonuss/design.md` (the milyonus.com design system).
+> Status: **W0–W5 landed in-tree (2026-11-03).** API + FastAPI runner + Vite SPA
+> ship under `src/milyonus/web/` and `web/`. W6–W8 (compaction engine polish,
+> red-team load test, external beta) remain open.
+> Companion to [PLAN.md](PLAN.md) and [docs/web-api.md](docs/web-api.md).
 > Owner: @ayazelrico · License: Apache-2.0
 
 ---

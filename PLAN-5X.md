@@ -1,7 +1,40 @@
 # İmece 5X — doğrulanmış sonuç başına beşte bir maliyet
 
-Durum: **yeni plan; henüz uygulanmadı**. Kapsam İmece ve ajan çekirdeğidir.
-Web ürünü ayrı kalır. Başlangıç kanıtları: [tamamlanma incelemesi](docs/completion.md).
+Durum: **P0–P4 altyapısı kodda; P5 kabul kapısı henüz ölçülmüş değil.** 50 görev
+× protokol, rezervasyon defteri, kanıt önbelleği, uyarlanan üretim, onarım/
+beceri akışları ve Hermes like-for-like adaptörü (`evals/hermes`) mevcut.
+Karşılaştırmalı 250 koşu + bağımsız denetim + fatura mutabakatı dış çalışma
+gerektirir — `accepted_5x` yalnızca `evals.imece.compare` ile ilan edilir.
+Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
+
+Yerel uygulamada sürümlü görev kümesi, gizli yürütülebilir oracle, deney manifesti
+ve rapor karşılaştırma kapısı; bütçe rezervasyon defteri, kalıcı aşama/çağrı
+günlüğü ve tamamlanan yanıtları yeniden kullanarak devam etme; deterministik,
+digest ile sabitlenmiş Docker doğrulaması için kanıt önbelleği bulunuyor.
+İlk turda isteğe bağlı uyarlanan üretim, hata çıktısıyla aday onarımı,
+bağlam/seçenek/kanıta bağlı emsaller, hata arşivi ve bağımsız kontrollerden sonra
+beceri yükseltme/iptal akışları da kodda mevcut. Bunlar P0–P4 kapsamının bütünüyle
+tamamlandığı veya performans hedeflerinin sağlandığı anlamına gelmez.
+
+Deney yürütücüsü [`evals/imece/run.py`](evals/imece/run.py) **yalnızca Codex veya
+Antigravity CLI** kullanır (`--engine codex|antigravity`, açık `--model`);
+ham sağlayıcı API'si üzerinden çalışmaz. `--prepare` model çağrısı yapmadan
+hazırlık kaydı üretir. Oracle erişim koruması şu anda macOS `sandbox-exec`
+gerektirir. CLI raporlarında dolar maliyeti `null`/bilinmiyor olarak kalır;
+abonelikten token fiyatı türetilmez. Token sınırı tamamlanan çağrılar üzerinden
+izlenir; çağrı başına kesin çıktı token sınırı uygulanmaz. Varsayılan olarak üretim havuzu, konsey ve onay aynı modeli kullanır.
+Koltuklara ayrı model atanabilir; bağımsızlık için denetçinin model kökeni kanıtı gerekir. Sağlayıcı rezervasyon defterinin kodda bulunması, bu CLI
+koşularında doğrulanmış dolar muhasebesi olduğu anlamına gelmez.
+
+`core-v1`, üretimi temsil ettiği henüz gösterilmemiş sınırlı Python görevlerinden
+oluşur. Temsili baseline, sürüm başına en az 50 görev × 5 tekrar, tam maliyet
+muhasebesi, karşılaştırmalı başarı/maliyet dağılımları, güven aralıkları ve
+bağımsız denetim henüz tamamlanmadı. CLI raporlarının bilinmeyen maliyet ve
+bağımsızlık uyarıları mevcut karşılaştırma kapısında 5X kabulünü engeller.
+%60 doğrulama azalması, yarıya inen token/onarım maliyeti ve toplam 5X kazanç
+ölçülmüş sonuçlar değildir. Başlangıç kanıtları:
+[tamamlanma incelemesi](docs/completion.md); yerel onarım akışları ve ölçüm sınırı:
+[onarım akışı](docs/imece-repairs.md).
 
 ## Ölçülebilir hedef
 

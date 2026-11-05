@@ -7,6 +7,18 @@ def _store(tmp_path):
     return SessionStore(tmp_path / "state.db")
 
 
+def test_surface_session_lookup_survives_recent_list_cutoff(tmp_path):
+    s = _store(tmp_path)
+    target = s.create_session("web", user_ref="alice", title="web:old")
+    for i in range(205):
+        s.create_session("web", user_ref="alice", title=f"web:new-{i}")
+    assert target not in {r.id for r in s.list_sessions(limit=200)}
+    assert s.find_session(channel="web", user_ref="alice", title="web:old").id == target
+    assert s.find_session(channel="web", user_ref="bob", title="web:old") is None
+    assert s.find_session(channel="cli", user_ref="alice", title="web:old") is None
+    s.close()
+
+
 def test_session_roundtrip(tmp_path):
     s = _store(tmp_path)
     sid = s.create_session("cli", user_ref="me")

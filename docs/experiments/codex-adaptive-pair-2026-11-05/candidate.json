@@ -1,0 +1,390 @@
+{
+  "schema_version": 1,
+  "manifest": {
+    "protocol": {
+      "schema_version": 1,
+      "scorer_hash": "59a9247206fb482dff321a62232bc769030f4921a863ca687535ec11ebbb7f4c",
+      "tasks": [
+        {
+          "id": "stable_unique",
+          "contract": "de1b5b1dab638aa4759d2548d02c6b835b43bbb81a087423d7493eca1252e00e",
+          "oracle": "d81859eee982a27f06dd116978d86d2657a92ea65633b0ff13324469e9f68972"
+        },
+        {
+          "id": "runs",
+          "contract": "3a7d2fe795153b3b7d8cfe6f40290dc9f519db7927861cb480082435c49fbd85",
+          "oracle": "bdfd7cce197515b1924ae190d51098dcf5effb9bba5eac28b9bd430ca1c3762a"
+        },
+        {
+          "id": "rotate",
+          "contract": "716c391a44b898845c903b6e29c4dc21d7c1e94440df24dbd104e25fe5ded48c",
+          "oracle": "dbd1efdabbfd4690dfc7dadf64ab7baa29184f0b8ff221d002810abef9f78f46"
+        },
+        {
+          "id": "window_sums",
+          "contract": "fce232be23fd0d98e014af0f7f0aa13f4fdb0f0bcdd346128c1684f1ec466c7d",
+          "oracle": "7659de4297dccf12a340f9702f9daf018f4e9169ce96f519aa2e32daff4a5029"
+        },
+        {
+          "id": "balanced",
+          "contract": "fdbd6f778e835c9fb559008519b59fd60bbfa28cb1e883f3f611cf896380679d",
+          "oracle": "427a83606dfcdcf5c6738f15a82f44ee07c46792fda929ebff2f67709fc1f462"
+        },
+        {
+          "id": "gcd_list",
+          "contract": "69f1e6905de43378befea987ef43df99e299f592cbc554874c04ee2616091f86",
+          "oracle": "2fe0aceef3b286712d75d5dc1f7740a01372c5f36dd9dc7e860ee388f75b841c"
+        },
+        {
+          "id": "divisors",
+          "contract": "b3f75172508f9627ffb7a3746b1e636c030ac3ffbb2cb979f4df1918f57a7c4f",
+          "oracle": "1326016f356224db42748577abfc438454e496a581c50e2f53a1145314a4c9af"
+        },
+        {
+          "id": "flatten",
+          "contract": "6307318eec0d90050b26f6c912804bf8acce21f392054d2487f42f3dde2d389c",
+          "oracle": "40fdc2d3922314f15b0effd63780f5752fa43678a8af92205fab63233e6a0699"
+        },
+        {
+          "id": "transpose",
+          "contract": "b9209c2e0185ae724463e72939c319654f1057aae8e5e060bffe0586336e259c",
+          "oracle": "d95e7b6efaaa1b986fd3e012caa85b7377c3e6b0690b4c0d574a19d9ac682a2a"
+        },
+        {
+          "id": "prime_flags",
+          "contract": "af9979c766465ba839414fb80fb129baefc2bd91b7ce1064ed572b93628f1428",
+          "oracle": "ad99f21fbb8fb8353a6524a14a652ebda310d115324b97277d163c0c6a2f72f4"
+        },
+        {
+          "id": "fix_binary_search",
+          "contract": "a2f08ae6bf9a6b7c606c595792b94ff3eaa216835ae22a56bd5b417565ccfca0",
+          "oracle": "6e6930ca4fb691918175cd8bea59dd73a636f1fde746ac893a36a959cc883a88"
+        },
+        {
+          "id": "fix_chunk_tail",
+          "contract": "0107e6cd7fdb9498730fa3797abdd856a4fa52f0dc529aedc037f7444113ef8c",
+          "oracle": "141398b7b5c610535525888aa68fa674bc58193ca283c4415a9b2482f68005db"
+        },
+        {
+          "id": "fix_negative_max",
+          "contract": "314e7f888f7121d85b4b15993c0b8b789a080132f58c89a071863ba7dc4895ae",
+          "oracle": "d91e20b207640596f85645b49d9c9ec3f858c434ffa1d9484b031b8d2af0910a"
+        },
+        {
+          "id": "fix_even_median",
+          "contract": "5e2860042e00d2a1cfc84fdea0f420831c32e35b5351fb252c1803f031b28dd6",
+          "oracle": "aa91e74f34a2c3e311d8c86e57f5af5078c055e282ed516c0d880abd7a3ceed9"
+        },
+        {
+          "id": "fix_empty_prefix",
+          "contract": "039ce159bf544151700d7c870e3e3a9b26b3d21b3aa04324e613962ed9b02de1",
+          "oracle": "2496d82e0dbe57ba64e26ad3c7dcd5c86ef72af59124e504de2e38a015501651"
+        },
+        {
+          "id": "fix_duplicate_pairs",
+          "contract": "7c89fc6ed46072d6f5afd3048e859041af6d8d6441ce2e1b6c9f16755f99d504",
+          "oracle": "fe579cd42db6bde3505abba5cf7fdb44e3d4629026dcc9ea39f7904d8d4f2b89"
+        },
+        {
+          "id": "fix_leap_year",
+          "contract": "0c940ff269b3faf929d62f66e9bf0f573453ce4c588f79866632574a3f586e7c",
+          "oracle": "364f94b9d3ab1072aae5948ce38d6e2c6ae6ac8d198b440a6c65e7eef08f702b"
+        },
+        {
+          "id": "fix_overlap",
+          "contract": "312092aafae7315a2c63043c7d6e35215b6c071aba392e276d1dd7f42873455a",
+          "oracle": "56b25c04dab273321c8cc51e4eeda5945abf4eac0297ed1290f969f722520f73"
+        },
+        {
+          "id": "fix_percent_decode",
+          "contract": "0a4dc381c61c401b5a2c79d86e861165aacc25185f9b106307140646c720eadc",
+          "oracle": "2a9b3727efea9bda013c6d9cfe2b57b8db64dc6fb759fbb564e6ac16db3333ae"
+        },
+        {
+          "id": "fix_truthy_zero",
+          "contract": "96bdc6b2c79d73c42f9d9efaccb0ce085d18be1b2f66b04114b774c136114778",
+          "oracle": "97bb2799a4175fd538242872214f6e10b74b94a2abcb55b3e8c9ae0847109b61"
+        },
+        {
+          "id": "group_totals",
+          "contract": "6cccdac78c9ac195a0a9ffa861b8e9689fb8b660e78eaa9fcc0b983df52b7bb4",
+          "oracle": "5506a43e1ecf59ea43407078f858e03bcfdab5c68f3f32eb8ee40b25502e0c9a"
+        },
+        {
+          "id": "csv_rows",
+          "contract": "533db2890467e93c1ca4ce8ae0e834d62fabb8923e5c9523850c6bb8f4540014",
+          "oracle": "7f45166bbd81d7c4a48f6301a348bc2eeda1539602a6cb3c5dfdf7e6685cc43a"
+        },
+        {
+          "id": "invert_multimap",
+          "contract": "0460df57a96f6cb1fe0ff75541d000f2abd6bd45040984e6dfa8f502258011f1",
+          "oracle": "2c69695ffe052e1a2895267ee1e402ac1b1868eb5e1339c56477c9be234d15a2"
+        },
+        {
+          "id": "pivot_counts",
+          "contract": "dd7e4c516f492c43a6b8781408d1d0028bf117b29e8f9d795f432bdf368d672a",
+          "oracle": "f314da48d3e6dbe17665275e0037a085fe464e313f8139195456074abbe7fc6e"
+        },
+        {
+          "id": "normalize_words",
+          "contract": "e54cd3aa6a35ce4a38933b8eb66dc9998dbff99b998651d2d1891ed500ada85d",
+          "oracle": "bcf7f545cb5821c4e15e11eb75ce30fe2c97089df9c20d5e0e4a579e6e14ff83"
+        },
+        {
+          "id": "records_latest",
+          "contract": "448e082fae0ced373491ab6c7e951954c807e41d6ac037267869f60d2f94563f",
+          "oracle": "8502df0ce726ce1c79a9ca74dac34792c46cf85651af53f57b526df757de8be1"
+        },
+        {
+          "id": "query_pairs",
+          "contract": "13ad208d2b8a2a1d97f9310dbf719c2fee8b27bb910eb177dea41f183a643e3d",
+          "oracle": "a5afc3f6cb07b24ecf1fff3ff309de5d2f6ffe34d634e527e3043c1eec88baef"
+        },
+        {
+          "id": "json_lines",
+          "contract": "5f6104aa93c8f288b1d39514a0b50ea9aa0116558222a95f41c3f1d4dedfda04",
+          "oracle": "90150b1c38c09a3d0be5f77da579dda77749521fdfde0b83bf94c0c1f7a1ed69"
+        },
+        {
+          "id": "unflatten_keys",
+          "contract": "37caea56249dd5f5f1cd78ff846eb732074a874cefca5531a9ec8190ba002987",
+          "oracle": "e8158c0da4aed568d4e5b188146b05245ba3fc87594b7818b4302c0656470e43"
+        },
+        {
+          "id": "sort_records",
+          "contract": "00edc53ddba8421c10947d137edd4d681083def2056c00117228cb8e2b0e83f5",
+          "oracle": "902f1534a00fed65ea75c1cf62c32b6ae706094a4d3299e5826f04a093c3560b"
+        },
+        {
+          "id": "left_join",
+          "contract": "a3517676846d5fbfda272462529208607a2781737026880fe08eb10369f93f02",
+          "oracle": "daadf3e47d3f1593ff4749ca73dc374ad402afc2fdc44fea1e27a15b1259bc12"
+        },
+        {
+          "id": "pagination",
+          "contract": "bba92cad05e1823d38d3b65a423f5889db332c36ccb7c46afcd41d2e36936e88",
+          "oracle": "4df7c5b2015e55aeb89032ffc938153afd280e750ef7cd1a4d9463ba7f26fb33"
+        },
+        {
+          "id": "retry_delays",
+          "contract": "6edc01dd5dceab3227060f79d40f8d617c81fded46bf57e6a4a7a96bd8b1cbad",
+          "oracle": "0903d54f6445a11a9af1c50028abecee49bbb5f5c84cc315c3845557c01ef1ca"
+        },
+        {
+          "id": "idempotent_events",
+          "contract": "a84175a69079515e60958b82f224317dd90b545a543f36000e6e987424f8df37",
+          "oracle": "03b8d415f3a0f9a7acb4a346332e24bc6bee5fcafc8a4b201bbdfccb00f702a1"
+        },
+        {
+          "id": "http_retry",
+          "contract": "7c3b0d1b7321cfff9aa793dcf63d0c75373eac284033a0c6a454686377de51b7",
+          "oracle": "43d3ad0e5510a040498be89bff992220352f557b6dfe2f9f0bacb8ff472d2d44"
+        },
+        {
+          "id": "headers",
+          "contract": "01b8e76b3413f3523ef44f21062d35ba99768afbe5ff1502120f24142b4767f5",
+          "oracle": "03cf918cc58e897bbf9c4a501a0e2bf13b4727e80b192ba2d66c2cdf350b49a3"
+        },
+        {
+          "id": "path_params",
+          "contract": "341bd688d8d248153494c9255309104ed7f7e8daf8ff7e7ee41bcbae5139f415",
+          "oracle": "44d21ced34b994726ed1ba8a143e7084f0e97f4677357867a87f1403bc34239f"
+        },
+        {
+          "id": "config_overlay",
+          "contract": "fe81a20af01f3416173d243baf5d3cc53eaa6601f255c30136c4c5effc2e4314",
+          "oracle": "e4e3f14772e614957d84483026b73d04b8c0074f7209d70874d340203bb8943c"
+        },
+        {
+          "id": "dependency_order",
+          "contract": "7340f64c2a2dfa39fe87b23c54feab841fdad6df47a93bb08e0db3a57b79da71",
+          "oracle": "3dd2de6443f72afdc96920a66014e5e1754862a80212fcdd27cd59039378d4b0"
+        },
+        {
+          "id": "balance_events",
+          "contract": "d374f2ae144d0dcf7d53defd65cfe4c9e45358c32af62850126e22fc0107425b",
+          "oracle": "c1f24318b2aa5ccd6031dcf9cd83ca66755e4fa39edea0237cd89a6a0c24b1b2"
+        },
+        {
+          "id": "evidence_votes",
+          "contract": "d7d38758d4d22f32e76527c8b13f885d3ef614d848572dccf762760bdaae1dc2",
+          "oracle": "2503630f63c8a3a498a9a275c91a87cc46320784217dc368ac1cebf4eee03fbf"
+        },
+        {
+          "id": "contradictions",
+          "contract": "dada57eaa8689850f9e750c5e18f6dbbe80ba68efac7864d58770a2ecb8403dd",
+          "oracle": "2bf98841b74f3578007e00d57a106974ca26b0cc04710f4191e3e1dd91019311"
+        },
+        {
+          "id": "weighted_score",
+          "contract": "6fd31e7dce4d22af949bcb8c3010ccf68f82b0e7d6024a8bef4f0a2f8dc6f00e",
+          "oracle": "6ffbd9d6f24abc9cc9b844820cfd71daee5fbfc9c0175d16911f67b15fcb6f88"
+        },
+        {
+          "id": "pareto",
+          "contract": "2874f8eaae4f130a7a4b4124bd0ad291ddb193cc915f96da65f6bf74cf58537d",
+          "oracle": "7c30fe9c512b969a886854df7afd08b5255e9ecff9425364a7ca63870c550b90"
+        },
+        {
+          "id": "coverage_gaps",
+          "contract": "46de92c7be5951f44dff941a0210a9e75a5a244ea34817cd650ce0ac5fa096b9",
+          "oracle": "0ed826af4e52bf1f266c0d66405aabf08a1228b1efa2722638b99eeefc6107cc"
+        },
+        {
+          "id": "confusion_counts",
+          "contract": "b8f523de089b2dc3d275c4325905240e0fdfe35bc048712b1f5deeb7e616c3d3",
+          "oracle": "27a3a9f2c078843d32e0b3791f0c00080302fb5280c86fcbefb2a01fca3a53f9"
+        },
+        {
+          "id": "cost_per_success",
+          "contract": "61e22d2493187a1ea49edaf87946828563d81d1544829d0ccb19a51784d79689",
+          "oracle": "fb9303763b14560795fcc8afbc07168cef2cec5a502e579c03379e7519cf378f"
+        },
+        {
+          "id": "longest_streak",
+          "contract": "591576b66c5f2a4c7f65e0c57948568a35b7ffa85b589dcfac495c22b6a0b211",
+          "oracle": "13abc95619fa7bb947e0ce36e2042a54cc3231c2a568be47cb5ffbc455b0f000"
+        },
+        {
+          "id": "rank_ties",
+          "contract": "7da092fd16716072223585e23061a1393f89848d6ae3611037ec13203ea5d8ec",
+          "oracle": "c2021a927834f810dbfe4adbe1685ed9aa72b11b14b95d9cf91deced90979a7b"
+        },
+        {
+          "id": "interval_coverage",
+          "contract": "e691a4e80d8c4f301e8131856042d291dc44682158968579fcfac5a5681f4f4e",
+          "oracle": "2587ea510eb304c2c8ee9babfb72f5aacaf1cbaccf385888030f89ebac0200ca"
+        }
+      ],
+      "models": {
+        "pool": "gpt-6.1-sol",
+        "repair": "gpt-6.1-sol",
+        "framing": "gpt-6.1-sol",
+        "test_design": "gpt-6.1-sol",
+        "red_team": "gpt-6.1-sol",
+        "evidence_audit": "gpt-6.1-sol",
+        "compliance": "gpt-6.1-sol",
+        "observer": "gpt-6.1-sol",
+        "approval": "gpt-6.1-sol",
+        "council:correctness": "gpt-6.1-sol",
+        "council:risk": "gpt-6.1-sol",
+        "council:user_impact": "gpt-6.1-sol",
+        "council:cost_speed": "gpt-6.1-sol",
+        "council:devils_advocate": "gpt-6.1-sol"
+      },
+      "runtime": {
+        "backend": "macos",
+        "image": "python:3.12-slim",
+        "python": "3.12.14",
+        "platform": "macOS-26.6.2-arm64-arm-64bit",
+        "engine": "codex",
+        "cli": {
+          "executable": "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
+          "version": "codex-cli 0.166.0-alpha.6",
+          "sha256": "508388df35319042107560d095b271a98a512f59a542848c908b23ed1bad4b44"
+        },
+        "agent_policy": "text-only-seatbelt-oracle-deny-v1"
+      },
+      "seed": 0,
+      "repeats": 5,
+      "limits": {
+        "max_tokens": 250000,
+        "max_rounds": 4,
+        "test_timeout": 10.0,
+        "max_cli_calls": null
+      }
+    },
+    "protocol_hash": "fcd15e19b678324c860cc599e85fd2ef40fdba6e679c210b6f65c63cea6d4175",
+    "settings": {
+      "agents": 17,
+      "max_parallel": 1,
+      "max_tokens": 250000,
+      "max_rounds": 4,
+      "max_clusters": 9,
+      "max_options": 12,
+      "shortlist": 4,
+      "pass_threshold": 0.6,
+      "verification": "python",
+      "sandbox_backend": "macos",
+      "sandbox_image": "python:3.12-slim",
+      "test_timeout": 10.0,
+      "agent_timeout": 300.0,
+      "cell_size": 9,
+      "irade": {
+        "veto_floor": 0.5,
+        "hard_veto_floor": 0.2,
+        "spread_threshold": 0.15,
+        "min_vote_share": 0.6,
+        "min_confidence": 0.55,
+        "audit_rate": 0.05,
+        "precedent_confidence": 0.8
+      },
+      "approved_evidence": [],
+      "adaptive_production": true,
+      "repair_skill": null,
+      "repair_skill_sha256": null
+    },
+    "revision": "7764e344e3f77f10eca1b1fe095c474a20347401",
+    "implementation_hash": "8e6a7a50d1865d5545502b2fbcf64c84840a500a98b89f089673e1fac875042e",
+    "capture_reproductions": false,
+    "engine": "codex",
+    "max_output_tokens": null,
+    "catalog_prices": null,
+    "shared_model_limitation": "Shared CLI model identifiers by seat: {\"gpt-6.1-sol\": [\"pool\", \"repair\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence."
+  },
+  "source": "codex",
+  "engine": "codex",
+  "models": {
+    "pool": "gpt-6.1-sol",
+    "repair": "gpt-6.1-sol",
+    "framing": "gpt-6.1-sol",
+    "test_design": "gpt-6.1-sol",
+    "red_team": "gpt-6.1-sol",
+    "evidence_audit": "gpt-6.1-sol",
+    "compliance": "gpt-6.1-sol",
+    "observer": "gpt-6.1-sol",
+    "approval": "gpt-6.1-sol",
+    "council:correctness": "gpt-6.1-sol",
+    "council:risk": "gpt-6.1-sol",
+    "council:user_impact": "gpt-6.1-sol",
+    "council:cost_speed": "gpt-6.1-sol",
+    "council:devils_advocate": "gpt-6.1-sol"
+  },
+  "runs": [],
+  "transcripts": [],
+  "ledger": null,
+  "catalog_prices": null,
+  "price_note": "CLI usage is not a billing receipt. Dollar cost is unknown (null), including failures/cancellations; no subscription-to-token price is invented. Token totals are null when any call lacks usage; observed_tokens is only a known lower bound.",
+  "independence_warnings": [
+    "Shared CLI model identifiers by seat: {\"gpt-6.1-sol\": [\"pool\", \"repair\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence."
+  ],
+  "shared_model_limitation": "Shared CLI model identifiers by seat: {\"gpt-6.1-sol\": [\"pool\", \"repair\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence.",
+  "state": "prepared",
+  "summary": {
+    "runs": 0,
+    "accepted": 0,
+    "verified_successes": 0,
+    "accepted_deliverable_rate": null,
+    "verified_success_rate": null,
+    "false_accepts": 0,
+    "total_tokens": null,
+    "tokens_per_verified_success": null,
+    "observed_tokens": 0,
+    "unknown_token_runs": 0,
+    "cost_usd": null,
+    "cost_estimated": false,
+    "cost_per_accepted_usd": null,
+    "cost_per_verified_success_usd": null,
+    "calibration_ece": null,
+    "calibration_samples": 0
+  },
+  "accounting": {
+    "cost_usd": null,
+    "cost_status": "unknown",
+    "token_budget": "completed-calls-only",
+    "cli_call_limit": null,
+    "cli_calls_reserved": 0,
+    "unknown_usage_calls": 0
+  },
+  "updated_at": "2026-11-05T09:02:17.252970+00:00"
+}

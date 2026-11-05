@@ -116,6 +116,14 @@ class SessionStore:
         ).fetchall()
         return [SessionRow(**dict(r)) for r in rows]
 
+    def find_session(self, *, channel: str, user_ref: str, title: str) -> SessionRow | None:
+        """Resolve a surface's persistent session without a recent-list cutoff."""
+        row = self._conn.execute(
+            "SELECT * FROM sessions WHERE channel=? AND user_ref=? AND title=? "
+            "ORDER BY created_at, id LIMIT 1", (channel, user_ref, title),
+        ).fetchone()
+        return SessionRow(**dict(row)) if row else None
+
     def set_title(self, sid: str, title: str) -> None:
         with self._tx() as c:
             c.execute(

@@ -127,6 +127,7 @@ from milyonus.cli.proactive_cmd import proactive_app  # noqa: E402
 from milyonus.cli.selfmod_cmd import selfmod_app  # noqa: E402
 from milyonus.cli.skills_cmd import skills_app  # noqa: E402
 from milyonus.cli.user_cmd import user_app  # noqa: E402
+from milyonus.cli.web_cmd import web_app  # noqa: E402
 
 app.add_typer(memory_app, name="memory")
 app.add_typer(admin_app, name="admin")
@@ -140,6 +141,7 @@ app.add_typer(proactive_app, name="proactive")
 app.add_typer(mcp_app, name="mcp")
 app.add_typer(user_app, name="user")
 app.add_typer(imece_app, name="imece")
+app.add_typer(web_app, name="web")
 
 
 def main() -> None:

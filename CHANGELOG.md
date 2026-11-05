@@ -5,6 +5,17 @@ The format follows Keep a Changelog; versions follow the Milyonus model line.
 
 ## [Unreleased] — Milyonus-Imece (experimental)
 
+### Plans closed in code — 2026-11-03
+- Shell sandbox backends: `ssh`, `modal`, and `daytona` alongside local/docker;
+  missing credentials fail closed with no host-shell fallback.
+- Hermes like-for-like adapter: `python -m evals.hermes.adapter` (prepare/run)
+  against the frozen 50-task suite for `evals.imece.compare`.
+- Web surface #7: `milyonus web start`, `src/milyonus/web/` (auth, SSE turns,
+  approvals, memory/audit APIs, tenant dirs) and `web/` Vite SPA (chat, tool
+  timeline, approval cards, trust rail). Docs: `docs/web-api.md`, ADR-0010/0011.
+- PLAN-5X measurement ground and adapters are in-tree; measured 5X acceptance
+  still requires paid baseline runs + independent audit attestation.
+
 ### Completion and hardening — 2026-11-02
 - Real isolated Python tests (Docker and macOS development backend), exact test
   accounting, fail-closed reviewers, re-testing revised/polished artifacts and

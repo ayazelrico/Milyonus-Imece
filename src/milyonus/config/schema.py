@@ -7,7 +7,7 @@ security control. Security-relevant fields are grouped so they are easy to audit
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -138,6 +138,7 @@ class MCPServerConfig(_Strict):
 # are the independent blocks. Unset seats fall back to `pool` (= [provider]).
 IMECE_SEATS = (
     "pool",
+    "repair",
     "framing",
     "test_design",
     "red_team",
@@ -164,6 +165,11 @@ class ImeceConfig(_Strict):
     max_tokens: int = Field(default=2_000_000, ge=10_000)
     max_rounds: int = Field(default=2, ge=1, le=5)
     max_clusters: int = Field(default=9, ge=1, le=50)
+    approved_evidence: list[Annotated[str, Field(pattern=r"^[0-9a-f]{64}$")]] = Field(
+        default_factory=list
+    )
+    adaptive_production: bool = False
+    repair_skill: str | None = None
     shortlist: int = Field(default=4, ge=1, le=12)
     pass_threshold: float = Field(default=0.6, ge=0.0, le=1.0)
     verification: Literal["model", "python"] = "model"

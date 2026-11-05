@@ -19,12 +19,13 @@ through the council to measure drift (guarantee #6).
 
 from __future__ import annotations
 
+import hashlib
 import json
 import math
 import random
 import statistics
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -205,6 +206,7 @@ class Irade:
         self.rng = rng or random.Random()
         self.precedents: dict[tuple[str, str], tuple[str, float]] = {}
         self.log: list[Decision] = []
+        self._seen_questions: set[tuple[str, str]] = set()
 
     # ── routing ────────────────────────────────────────────────────────────
     def initial_tier(self, req: DecisionRequest) -> tuple[int, list[str]]:
@@ -218,14 +220,17 @@ class Irade:
         prec = self.precedents.get(self._precedent_key(req))
         if prec and prec[1] >= self.s.precedent_confidence:
             return 1, ["precedent"]
+        if prec is None and (req.kind, req.question) in self._seen_questions:
+            return 2, ["decision context, options, evidence or policy changed"]
         if prec is None and req.kind not in {k for k, _ in self.precedents}:
             reasons.append("novel decision kind")
             return 2, reasons
         return 0, ["policy"]
 
-    @staticmethod
-    def _precedent_key(req: DecisionRequest) -> tuple[str, str]:
-        return (req.kind, " ".join(req.question.lower().split()))
+    def _precedent_key(self, req: DecisionRequest) -> tuple[str, str]:
+        payload = {"request": asdict(req), "policy": asdict(self.s)}
+        key = hashlib.sha256(json.dumps(payload, sort_keys=True).encode()).hexdigest()
+        return (req.kind, key)
 
     async def decide(self, req: DecisionRequest) -> Decision:
         if not req.options:
@@ -263,6 +268,7 @@ class Irade:
             d.escalations = why
         if d.choice is not None:
             self.precedents[self._precedent_key(req)] = (d.choice, d.confidence)
+            self._seen_questions.add((req.kind, req.question))
         self.log.append(d)
         return d
 

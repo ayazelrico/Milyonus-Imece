@@ -15,3 +15,5 @@ once accepted; a reversal is a new ADR that supersedes the old one.
 | 008 | rich + prompt_toolkit terminal UI |
 | 009 | Strict config schema |
 | 010 | pytest + recorded LLM responses |
+| 0010 | Web tenancy = directory per tenant |
+| 0011 | Erasure tombstones content; ledger keeps hashes |

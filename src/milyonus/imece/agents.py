@@ -63,6 +63,18 @@ class PoolExhausted(Exception):
     """The shared token pool ran out; the run stops with what it has."""
 
 
+class AdmissionDenied(PoolExhausted):
+    """The configured budget rejected the call before any provider dispatch."""
+
+
+class Stopped(Exception):
+    """The operator requested that execution stop."""
+
+
+class FatalAgentStateError(ValueError):
+    """Agent state could not be trusted or persisted; abort the run."""
+
+
 @dataclass(slots=True)
 class AgentEvent:
     block: str
@@ -72,6 +84,7 @@ class AgentEvent:
     ok: bool
     cost_usd: float | None = None
     cost_estimated: bool = True
+    usage_known: bool = True
 
 
 class Swarm:
@@ -84,13 +97,17 @@ class Swarm:
         max_parallel: int = 8,
         max_tokens: int = 2_000_000,
         agent_timeout: float = 300.0,
+        should_stop: Callable[[], bool] | None = None,
     ):
         if max_parallel < 1:
             raise ValueError("max_parallel must be >= 1")
         self._fn = agent_fn
         self.max_parallel = max_parallel
         self.agent_timeout = agent_timeout
+        self._should_stop = should_stop
         self._sem = asyncio.Semaphore(max_parallel)
+        self._workers: set[asyncio.Task[None]] = set()
+        self._fatal_error: FatalAgentStateError | None = None
         self.max_tokens = max_tokens
         self.used_tokens = 0
         self.events: list[AgentEvent] = []
@@ -100,14 +117,30 @@ class Swarm:
 
     async def _one(self, spec: AgentSpec) -> str:
         async with self._sem:
+            if self._fatal_error is not None:
+                raise self._fatal_error from None
+            if self._should_stop and self._should_stop():
+                raise Stopped("operator stopped queued work")
             if self.exhausted():
                 raise PoolExhausted(f"token pool exhausted ({self.used_tokens}/{self.max_tokens})")
             try:
                 reply = await asyncio.wait_for(self._fn(spec), self.agent_timeout)
-            except PoolExhausted:
+            except FatalAgentStateError as exc:
+                if self._fatal_error is None:
+                    self._fatal_error = exc
+                raise
+            except (PoolExhausted, Stopped):
+                raise
+            except asyncio.CancelledError:
+                # A dispatched call may still have consumed quota.
+                self.events.append(
+                    AgentEvent(spec.block, spec.role, spec.seat, 0, False, usage_known=False)
+                )
                 raise
             except Exception as exc:  # one failed agent must not sink the phase
-                self.events.append(AgentEvent(spec.block, spec.role, spec.seat, 0, False))
+                self.events.append(
+                    AgentEvent(spec.block, spec.role, spec.seat, 0, False, usage_known=False)
+                )
                 return f"(agent failed: {type(exc).__name__}: {exc})"
             self.used_tokens += reply.tokens
             if not reply.text.strip() or reply.text.startswith("(budget exhausted"):
@@ -150,13 +183,28 @@ class Swarm:
                 out[index] = await self._one(spec)
 
         workers = [asyncio.create_task(worker()) for _ in range(min(len(specs), self.max_parallel))]
+        self._workers.update(workers)
+        batch = asyncio.gather(*workers)
         try:
-            await asyncio.gather(*workers)
+            if self._should_stop:
+                while not batch.done():
+                    await asyncio.wait([batch], timeout=0.25)
+                    if self._should_stop():
+                        raise Stopped("operator stopped active work")
+            await batch
         except BaseException:
-            for task in workers:
-                task.cancel()
-            await asyncio.gather(*workers, return_exceptions=True)
+            # Parallel batches share the journal. Drain them before reporting a
+            # budget or stop result because cancellation can expose a write failure.
+            active_workers = tuple(self._workers)
+            for task in active_workers:
+                if not task.done() and not task.cancelling():
+                    task.cancel()
+            await asyncio.gather(batch, *active_workers, return_exceptions=True)
+            if self._fatal_error is not None:
+                raise self._fatal_error from None
             raise
+        finally:
+            self._workers.difference_update(workers)
         return out
 
     def failed_by_block(self) -> dict[str, int]:

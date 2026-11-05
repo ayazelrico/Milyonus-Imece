@@ -9,15 +9,17 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import hashlib
 import json
 import os
+import platform
 import re
 import shutil
 import signal
 import sys
 import tempfile
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 from typing import Literal
 
@@ -25,6 +27,17 @@ from milyonus.security.redact import redact
 
 _FILES = re.compile(r"^```python\s+file=([^\s`]+)\s*\n(.*?)^```\s*$", re.M | re.S)
 _LIMIT = 16_384
+# These observations do not establish a defect in builder-produced code.
+NON_BUILDER_FAILURES = frozenset(
+    {
+        "oracle_missing",
+        "oracle_syntax_error",
+        "sandbox_unavailable",
+        "timeout",
+        "sandbox_launch_error",
+        "docker_infrastructure_error",
+    }
+)
 
 
 def _validate_path(name: str) -> None:
@@ -59,6 +72,10 @@ class ExecutionResult:
     output: str
     returncode: int | None = None
     backend: str = ""
+    evidence_id: str | None = None
+    reused: bool = False
+    failure_class: str | None = None
+    output_truncated: bool = False
 
 
 @dataclass
@@ -67,11 +84,15 @@ class PythonExecutor:
     image: str = "python:3.12-slim"
     timeout: float = 10.0
     max_parallel: int = 4
+    cache_path: Path | None = None
+    approved_evidence: frozenset[str] = frozenset()
 
     def __post_init__(self) -> None:
         if self.timeout <= 0 or self.max_parallel < 1:
             raise ValueError("execution timeout and concurrency must be positive")
         self._sem = asyncio.Semaphore(self.max_parallel)
+        self.processes_started = 0
+        self._policy_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
     def available(self) -> bool:
         if self.backend == "docker":
@@ -148,10 +169,60 @@ class PythonExecutor:
             str(root / "oracle.py"),
         ]
 
-    async def run(self, files: dict[str, str], test: str) -> ExecutionResult:
-        if not files or not test.strip():
+    async def run(
+        self, files: dict[str, str], test: str, *, deterministic: bool = False
+    ) -> ExecutionResult:
+        # Generated tests are untrusted/non-deterministic by default. Only a
+        # trusted caller can opt into reuse with a pinned Docker image.
+        if self.backend != "docker" or not re.fullmatch(r".+@sha256:[0-9a-f]{64}", self.image):
+            return await self._execute(files, test)
+        from milyonus.imece.evidence import EvidenceCache, evidence_key
+
+        environment = {
+            "backend": self.backend,
+            "image": self.image,
+            "timeout": self.timeout,
+            "executor": self._policy_hash,
+            "architecture": platform.machine(),
+        }
+        key = evidence_key(files, test, environment, "isolated-python-v1")
+        if self.cache_path is None or (not deterministic and key not in self.approved_evidence):
+            return replace(await self._execute(files, test), evidence_id=key)
+        cache = EvidenceCache(self.cache_path)
+        try:
+            cached = cache.get(key)
+            if cached is not None:
+                return replace(cached, evidence_id=key, reused=True)
+            result = replace(await self._execute(files, test), evidence_id=key)
+            cache.put(key, result)
+            return result
+        finally:
+            cache.close()
+
+    async def _execute(self, files: dict[str, str], test: str) -> ExecutionResult:
+        if not test.strip():
             return ExecutionResult(
-                False, "missing Python artifacts or executable test", backend=self.backend
+                False,
+                "missing executable test",
+                backend=self.backend,
+                failure_class="oracle_missing",
+            )
+        try:
+            # Compile only: never import or execute generated oracle code on the host.
+            compile(test, "oracle.py", "exec")
+        except (SyntaxError, ValueError) as exc:
+            return ExecutionResult(
+                False,
+                redact(f"invalid oracle: {exc}"),
+                backend=self.backend,
+                failure_class="oracle_syntax_error",
+            )
+        if not files:
+            return ExecutionResult(
+                False,
+                "missing Python artifacts",
+                backend=self.backend,
+                failure_class="candidate_missing_files",
             )
         # Validate caller-supplied mappings as strictly as extracted artifacts.
         try:
@@ -160,10 +231,15 @@ class PythonExecutor:
             if len(files) > 32 or sum(len(c.encode()) for c in files.values()) > 256_000:
                 raise ValueError("Python artifact exceeds file/size limits")
         except ValueError as exc:
-            return ExecutionResult(False, str(exc), backend=self.backend)
+            return ExecutionResult(
+                False, str(exc), backend=self.backend, failure_class="candidate_invalid_files"
+            )
         if not self.available():
             return ExecutionResult(
-                False, f"sandbox unavailable: {self.backend}", backend=self.backend
+                False,
+                f"sandbox unavailable: {self.backend}",
+                backend=self.backend,
+                failure_class="sandbox_unavailable",
             )
         async with self._sem:
             with tempfile.TemporaryDirectory(prefix="milyonus-exec-") as tmp:
@@ -178,19 +254,36 @@ class PythonExecutor:
                 (root / "oracle.py").write_text(test, encoding="utf-8")
                 (root / "oracle.py").chmod(0o444)
                 container = "milyonus-test-" + uuid.uuid4().hex
-                proc = await asyncio.create_subprocess_exec(
-                    *self._argv(root, container),
-                    cwd=root / "code",
-                    env={"PATH": os.defpath, "LANG": "C.UTF-8"},
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.STDOUT,
-                    start_new_session=True,
-                )
+                try:
+                    proc = await asyncio.create_subprocess_exec(
+                        *self._argv(root, container),
+                        cwd=root / "code",
+                        env={"PATH": os.defpath, "LANG": "C.UTF-8"},
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.STDOUT,
+                        start_new_session=True,
+                    )
+                except OSError as exc:
+                    return ExecutionResult(
+                        False,
+                        redact(f"sandbox launch failed: {exc}"),
+                        backend=self.backend,
+                        failure_class=(
+                            "sandbox_unavailable"
+                            if isinstance(exc, FileNotFoundError)
+                            else "sandbox_launch_error"
+                        ),
+                    )
+                self.processes_started += 1
                 output = bytearray()
+                output_truncated = False
 
                 async def collect() -> None:
+                    nonlocal output_truncated
                     assert proc.stdout is not None
                     while chunk := await proc.stdout.read(4096):
+                        if len(output) + len(chunk) > _LIMIT:
+                            output_truncated = True
                         output.extend(chunk[: max(0, _LIMIT - len(output))])
                     await proc.wait()
 
@@ -201,25 +294,47 @@ class PythonExecutor:
                         os.killpg(proc.pid, signal.SIGKILL)
                     await proc.wait()
                     if self.backend == "docker":
-                        cleanup = await asyncio.create_subprocess_exec(
-                            "docker",
-                            "rm",
-                            "-f",
-                            container,
-                            stdout=asyncio.subprocess.DEVNULL,
-                            stderr=asyncio.subprocess.DEVNULL,
-                        )
-                        with contextlib.suppress(TimeoutError):
-                            await asyncio.wait_for(cleanup.wait(), 5)
-                        if cleanup.returncode is None:
-                            cleanup.kill()
-                            await cleanup.wait()
+                        # Cleanup must not hide the original timeout/cancellation.
+                        with contextlib.suppress(OSError):
+                            await self._remove_container(container)
                     if isinstance(exc, asyncio.CancelledError):
                         raise
-                    return ExecutionResult(False, "sandbox test timed out", backend=self.backend)
+                    return ExecutionResult(
+                        False,
+                        "sandbox test timed out",
+                        backend=self.backend,
+                        failure_class="timeout",
+                    )
+                failure_class = None
+                if proc.returncode != 0:
+                    # Docker reserves these codes for failures to run the command.
+                    # Other exits (including AssertionError) cannot identify which
+                    # side of the candidate/oracle contract caused the failure.
+                    failure_class = (
+                        "docker_infrastructure_error"
+                        if self.backend == "docker" and proc.returncode in (125, 126, 127)
+                        else "candidate_or_oracle_runtime"
+                    )
                 return ExecutionResult(
                     proc.returncode == 0,
                     redact(output.decode("utf-8", "replace")),
                     proc.returncode,
                     self.backend,
+                    failure_class=failure_class,
+                    output_truncated=output_truncated,
                 )
+
+    async def _remove_container(self, container: str) -> None:
+        cleanup = await asyncio.create_subprocess_exec(
+            "docker",
+            "rm",
+            "-f",
+            container,
+            stdout=asyncio.subprocess.DEVNULL,
+            stderr=asyncio.subprocess.DEVNULL,
+        )
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(cleanup.wait(), 5)
+        if cleanup.returncode is None:
+            cleanup.kill()
+            await cleanup.wait()

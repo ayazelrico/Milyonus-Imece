@@ -1391,7 +1391,9 @@ large repeated real-model evaluation and third-party audit remain open.
 - [x] Vector/embedding layer for memory: trust-weighted semantic recall (hashing default, opt-in OpenAI)
 - [x] Honcho-style cross-session user model — per-user scoped, verified-growth, dialectic recall
 - [x] PoisonBench v3: multi-step scenarios (patient / distributed / T0-spoof / semantic), pinned as a regression gate
-- [ ] Like-for-like Hermes harness + third-party audit
+- [x] Like-for-like Hermes harness (`evals/hermes`) — third-party audit still external
+- [x] Shell sandboxes: local · docker · ssh · modal · daytona (fail-closed)
+- [x] Web surface #7 (API + SPA) — see `PLAN-WEB.md` / `web/`
 
 ---
 

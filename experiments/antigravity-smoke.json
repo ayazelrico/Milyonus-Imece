@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "manifest": {
+    "protocol": {
+      "schema_version": 1,
+      "scorer_hash": "59a9247206fb482dff321a62232bc769030f4921a863ca687535ec11ebbb7f4c",
+      "tasks": [
+        {
+          "id": "clamp",
+          "contract": "761bb3f69dec2a23ff4d30e6b57663ff572d9fdcdd76892b12e6b7145448031a",
+          "oracle": "3145d2bb5c7789b9d1795881420f94d83fe67802881a37090e71aedbbb3663b4"
+        },
+        {
+          "id": "merge_intervals",
+          "contract": "d38ec72439766f3b70fbc4b1252dad92f88f04d1018408de3818118c43a1ef56",
+          "oracle": "31131bf9db6ab0327e0756a3906377ede8549850e7ac7720058ba88ab1b9802b"
+        },
+        {
+          "id": "iban_tr",
+          "contract": "1352de2aa4b23f9ba1189edf9e06b696c8b2d2890f5d958ab2b59e613342e821",
+          "oracle": "4b3b4e9276c427f3fd66c4bb1aa7d58845988826ad2821b99c33611a615303f0"
+        }
+      ],
+      "models": {
+        "pool": "gemini-3.8-flash-high",
+        "framing": "gemini-3.8-flash-high",
+        "test_design": "gemini-3.8-flash-high",
+        "red_team": "gemini-3.8-flash-high",
+        "evidence_audit": "gemini-3.8-flash-high",
+        "compliance": "gemini-3.8-flash-high",
+        "observer": "gemini-3.8-flash-high",
+        "approval": "gemini-3.8-flash-high",
+        "council:correctness": "gemini-3.8-flash-high",
+        "council:risk": "gemini-3.8-flash-high",
+        "council:user_impact": "gemini-3.8-flash-high",
+        "council:cost_speed": "gemini-3.8-flash-high",
+        "council:devils_advocate": "gemini-3.8-flash-high"
+      },
+      "runtime": {
+        "backend": "macos",
+        "image": "python:3.12-slim",
+        "python": "3.12.14",
+        "platform": "macOS-26.6.2-arm64-arm-64bit",
+        "engine": "antigravity",
+        "cli": {
+          "executable": "/Users/ayazelrico/.local/bin/agy",
+          "version": null,
+          "sha256": "ec8cd97638cd6dc883b36ee015729ec4a209c5d3721ef44631ff0d28daa2f77f"
+        },
+        "agent_policy": "text-only-seatbelt-oracle-deny-v1"
+      },
+      "seed": 0,
+      "repeats": 1,
+      "limits": {
+        "max_tokens": 250000,
+        "max_rounds": 2,
+        "test_timeout": 10.0,
+        "max_cli_calls": null
+      }
+    },
+    "protocol_hash": "f4b92b3b42e94526e1b8355d3e5af95cf61f878e3e760ee26d5e3828667ed754",
+    "settings": {
+      "agents": 17,
+      "max_parallel": 4,
+      "max_tokens": 250000,
+      "max_rounds": 2,
+      "max_clusters": 9,
+      "max_options": 12,
+      "shortlist": 4,
+      "pass_threshold": 0.6,
+      "verification": "python",
+      "sandbox_backend": "macos",
+      "sandbox_image": "python:3.12-slim",
+      "test_timeout": 10.0,
+      "agent_timeout": 120.0,
+      "cell_size": 9,
+      "irade": {
+        "veto_floor": 0.5,
+        "hard_veto_floor": 0.2,
+        "spread_threshold": 0.15,
+        "min_vote_share": 0.6,
+        "min_confidence": 0.55,
+        "audit_rate": 0.05,
+        "precedent_confidence": 0.8
+      },
+      "approved_evidence": [],
+      "adaptive_production": false
+    },
+    "revision": "7764e344e3f77f10eca1b1fe095c474a20347401",
+    "implementation_hash": "4377a237b27356f75228a29040103fdaf9efd74f324acd6597c7323587e61a2a",
+    "engine": "antigravity",
+    "max_output_tokens": null,
+    "catalog_prices": null,
+    "shared_model_limitation": "Shared CLI model identifiers by seat: {\"gemini-3.8-flash-high\": [\"pool\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence."
+  },
+  "source": "antigravity",
+  "engine": "antigravity",
+  "models": {
+    "pool": "gemini-3.8-flash-high",
+    "framing": "gemini-3.8-flash-high",
+    "test_design": "gemini-3.8-flash-high",
+    "red_team": "gemini-3.8-flash-high",
+    "evidence_audit": "gemini-3.8-flash-high",
+    "compliance": "gemini-3.8-flash-high",
+    "observer": "gemini-3.8-flash-high",
+    "approval": "gemini-3.8-flash-high",
+    "council:correctness": "gemini-3.8-flash-high",
+    "council:risk": "gemini-3.8-flash-high",
+    "council:user_impact": "gemini-3.8-flash-high",
+    "council:cost_speed": "gemini-3.8-flash-high",
+    "council:devils_advocate": "gemini-3.8-flash-high"
+  },
+  "runs": [],
+  "transcripts": [],
+  "ledger": null,
+  "catalog_prices": null,
+  "price_note": "CLI usage is not a billing receipt. Dollar cost is unknown (null), including failures/cancellations; no subscription-to-token price is invented. Token totals are null when any call lacks usage; observed_tokens is only a known lower bound.",
+  "independence_warnings": [
+    "Shared CLI model identifiers by seat: {\"gemini-3.8-flash-high\": [\"pool\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence."
+  ],
+  "shared_model_limitation": "Shared CLI model identifiers by seat: {\"gemini-3.8-flash-high\": [\"pool\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence.",
+  "state": "running",
+  "summary": {
+    "runs": 0,
+    "accepted": 0,
+    "verified_successes": 0,
+    "accepted_deliverable_rate": null,
+    "verified_success_rate": null,
+    "false_accepts": 0,
+    "total_tokens": 0,
+    "observed_tokens": 0,
+    "unknown_token_runs": 0,
+    "cost_usd": null,
+    "cost_estimated": false,
+    "cost_per_accepted_usd": null,
+    "cost_per_verified_success_usd": null,
+    "calibration_ece": null,
+    "calibration_samples": 0
+  },
+  "accounting": {
+    "cost_usd": null,
+    "cost_status": "unknown",
+    "token_budget": "completed-calls-only",
+    "cli_call_limit": null,
+    "cli_calls_reserved": 0,
+    "unknown_usage_calls": 0
+  },
+  "updated_at": "2026-11-03T14:50:56.479243+00:00"
+}

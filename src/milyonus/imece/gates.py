@@ -191,7 +191,8 @@ class GateReport:
         ]
         lines += [f"- [{f.source}/{f.severity}] {clip(f.text, 300)}" for f in self.findings[:12]]
         lines += [
-            f"- FAILED {r['test']}: {clip(str(r.get('output', '')), 1200)}"
+            f"- FAILED {r['test']} [failure_class={r.get('failure_class') or 'unknown'}]: "
+            f"{clip(str(r.get('output', '')), 1200)}"
             for r in self.test_results
             if not r["passed"]
         ]
@@ -417,7 +418,11 @@ async def reality(
                         "passed": outcome.passed,
                         "source": rep.verification,
                         "output": outcome.output[:2000],
+                        "output_truncated": outcome.output_truncated or len(outcome.output) > 2000,
                         "returncode": outcome.returncode,
+                        "evidence_id": outcome.evidence_id,
+                        "reused": outcome.reused,
+                        "failure_class": outcome.failure_class,
                     }
                 )
 

@@ -1,0 +1,17 @@
+# Lean Antigravity CLI trial — serial calls to conserve subscription quota.
+# Engine/models come from `evals.imece.run --engine antigravity --model …`.
+[provider]
+name = "openai"
+model = "placeholder"
+verifier_model = "placeholder"
+base_url = "https://openrouter.ai/api/v1"
+api_key_env = "OPENROUTER_API_KEY"
+
+[imece]
+agents = 5
+max_parallel = 1
+max_rounds = 2
+max_tokens = 250000
+max_output_tokens = 8192
+verification = "python"
+agent_timeout = 300

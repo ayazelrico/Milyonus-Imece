@@ -381,6 +381,18 @@ class MemoryStore:
         )
         self._conn.commit()
 
+    def preview_revoke_by_source(self, source_uri: str) -> list[str]:
+        """Return the complete cascade without modifying memory or its ledger."""
+        rows = self._conn.execute(
+            "WITH RECURSIVE affected(id) AS ("
+            "SELECT m.id FROM memory m LEFT JOIN memory_confirmations c ON c.item_id=m.id "
+            "WHERE (m.source_uri=? OR c.source_uri=?) AND m.state IN ('active','pending') "
+            "UNION SELECT m.id FROM memory m JOIN affected a ON m.derived_from=a.id "
+            "WHERE m.state IN ('active','pending')) SELECT id FROM affected ORDER BY id",
+            (source_uri, source_uri),
+        ).fetchall()
+        return [row["id"] for row in rows]
+
     def revoke_by_source(self, source_uri: str) -> list[str]:
         """Revoke all items from a source and everything derived from them
         (cascade, PLAN §4.5). Returns the ids revoked."""

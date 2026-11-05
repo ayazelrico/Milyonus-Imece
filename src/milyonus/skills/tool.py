@@ -40,10 +40,14 @@ def make_skill_tools(engine: SkillEngine, manager: SkillManager) -> list[Tool]:
                 tags=args.get("tags", []),
                 provenance="self-learned",
             )
-            result = await manager.create(meta, body, force=args.get("force", False))
+            result = await manager.create(
+                meta, body, force=args.get("force", False), stage_only=True
+            )
             return result.message
         if action == "patch":
-            result = await manager.patch(name, body, force=args.get("force", False))
+            result = await manager.patch(
+                name, body, force=args.get("force", False), stage_only=True
+            )
             return result.message
         return f"unknown action: {action}"
 

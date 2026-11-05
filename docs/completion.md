@@ -102,8 +102,9 @@ Henüz doğrulanmamış veya dış çalışma gerektiren işler:
    doğrulaması. Maliyet rakamları token fiyatı hesabıdır, fatura değildir.
 3. Hermes ile aynı modeller/araçlar/bütçe/görevlerle karşılaştırmalı çalışma ve
    bağımsız üçüncü taraf güvenlik denetimi.
-4. SSH/Modal/Daytona shell adaptörleri: eski planda listelenmişlerdi, uygulama
-   mevcut değildir. Seçildiklerinde açık hata alınır; doctor bunu raporlar.
+4. SSH/Modal/Daytona shell adaptörleri uygulandı (`security/sandbox/backends.py`);
+   kimlik bilgisi yoksa fail-closed (yerel shell'e düşmez). Doctor durumu raporlar.
+   Modal/Daytona v1 komut odaklıdır; tam workspace senkronu sonraki sertleştirmedir.
 5. Model-judged modun gerçek test yürütmesiyle aynı güvenceyi vermemesi;
    `verification="python"` kod işleri için açıkça seçilmelidir.
 6. Paylaşılan token sınırı tamamlanan çağrılar üzerinden izlenir; uçuş halindeki

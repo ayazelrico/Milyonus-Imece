@@ -1,0 +1,1743 @@
+{
+  "schema_version": 1,
+  "suite": "core-v1",
+  "tasks": [
+    {
+      "id": "stable_unique",
+      "category": "code",
+      "contract": "Input: list of integers. Return first occurrences in original order.",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            2,
+            1,
+            2,
+            3,
+            1
+          ],
+          "expected": [
+            2,
+            1,
+            3
+          ]
+        },
+        {
+          "input": [
+            0,
+            -1,
+            0
+          ],
+          "expected": [
+            0,
+            -1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "runs",
+      "category": "code",
+      "contract": "Input: list of integers. Return consecutive runs as [value,count] pairs.",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            1,
+            1,
+            2,
+            1
+          ],
+          "expected": [
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              1
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        },
+        {
+          "input": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            [
+              0,
+              3
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rotate",
+      "category": "code",
+      "contract": "Input: {items: integer list, k: nonnegative integer}. Rotate items right by k; empty stays empty.",
+      "cases": [
+        {
+          "input": {
+            "items": [],
+            "k": 8
+          },
+          "expected": []
+        },
+        {
+          "input": {
+            "items": [
+              1,
+              2,
+              3
+            ],
+            "k": 4
+          },
+          "expected": [
+            3,
+            1,
+            2
+          ]
+        },
+        {
+          "input": {
+            "items": [
+              1,
+              2
+            ],
+            "k": 0
+          },
+          "expected": [
+            1,
+            2
+          ]
+        }
+      ]
+    },
+    {
+      "id": "window_sums",
+      "category": "code",
+      "contract": "Input: {items: integer list, k: positive integer}. Return sums of all contiguous windows of exactly k elements.",
+      "cases": [
+        {
+          "input": {
+            "items": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "k": 2
+          },
+          "expected": [
+            3,
+            5,
+            7
+          ]
+        },
+        {
+          "input": {
+            "items": [],
+            "k": 1
+          },
+          "expected": []
+        },
+        {
+          "input": {
+            "items": [
+              -2,
+              3
+            ],
+            "k": 3
+          },
+          "expected": []
+        }
+      ]
+    },
+    {
+      "id": "balanced",
+      "category": "code",
+      "contract": "Input: string containing only ()[]{}. Return whether brackets are correctly nested and balanced.",
+      "cases": [
+        {
+          "input": "",
+          "expected": true
+        },
+        {
+          "input": "([]{})",
+          "expected": true
+        },
+        {
+          "input": "([)]",
+          "expected": false
+        },
+        {
+          "input": ")(",
+          "expected": false
+        }
+      ]
+    },
+    {
+      "id": "gcd_list",
+      "category": "code",
+      "contract": "Input: integer list. Return nonnegative greatest common divisor of all values; empty returns 0.",
+      "cases": [
+        {
+          "input": [],
+          "expected": 0
+        },
+        {
+          "input": [
+            12,
+            -18,
+            0
+          ],
+          "expected": 6
+        },
+        {
+          "input": [
+            7,
+            11
+          ],
+          "expected": 1
+        }
+      ]
+    },
+    {
+      "id": "divisors",
+      "category": "code",
+      "contract": "Input: positive integer. Return all positive divisors ascending.",
+      "cases": [
+        {
+          "input": 1,
+          "expected": [
+            1
+          ]
+        },
+        {
+          "input": 12,
+          "expected": [
+            1,
+            2,
+            3,
+            4,
+            6,
+            12
+          ]
+        },
+        {
+          "input": 13,
+          "expected": [
+            1,
+            13
+          ]
+        }
+      ]
+    },
+    {
+      "id": "flatten",
+      "category": "code",
+      "contract": "Input: nested lists with integer leaves. Return all leaves left-to-right as a flat list.",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            1,
+            [
+              2,
+              [],
+              [
+                3
+              ]
+            ],
+            4
+          ],
+          "expected": [
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "input": [
+            [
+              [
+                -1
+              ]
+            ]
+          ],
+          "expected": [
+            -1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "transpose",
+      "category": "code",
+      "contract": "Input: rectangular matrix of integers. Return transpose as lists; [] and rows of length zero return [].",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            [],
+            []
+          ],
+          "expected": []
+        },
+        {
+          "input": [
+            [
+              1,
+              2,
+              3
+            ],
+            [
+              4,
+              5,
+              6
+            ]
+          ],
+          "expected": [
+            [
+              1,
+              4
+            ],
+            [
+              2,
+              5
+            ],
+            [
+              3,
+              6
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prime_flags",
+      "category": "code",
+      "contract": "Input: integer list. Return bool for primality of each integer (values below 2 are not prime).",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            -1,
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "expected": [
+            false,
+            false,
+            false,
+            true,
+            true,
+            false
+          ]
+        },
+        {
+          "input": [
+            49,
+            97
+          ],
+          "expected": [
+            false,
+            true
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fix_binary_search",
+      "category": "bugfix",
+      "contract": "Repair binary-search boundary behavior: input {items: sorted integer list, target: integer}; return first index of target or -1.",
+      "cases": [
+        {
+          "input": {
+            "items": [],
+            "target": 1
+          },
+          "expected": -1
+        },
+        {
+          "input": {
+            "items": [
+              1,
+              2,
+              2,
+              2,
+              5
+            ],
+            "target": 2
+          },
+          "expected": 1
+        },
+        {
+          "input": {
+            "items": [
+              1,
+              2
+            ],
+            "target": 3
+          },
+          "expected": -1
+        }
+      ]
+    },
+    {
+      "id": "fix_chunk_tail",
+      "category": "bugfix",
+      "contract": "Repair dropped-tail chunking: input {items: integer list,k: positive integer}. Return consecutive chunks, retaining the shorter final chunk.",
+      "cases": [
+        {
+          "input": {
+            "items": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "k": 2
+          },
+          "expected": [
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              5
+            ]
+          ]
+        },
+        {
+          "input": {
+            "items": [],
+            "k": 3
+          },
+          "expected": []
+        },
+        {
+          "input": {
+            "items": [
+              1
+            ],
+            "k": 4
+          },
+          "expected": [
+            [
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fix_negative_max",
+      "category": "bugfix",
+      "contract": "Repair zero-initialized maximum: input nonempty integer list; return maximum including all-negative lists.",
+      "cases": [
+        {
+          "input": [
+            -8,
+            -3,
+            -5
+          ],
+          "expected": -3
+        },
+        {
+          "input": [
+            0
+          ],
+          "expected": 0
+        },
+        {
+          "input": [
+            1,
+            9,
+            2
+          ],
+          "expected": 9
+        }
+      ]
+    },
+    {
+      "id": "fix_even_median",
+      "category": "bugfix",
+      "contract": "Repair median: input nonempty integer list. Sort a copy; even sizes return mean of two central values.",
+      "cases": [
+        {
+          "input": [
+            9,
+            1,
+            3
+          ],
+          "expected": 3
+        },
+        {
+          "input": [
+            4,
+            1,
+            2,
+            3
+          ],
+          "expected": 2.5
+        },
+        {
+          "input": [
+            -4,
+            -2
+          ],
+          "expected": -3
+        }
+      ]
+    },
+    {
+      "id": "fix_empty_prefix",
+      "category": "bugfix",
+      "contract": "Repair common-prefix edge cases: input list of strings; return longest shared prefix, empty list returns empty string.",
+      "cases": [
+        {
+          "input": [],
+          "expected": ""
+        },
+        {
+          "input": [
+            "flower",
+            "flow",
+            "flight"
+          ],
+          "expected": "fl"
+        },
+        {
+          "input": [
+            "abc",
+            ""
+          ],
+          "expected": ""
+        }
+      ]
+    },
+    {
+      "id": "fix_duplicate_pairs",
+      "category": "bugfix",
+      "contract": "Repair pair counting: input integer list; return number of index pairs i<j whose values are equal, including multiplicity.",
+      "cases": [
+        {
+          "input": [],
+          "expected": 0
+        },
+        {
+          "input": [
+            1,
+            1,
+            1,
+            2,
+            2
+          ],
+          "expected": 4
+        },
+        {
+          "input": [
+            1,
+            2,
+            3
+          ],
+          "expected": 0
+        }
+      ]
+    },
+    {
+      "id": "fix_leap_year",
+      "category": "bugfix",
+      "contract": "Repair century rule: input Gregorian year integer 1..9999; return bool leap year.",
+      "cases": [
+        {
+          "input": 1900,
+          "expected": false
+        },
+        {
+          "input": 2000,
+          "expected": true
+        },
+        {
+          "input": 2024,
+          "expected": true
+        },
+        {
+          "input": 2023,
+          "expected": false
+        }
+      ]
+    },
+    {
+      "id": "fix_overlap",
+      "category": "bugfix",
+      "contract": "Repair half-open interval overlap: input [[a,b],[c,d]], integer endpoints with a<=b,c<=d; empty intervals never overlap. Return bool.",
+      "cases": [
+        {
+          "input": [
+            [
+              1,
+              3
+            ],
+            [
+              3,
+              5
+            ]
+          ],
+          "expected": false
+        },
+        {
+          "input": [
+            [
+              1,
+              5
+            ],
+            [
+              2,
+              4
+            ]
+          ],
+          "expected": true
+        },
+        {
+          "input": [
+            [
+              2,
+              2
+            ],
+            [
+              1,
+              3
+            ]
+          ],
+          "expected": false
+        }
+      ]
+    },
+    {
+      "id": "fix_percent_decode",
+      "category": "bugfix",
+      "contract": "Repair URL query decoding: input string of ASCII URL-encoded text; decode percent escapes as UTF-8 and plus as space. Malformed percent escapes stay literal.",
+      "cases": [
+        {
+          "input": "a+b%2Bc",
+          "expected": "a b+c"
+        },
+        {
+          "input": "%C3%A7",
+          "expected": "ç"
+        },
+        {
+          "input": "%ZZ",
+          "expected": "%ZZ"
+        }
+      ]
+    },
+    {
+      "id": "fix_truthy_zero",
+      "category": "bugfix",
+      "contract": "Repair fallback handling: input list of JSON values. Return first value that is not null; false, zero and empty strings count. If all null return null.",
+      "cases": [
+        {
+          "input": [
+            null,
+            0,
+            5
+          ],
+          "expected": 0
+        },
+        {
+          "input": [
+            null,
+            false,
+            1
+          ],
+          "expected": false
+        },
+        {
+          "input": [
+            null,
+            "",
+            "x"
+          ],
+          "expected": ""
+        },
+        {
+          "input": [],
+          "expected": null
+        }
+      ]
+    },
+    {
+      "id": "group_totals",
+      "category": "transform",
+      "contract": "Input: list of {group:string, amount:integer}. Return dictionary of amount sums by group.",
+      "cases": [
+        {
+          "input": [],
+          "expected": {}
+        },
+        {
+          "input": [
+            {
+              "group": "a",
+              "amount": 3
+            },
+            {
+              "group": "b",
+              "amount": -1
+            },
+            {
+              "group": "a",
+              "amount": 2
+            }
+          ],
+          "expected": {
+            "a": 5,
+            "b": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "csv_rows",
+      "category": "transform",
+      "contract": "Input: CSV string with header, using comma delimiter and standard double-quote escaping. Return list of dictionaries; empty string returns []. All rows match header width.",
+      "cases": [
+        {
+          "input": "",
+          "expected": []
+        },
+        {
+          "input": "a,b\n1,2\n",
+          "expected": [
+            {
+              "a": "1",
+              "b": "2"
+            }
+          ]
+        },
+        {
+          "input": "name,note\nAda,\"a,b\"\n",
+          "expected": [
+            {
+              "name": "Ada",
+              "note": "a,b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "invert_multimap",
+      "category": "transform",
+      "contract": "Input: dictionary of strings to lists of strings. Invert into value->sorted unique keys; omit empty groups.",
+      "cases": [
+        {
+          "input": {},
+          "expected": {}
+        },
+        {
+          "input": {
+            "b": [
+              "x",
+              "x"
+            ],
+            "a": [
+              "x",
+              "y"
+            ],
+            "c": []
+          },
+          "expected": {
+            "x": [
+              "a",
+              "b"
+            ],
+            "y": [
+              "a"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "pivot_counts",
+      "category": "transform",
+      "contract": "Input: list of [row,column] string pairs. Return nested dictionary row->column->occurrence count.",
+      "cases": [
+        {
+          "input": [],
+          "expected": {}
+        },
+        {
+          "input": [
+            [
+              "a",
+              "x"
+            ],
+            [
+              "b",
+              "x"
+            ],
+            [
+              "a",
+              "x"
+            ],
+            [
+              "a",
+              "y"
+            ]
+          ],
+          "expected": {
+            "a": {
+              "x": 2,
+              "y": 1
+            },
+            "b": {
+              "x": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "normalize_words",
+      "category": "transform",
+      "contract": "Input: ASCII string. Lowercase, split on arbitrary whitespace, and join words with single spaces.",
+      "cases": [
+        {
+          "input": "",
+          "expected": ""
+        },
+        {
+          "input": "  HELLO\tWorld\n",
+          "expected": "hello world"
+        },
+        {
+          "input": "A-B  C",
+          "expected": "a-b c"
+        }
+      ]
+    },
+    {
+      "id": "records_latest",
+      "category": "transform",
+      "contract": "Input: list of {id:string,version:integer,data:JSON}. Return one record per id sorted by id; highest version wins, last input wins ties.",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            {
+              "id": "a",
+              "version": 2,
+              "data": "x"
+            },
+            {
+              "id": "a",
+              "version": 1,
+              "data": "old"
+            },
+            {
+              "id": "a",
+              "version": 2,
+              "data": "y"
+            }
+          ],
+          "expected": [
+            {
+              "id": "a",
+              "version": 2,
+              "data": "y"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "query_pairs",
+      "category": "transform",
+      "contract": "Input: URL query string. Return list of [key,value] decoded pairs preserving order, duplicates, and blank values; use UTF-8 and plus-to-space.",
+      "cases": [
+        {
+          "input": "",
+          "expected": []
+        },
+        {
+          "input": "a=1&a=2&b=",
+          "expected": [
+            [
+              "a",
+              "1"
+            ],
+            [
+              "a",
+              "2"
+            ],
+            [
+              "b",
+              ""
+            ]
+          ]
+        },
+        {
+          "input": "x=a+b",
+          "expected": [
+            [
+              "x",
+              "a b"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "json_lines",
+      "category": "transform",
+      "contract": "Input: string of JSON lines. Ignore whitespace-only lines, parse the others, and return list of parsed values.",
+      "cases": [
+        {
+          "input": "",
+          "expected": []
+        },
+        {
+          "input": "1\n\n{\"a\":2}\nnull\n",
+          "expected": [
+            1,
+            {
+              "a": 2
+            },
+            null
+          ]
+        },
+        {
+          "input": " false\n",
+          "expected": [
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unflatten_keys",
+      "category": "transform",
+      "contract": "Input: dictionary with nonempty dot-separated string keys and JSON values; no path conflicts. Expand into nested dictionaries.",
+      "cases": [
+        {
+          "input": {},
+          "expected": {}
+        },
+        {
+          "input": {
+            "a.b": 1,
+            "a.c": 2,
+            "d": 3
+          },
+          "expected": {
+            "a": {
+              "b": 1,
+              "c": 2
+            },
+            "d": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "sort_records",
+      "category": "transform",
+      "contract": "Input: list of {name:string,score:integer}. Return records sorted by descending score then ascending name; exact ties stable.",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            {
+              "name": "b",
+              "score": 2
+            },
+            {
+              "name": "a",
+              "score": 2
+            },
+            {
+              "name": "c",
+              "score": 5
+            }
+          ],
+          "expected": [
+            {
+              "name": "c",
+              "score": 5
+            },
+            {
+              "name": "a",
+              "score": 2
+            },
+            {
+              "name": "b",
+              "score": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "left_join",
+      "category": "integration",
+      "contract": "Input: {left:list of records with id,right:list of records with unique id}. Return [leftRecord,rightRecordOrNull] for each left record in its order.",
+      "cases": [
+        {
+          "input": {
+            "left": [],
+            "right": []
+          },
+          "expected": []
+        },
+        {
+          "input": {
+            "left": [
+              {
+                "id": 2
+              },
+              {
+                "id": 1
+              }
+            ],
+            "right": [
+              {
+                "id": 1,
+                "v": "x"
+              }
+            ]
+          },
+          "expected": [
+            [
+              {
+                "id": 2
+              },
+              null
+            ],
+            [
+              {
+                "id": 1
+              },
+              {
+                "id": 1,
+                "v": "x"
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pagination",
+      "category": "integration",
+      "contract": "Input: list of pages; each page is list of {id:string} records. Concatenate, deduplicate by id keeping first occurrence in page order.",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            [
+              {
+                "id": "a"
+              }
+            ],
+            [],
+            [
+              {
+                "id": "a"
+              },
+              {
+                "id": "b"
+              }
+            ]
+          ],
+          "expected": [
+            {
+              "id": "a"
+            },
+            {
+              "id": "b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "retry_delays",
+      "category": "integration",
+      "contract": "Input: {base:positive integer, cap:positive integer, attempts:nonnegative integer}. Return capped exponential retry delays min(cap,base*2**i) for i=0..attempts-1.",
+      "cases": [
+        {
+          "input": {
+            "base": 2,
+            "cap": 5,
+            "attempts": 5
+          },
+          "expected": [
+            2,
+            4,
+            5,
+            5,
+            5
+          ]
+        },
+        {
+          "input": {
+            "base": 9,
+            "cap": 3,
+            "attempts": 1
+          },
+          "expected": [
+            3
+          ]
+        },
+        {
+          "input": {
+            "base": 1,
+            "cap": 5,
+            "attempts": 0
+          },
+          "expected": []
+        }
+      ]
+    },
+    {
+      "id": "idempotent_events",
+      "category": "integration",
+      "contract": "Input: list of {id:string,delta:integer}. Return total delta counting only the first event for each id.",
+      "cases": [
+        {
+          "input": [],
+          "expected": 0
+        },
+        {
+          "input": [
+            {
+              "id": "a",
+              "delta": 3
+            },
+            {
+              "id": "a",
+              "delta": 9
+            },
+            {
+              "id": "b",
+              "delta": -1
+            }
+          ],
+          "expected": 2
+        }
+      ]
+    },
+    {
+      "id": "http_retry",
+      "category": "integration",
+      "contract": "Input: list of HTTP status integers. Return bool list: retry only 408,429 and 500..599 inclusive.",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            200,
+            400,
+            408,
+            429,
+            499,
+            500,
+            599,
+            600
+          ],
+          "expected": [
+            false,
+            false,
+            true,
+            true,
+            false,
+            true,
+            true,
+            false
+          ]
+        }
+      ]
+    },
+    {
+      "id": "headers",
+      "category": "integration",
+      "contract": "Input: list of [ASCII header name, string value]. Return dict with lowercase names, trimming spaces/tabs from values; duplicate names joined with comma followed by space in input order.",
+      "cases": [
+        {
+          "input": [],
+          "expected": {}
+        },
+        {
+          "input": [
+            [
+              "X-A",
+              " 1 "
+            ],
+            [
+              "x-a",
+              "\t2"
+            ],
+            [
+              "B",
+              "z"
+            ]
+          ],
+          "expected": {
+            "x-a": "1, 2",
+            "b": "z"
+          }
+        }
+      ]
+    },
+    {
+      "id": "path_params",
+      "category": "integration",
+      "contract": "Input: {template:string,path:string} slash-separated paths without query. A template segment {name} matches one nonempty segment. Return parameter dict or null on mismatch; literal segments exact, preserve trailing slash.",
+      "cases": [
+        {
+          "input": {
+            "template": "/u/{id}",
+            "path": "/u/42"
+          },
+          "expected": {
+            "id": "42"
+          }
+        },
+        {
+          "input": {
+            "template": "/u/{id}",
+            "path": "/u/"
+          },
+          "expected": null
+        },
+        {
+          "input": {
+            "template": "/a",
+            "path": "/a/"
+          },
+          "expected": null
+        }
+      ]
+    },
+    {
+      "id": "config_overlay",
+      "category": "integration",
+      "contract": "Input: list of dictionaries. Merge left to right: later values replace earlier values wholesale, including nested objects and null. Return dictionary.",
+      "cases": [
+        {
+          "input": [],
+          "expected": {}
+        },
+        {
+          "input": [
+            {
+              "a": {
+                "x": 1
+              },
+              "b": 2
+            },
+            {
+              "a": {
+                "y": 3
+              },
+              "b": null
+            }
+          ],
+          "expected": {
+            "a": {
+              "y": 3
+            },
+            "b": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "dependency_order",
+      "category": "integration",
+      "contract": "Input: dictionary node->list of dependency nodes; all nodes present. Return lexicographically smallest valid topological order (smallest currently ready node each step), or null if cyclic.",
+      "cases": [
+        {
+          "input": {},
+          "expected": []
+        },
+        {
+          "input": {
+            "c": [
+              "a"
+            ],
+            "b": [],
+            "a": []
+          },
+          "expected": [
+            "a",
+            "b",
+            "c"
+          ]
+        },
+        {
+          "input": {
+            "a": [
+              "b"
+            ],
+            "b": [
+              "a"
+            ]
+          },
+          "expected": null
+        }
+      ]
+    },
+    {
+      "id": "balance_events",
+      "category": "integration",
+      "contract": "Input: {initial:integer,events:list of signed integers}. Apply in order; reject each event that would make balance negative. Return {balance:integer,rejected:list of zero-based event indices}. Initial is nonnegative.",
+      "cases": [
+        {
+          "input": {
+            "initial": 0,
+            "events": []
+          },
+          "expected": {
+            "balance": 0,
+            "rejected": []
+          }
+        },
+        {
+          "input": {
+            "initial": 3,
+            "events": [
+              -4,
+              2,
+              -5,
+              1
+            ]
+          },
+          "expected": {
+            "balance": 1,
+            "rejected": [
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "evidence_votes",
+      "category": "analysis",
+      "contract": "Input: list of {source:string,claim:string}. For each claim return count of distinct sources, duplicates ignored.",
+      "cases": [
+        {
+          "input": [],
+          "expected": {}
+        },
+        {
+          "input": [
+            {
+              "source": "a",
+              "claim": "x"
+            },
+            {
+              "source": "a",
+              "claim": "x"
+            },
+            {
+              "source": "b",
+              "claim": "x"
+            }
+          ],
+          "expected": {
+            "x": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "contradictions",
+      "category": "analysis",
+      "contract": "Input: list of {key:string,value:string}. Return sorted keys associated with more than one distinct value.",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            {
+              "key": "a",
+              "value": "x"
+            },
+            {
+              "key": "a",
+              "value": "y"
+            },
+            {
+              "key": "b",
+              "value": "z"
+            }
+          ],
+          "expected": [
+            "a"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "weighted_score",
+      "category": "analysis",
+      "contract": "Input: list of {score:integer,weight:nonnegative integer}. Return weighted mean, or null if total weight zero.",
+      "cases": [
+        {
+          "input": [],
+          "expected": null
+        },
+        {
+          "input": [
+            {
+              "score": 10,
+              "weight": 1
+            },
+            {
+              "score": 4,
+              "weight": 2
+            }
+          ],
+          "expected": 6
+        },
+        {
+          "input": [
+            {
+              "score": 9,
+              "weight": 0
+            }
+          ],
+          "expected": null
+        }
+      ]
+    },
+    {
+      "id": "pareto",
+      "category": "analysis",
+      "contract": "Input: list of [cost,quality] integer pairs. Return indices of nondominated points in input order. Dominance means cost<= and quality>= with at least one strict; duplicate points do not dominate each other.",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            [
+              2,
+              5
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              2,
+              5
+            ]
+          ],
+          "expected": [
+            0,
+            2,
+            3
+          ]
+        },
+        {
+          "input": [
+            [
+              1,
+              1
+            ],
+            [
+              1,
+              2
+            ]
+          ],
+          "expected": [
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coverage_gaps",
+      "category": "analysis",
+      "contract": "Input: {required:list of strings,covered:list of strings}. Return sorted unique required items absent from covered.",
+      "cases": [
+        {
+          "input": {
+            "required": [],
+            "covered": []
+          },
+          "expected": []
+        },
+        {
+          "input": {
+            "required": [
+              "b",
+              "a",
+              "b",
+              "c"
+            ],
+            "covered": [
+              "b",
+              "z"
+            ]
+          },
+          "expected": [
+            "a",
+            "c"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "confusion_counts",
+      "category": "analysis",
+      "contract": "Input: list of [actualBool,predictedBool]. Return dict tp,tn,fp,fn counts.",
+      "cases": [
+        {
+          "input": [],
+          "expected": {
+            "tp": 0,
+            "tn": 0,
+            "fp": 0,
+            "fn": 0
+          }
+        },
+        {
+          "input": [
+            [
+              true,
+              true
+            ],
+            [
+              false,
+              false
+            ],
+            [
+              false,
+              true
+            ],
+            [
+              true,
+              false
+            ]
+          ],
+          "expected": {
+            "tp": 1,
+            "tn": 1,
+            "fp": 1,
+            "fn": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "cost_per_success",
+      "category": "analysis",
+      "contract": "Input: list of {cost:number or null,success:bool}. Return sum of ALL costs divided by successes; null if any cost unknown or no successes.",
+      "cases": [
+        {
+          "input": [],
+          "expected": null
+        },
+        {
+          "input": [
+            {
+              "cost": 2,
+              "success": true
+            },
+            {
+              "cost": 4,
+              "success": false
+            }
+          ],
+          "expected": 6
+        },
+        {
+          "input": [
+            {
+              "cost": null,
+              "success": false
+            },
+            {
+              "cost": 1,
+              "success": true
+            }
+          ],
+          "expected": null
+        }
+      ]
+    },
+    {
+      "id": "longest_streak",
+      "category": "analysis",
+      "contract": "Input: list of booleans. Return length of longest consecutive true streak, empty returns 0.",
+      "cases": [
+        {
+          "input": [],
+          "expected": 0
+        },
+        {
+          "input": [
+            true,
+            true,
+            false,
+            true
+          ],
+          "expected": 2
+        },
+        {
+          "input": [
+            false,
+            false
+          ],
+          "expected": 0
+        },
+        {
+          "input": [
+            true,
+            true,
+            true
+          ],
+          "expected": 3
+        }
+      ]
+    },
+    {
+      "id": "rank_ties",
+      "category": "analysis",
+      "contract": "Input: integer score list. Return competition ranks descending (highest rank 1; ties share rank and leave gaps), in original order.",
+      "cases": [
+        {
+          "input": [],
+          "expected": []
+        },
+        {
+          "input": [
+            10,
+            20,
+            20,
+            5
+          ],
+          "expected": [
+            3,
+            1,
+            1,
+            4
+          ]
+        },
+        {
+          "input": [
+            4,
+            4
+          ],
+          "expected": [
+            1,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interval_coverage",
+      "category": "analysis",
+      "contract": "Input: list of integer [start,end] half-open intervals, start<=end. Return total length of union.",
+      "cases": [
+        {
+          "input": [],
+          "expected": 0
+        },
+        {
+          "input": [
+            [
+              1,
+              4
+            ],
+            [
+              3,
+              7
+            ],
+            [
+              9,
+              10
+            ]
+          ],
+          "expected": 7
+        },
+        {
+          "input": [
+            [
+              -3,
+              0
+            ],
+            [
+              -1,
+              2
+            ],
+            [
+              5,
+              5
+            ]
+          ],
+          "expected": 5
+        }
+      ]
+    }
+  ]
+}

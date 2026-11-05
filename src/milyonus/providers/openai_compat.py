@@ -139,6 +139,7 @@ class OpenAICompatProvider:
         # tool_calls arrive as indexed deltas; assemble by index.
         tools: dict[int, dict] = {}
         usage = Usage()
+        usage_seen = False
         stop_reason: str | None = None
         try:
             async with client.stream(
@@ -159,6 +160,7 @@ class OpenAICompatProvider:
                     event = json.loads(data)
                     if event.get("usage"):
                         u = event["usage"]
+                        usage_seen = "prompt_tokens" in u and "completion_tokens" in u
                         usage.input_tokens = u.get("prompt_tokens", usage.input_tokens)
                         usage.output_tokens = u.get("completion_tokens", usage.output_tokens)
                     for choice in event.get("choices", []):
@@ -191,7 +193,10 @@ class OpenAICompatProvider:
                             stop_reason = finish
             # Usage often arrives in a chunk AFTER finish_reason (stream_options
             # include_usage), so report it only once the stream has ended.
-            yield StreamEvent(kind="usage", usage=usage)
+            if usage_seen:
+                yield StreamEvent(kind="usage", usage=usage)
+            if stop_reason is None:
+                raise ProviderError("stream ended without a finish reason")
             yield StreamEvent(kind="done", stop_reason=stop_reason)
         finally:
             if owns_client:

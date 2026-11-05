@@ -62,3 +62,44 @@ def skills_why(name: str) -> None:
     refs = skill.reference_files()
     if refs:
         console.print(f"  references: {', '.join(refs)}")
+
+
+@skills_app.command("promote-repair")
+def skills_promote_repair(name: str, task_manifest: str) -> None:
+    """Promote a staged repair after replaying independently authored task oracles.
+
+    Supply a JSON object mapping task names to Python oracle file paths,
+    relative to the manifest. Each script imports the staged artifact.
+    """
+    import asyncio
+    import json
+    from pathlib import Path
+
+    from milyonus.skills.manage import SkillManager
+
+    path = Path(task_manifest)
+    try:
+        entries = json.loads(path.read_text("utf-8"))
+        if not isinstance(entries, dict) or not all(isinstance(p, str) for p in entries.values()):
+            raise ValueError("expected a JSON mapping of task labels to oracle paths")
+        tasks = {k: (path.parent / v).read_text("utf-8") for k, v in entries.items()}
+        result = asyncio.run(SkillManager().promote_repair(name, tasks))
+    except (OSError, ValueError, SyntaxError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(result.message, markup=False)
+    if not result.ok:
+        raise typer.Exit(1)
+
+
+@skills_app.command("revoke-oracle")
+def skills_revoke_oracle(sha256: str) -> None:
+    """Revoke an oracle for future promotion/use and withdraw dependent skills."""
+    from milyonus.skills.manage import SkillManager
+
+    try:
+        removed = SkillManager().revoke_oracle(sha256)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(f"Oracle revoked. Skills withdrawn: {len(removed)}", markup=False)
+    for name in removed:
+        console.print(name, markup=False)

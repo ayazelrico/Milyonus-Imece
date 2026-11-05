@@ -14,3 +14,12 @@ build/
 *.db-shm
 .DS_Store
 .milyonus-selfmod-pending.json
+web/node_modules/
+web/.npm-cache/
+web/*.tsbuildinfo
+experiments/*.lock
+experiments/*.log
+experiments/*.nohup
+experiments/*.journal/
+experiments/*.calls/
+docs/experiments/**/*.lock

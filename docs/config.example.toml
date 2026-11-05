@@ -26,6 +26,13 @@ env_passthrough = []
 enabled = false                 # opt-in, anonymous, off by default
 
 [imece]
+# Limit first-round builders using approach count and framing disagreements.
+adaptive_production = false
+# İsteğe bağlı: operatörün promote-repair ile yükselttiği canlı beceri adı.
+# Varsayılan None (kapalı); yalnızca hedefli onarım bağlamında örnek olarak kullanılır.
+# repair_skill = "reconcile-invoice"
+# Full evidence IDs of operator-reviewed deterministic artifact/check pairs.
+approved_evidence = []
 # Milyonus-Imece run (`milyonus imece run "<task>"`). 10,000 is the reference
 # distribution; `agents` scales it. 17 is the minimum (every mandatory function
 # keeps at least one agent). The 5-member IRADE council is outside this total.

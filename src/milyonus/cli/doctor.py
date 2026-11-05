@@ -104,31 +104,65 @@ def _sandbox_check() -> Check:
         return Check(
             "Sandbox", True, "local host shell (approval required); no container isolation"
         )
-    if backend != "docker":
+    if backend == "docker":
+        if not shutil.which("docker"):
+            return Check("Sandbox", False, "docker CLI is unavailable")
+        try:
+            result = subprocess.run(
+                ["docker", "image", "inspect", cfg.security.sandbox_image, "--format", "{{.Id}}"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return Check("Sandbox", False, "Docker daemon unavailable or timed out")
         return Check(
-            "Sandbox", False, f"{backend} adapter is not implemented; choose local or docker"
+            "Sandbox",
+            result.returncode == 0,
+            f"docker · {cfg.security.sandbox_image} "
+            + (
+                "ready"
+                if result.returncode == 0
+                else "image/daemon unavailable; pre-pull the configured image"
+            ),
         )
-    if not shutil.which("docker"):
-        return Check("Sandbox", False, "docker CLI is unavailable")
-    try:
-        result = subprocess.run(
-            ["docker", "image", "inspect", cfg.security.sandbox_image, "--format", "{{.Id}}"],
-            capture_output=True,
-            text=True,
-            timeout=5,
+    if backend == "ssh":
+        target = os.environ.get("MILYONUS_SANDBOX_SSH_TARGET", "").strip()
+        if not target:
+            return Check(
+                "Sandbox",
+                False,
+                "ssh · set MILYONUS_SANDBOX_SSH_TARGET=user@host (no local fallback)",
+            )
+        if not shutil.which("ssh"):
+            return Check("Sandbox", False, "ssh CLI is unavailable")
+        return Check("Sandbox", True, f"ssh · {target} (BatchMode; workspace synced per call)")
+    if backend == "modal":
+        opted = os.environ.get("MILYONUS_SANDBOX_MODAL", "").strip().lower() in (
+            "1",
+            "true",
+            "yes",
         )
-    except (OSError, subprocess.TimeoutExpired):
-        return Check("Sandbox", False, "Docker daemon unavailable or timed out")
-    return Check(
-        "Sandbox",
-        result.returncode == 0,
-        f"docker · {cfg.security.sandbox_image} "
-        + (
-            "ready"
-            if result.returncode == 0
-            else "image/daemon unavailable; pre-pull the configured image"
-        ),
-    )
+        if not opted:
+            return Check(
+                "Sandbox",
+                False,
+                "modal · set MILYONUS_SANDBOX_MODAL=1 and log in to the Modal CLI",
+            )
+        if not shutil.which("modal"):
+            return Check("Sandbox", False, "modal CLI is unavailable on PATH")
+        return Check("Sandbox", True, "modal · CLI present (command-only sandbox)")
+    if backend == "daytona":
+        url = (os.environ.get("DAYTONA_API_URL") or "").strip()
+        key = (os.environ.get("DAYTONA_API_KEY") or "").strip()
+        if not url or not key:
+            return Check(
+                "Sandbox",
+                False,
+                "daytona · set DAYTONA_API_URL and DAYTONA_API_KEY (no local fallback)",
+            )
+        return Check("Sandbox", True, f"daytona · {url}")
+    return Check("Sandbox", False, f"unknown sandbox backend: {backend}")
 
 
 def run_doctor() -> int:

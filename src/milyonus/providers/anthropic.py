@@ -121,6 +121,7 @@ class AnthropicProvider:
         cur_tool: dict | None = None
         cur_json: list[str] = []
         usage = Usage()
+        input_seen = output_seen = completed = False
         try:
             async with client.stream(
                 "POST", self._url, headers=self._headers(), json=self._payload(request)
@@ -138,6 +139,7 @@ class AnthropicProvider:
                     etype = event.get("type")
                     if etype == "message_start":
                         u = event["message"].get("usage", {})
+                        input_seen = "input_tokens" in u
                         usage.input_tokens = u.get("input_tokens", 0)
                     elif etype == "content_block_start":
                         block = event["content_block"]
@@ -165,11 +167,16 @@ class AnthropicProvider:
                             cur_tool = None
                     elif etype == "message_delta":
                         u = event.get("usage", {})
+                        output_seen = "output_tokens" in u
                         usage.output_tokens = u.get("output_tokens", usage.output_tokens)
                         stop = event.get("delta", {}).get("stop_reason")
                         if stop:
-                            yield StreamEvent(kind="usage", usage=usage)
+                            if input_seen and output_seen:
+                                yield StreamEvent(kind="usage", usage=usage)
+                            completed = True
                             yield StreamEvent(kind="done", stop_reason=stop)
+            if not completed:
+                raise ProviderError("stream ended without a finish reason")
         finally:
             if owns_client:
                 await client.aclose()

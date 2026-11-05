@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "state": "prepared",
+  "engine": "codex",
+  "protocol_hash": "fcd15e19b678324c860cc599e85fd2ef40fdba6e679c210b6f65c63cea6d4175",
+  "settings_differences": {
+    "adaptive_production": {
+      "baseline": false,
+      "candidate": true
+    }
+  },
+  "reports": {
+    "baseline": {
+      "path": "baseline.json",
+      "report_hash": "ca0b0024c90f30a8970318e709b93c34601b376d04850126dd033f9568ca63fd",
+      "protocol_hash": "fcd15e19b678324c860cc599e85fd2ef40fdba6e679c210b6f65c63cea6d4175",
+      "revision": "7764e344e3f77f10eca1b1fe095c474a20347401",
+      "implementation_hash": "8e6a7a50d1865d5545502b2fbcf64c84840a500a98b89f089673e1fac875042e"
+    },
+    "candidate": {
+      "path": "candidate.json",
+      "report_hash": "793623dde6b98ed7447c858fb5f4f048f7cffeb8f94b3d1f0a8acc036af7ee2e",
+      "protocol_hash": "fcd15e19b678324c860cc599e85fd2ef40fdba6e679c210b6f65c63cea6d4175",
+      "revision": "7764e344e3f77f10eca1b1fe095c474a20347401",
+      "implementation_hash": "8e6a7a50d1865d5545502b2fbcf64c84840a500a98b89f089673e1fac875042e"
+    }
+  },
+  "model_calls": 0,
+  "result": null,
+  "note": "Preparation only; no trials executed, no measured gain or 5X result."
+}

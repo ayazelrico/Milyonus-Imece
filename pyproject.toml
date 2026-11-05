@@ -34,11 +34,22 @@ admin = ["cryptography>=42.0"]
 anthropic = ["anthropic>=0.34"]
 openai = ["openai>=1.40"]
 vec = ["sqlite-vec>=0.1.1"]
+web = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "python-multipart>=0.0.9",
+  "itsdangerous>=2.2",
+]
 dev = [
   "pytest>=8.2",
   "pytest-asyncio>=0.23",
   "ruff>=0.6",
   "mypy>=1.11",
+  "httpx>=0.27",
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "python-multipart>=0.0.9",
+  "itsdangerous>=2.2",
 ]
 
 [project.scripts]
@@ -66,6 +77,12 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "C4"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# FastAPI idiomatic Depends(...) defaults.
+"src/milyonus/web/app.py" = ["B008"]
+# importorskip then import TestClient.
+"tests/test_web.py" = ["E402"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

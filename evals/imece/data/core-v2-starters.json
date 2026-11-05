@@ -1,0 +1,12 @@
+{
+  "fix_binary_search": "def solve(value):\n    import bisect\n    a = value[\"items\"]\n    i = bisect.bisect_right(a, value[\"target\"]) - 1\n    return i if i >= 0 and a[i] == value[\"target\"] else -1\n",
+  "fix_chunk_tail": "def solve(value):\n    a, k = value[\"items\"], value[\"k\"]\n    return [a[i:i+k] for i in range(0, len(a)-k+1, k)]\n",
+  "fix_negative_max": "def solve(value):\n    best = 0\n    for number in value:\n        best = max(best, number)\n    return best\n",
+  "fix_even_median": "def solve(value):\n    a = sorted(value)\n    return a[len(a)//2]\n",
+  "fix_empty_prefix": "def solve(value):\n    prefix = value[0]\n    for word in value[1:]:\n        while not word.startswith(prefix):\n            prefix = prefix[:-1]\n    return prefix\n",
+  "fix_duplicate_pairs": "def solve(value):\n    seen = set()\n    pairs = 0\n    for item in value:\n        if item in seen:\n            pairs += 1\n        seen.add(item)\n    return pairs\n",
+  "fix_leap_year": "def solve(value):\n    return value % 4 == 0\n",
+  "fix_overlap": "def solve(value):\n    (a, b), (c, d) = value\n    return max(a,c) <= min(b,d)\n",
+  "fix_percent_decode": "def solve(value):\n    from urllib.parse import unquote\n    return unquote(value)\n",
+  "fix_truthy_zero": "def solve(value):\n    return next((item for item in value if item), None)\n"
+}

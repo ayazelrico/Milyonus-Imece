@@ -7,12 +7,16 @@ verified success, and unavailable cost is never reported as zero.
 
 from __future__ import annotations
 
+import json
+import random
 import time
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
 from milyonus.imece.agents import AgentFn
 from milyonus.imece.execution import PythonExecutor, python_files
+from milyonus.imece.journal import AgentJournal
 from milyonus.imece.orchestrator import Imece, ImeceSettings
 
 
@@ -21,6 +25,69 @@ class BenchmarkTask:
     id: str
     request: str
     oracle: str
+    cases: tuple[dict[str, Any], ...] = ()
+
+
+def trial_identity(task, repeat, settings, run_identity, seed) -> dict:
+    """Shared frozen identity for journal dispatch binding and CLI recovery."""
+    return {
+        "run": run_identity,
+        "task": asdict(task),
+        "repeat": repeat,
+        "settings": asdict(settings),
+        "seed": seed,
+    }
+
+
+def _matches(actual: Any, expected: Any) -> bool:
+    if isinstance(expected, bool) or isinstance(actual, bool):
+        return actual is expected
+    if isinstance(expected, list):
+        return (
+            isinstance(actual, list)
+            and len(actual) == len(expected)
+            and all(_matches(a, b) for a, b in zip(actual, expected, strict=True))
+        )
+    if isinstance(expected, dict):
+        return (
+            isinstance(actual, dict)
+            and actual.keys() == expected.keys()
+            and all(_matches(actual[k], v) for k, v in expected.items())
+        )
+    return actual == expected
+
+
+async def _score_artifact(executor: PythonExecutor, task: BenchmarkTask, deliverable: str):
+    files = python_files(deliverable)
+    if not task.cases:
+        result = await executor.run(files, task.oracle)
+        return result.passed, result.output
+    # Send inputs only. Untrusted Python can exit(0), shadow imports or inspect
+    # the driver, so assertions inside its own interpreter cannot certify success.
+    inputs = json.dumps([c["input"] for c in task.cases], allow_nan=False)
+    driver = (
+        "import json\nfrom solution import solve\n"
+        f"values = json.loads({inputs!r})\n"
+        "answers = []\nfor value in values:\n"
+        " answers.append(json.dumps([solve(value), value], allow_nan=False))\n"
+        "print(json.dumps(answers))\n"
+    )
+    result = await executor.run(files, driver)
+    if not result.passed:
+        return False, result.output
+    if result.output_truncated:
+        return False, "sandbox result output was truncated"
+    try:
+        answers = json.loads(result.output)
+        if not isinstance(answers, list) or len(answers) != len(task.cases):
+            return False, "incomplete result set"
+        for index, (answer, case) in enumerate(zip(answers, task.cases, strict=True)):
+            actual = json.loads(answer)
+            if not _matches(actual, [case["expected"], case["input"]]):
+                return False, f"incorrect result or modified input in case {index}"
+    except (ValueError, TypeError, RecursionError):
+        return False, "invalid sandbox result encoding"
+    return True, ""
 
 
 TASKS = (
@@ -79,6 +146,7 @@ TASKS = (
 
 def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     n = len(rows)
+    unknown_usage = sum(r.get("unknown_usage_calls", 0) for r in rows)
     accepted = sum(r["status"] == "accepted" for r in rows)
     verified = sum(r["status"] == "accepted" and r["oracle_passed"] for r in rows)
     costs_known = bool(rows) and all(r.get("cost_usd") is not None for r in rows)
@@ -101,6 +169,11 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         if samples
         else None
     )
+    total_tokens = (
+        sum(r["tokens"] for r in rows)
+        if n and not unknown_usage and all(r.get("tokens") is not None for r in rows)
+        else None
+    )
     return {
         "runs": n,
         "accepted": accepted,
@@ -108,7 +181,14 @@ def summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "accepted_deliverable_rate": accepted / n if n else None,
         "verified_success_rate": verified / n if n else None,
         "false_accepts": sum(r["status"] == "accepted" and not r["oracle_passed"] for r in rows),
-        "total_tokens": sum(r["tokens"] for r in rows),
+        "total_tokens": total_tokens,
+        "tokens_per_verified_success": total_tokens / verified
+        if total_tokens is not None and verified
+        else None,
+        "observed_tokens": sum(r.get("observed_tokens", r.get("tokens")) or 0 for r in rows),
+        "unknown_token_runs": sum(
+            r.get("tokens") is None or bool(r.get("unknown_usage_calls")) for r in rows
+        ),
         "cost_usd": cost,
         "cost_estimated": any(r.get("cost_estimated", True) for r in rows),
         "cost_per_accepted_usd": cost / accepted if cost is not None and accepted else None,
@@ -126,6 +206,15 @@ async def run_benchmark(
     repeats: int = 1,
     source: str = "unspecified",
     on_phase=None,
+    seed: int = 0,
+    on_row=None,
+    on_trial=None,
+    can_begin_trial=None,
+    capture_reproductions: bool = False,
+    should_stop=None,
+    completed_rows=None,
+    journal_dir: Path | None = None,
+    run_identity: dict | None = None,
 ) -> dict[str, Any]:
     if settings.verification != "python":
         raise ValueError("benchmark requires verification='python'")
@@ -136,14 +225,49 @@ async def run_benchmark(
         image=settings.sandbox_image,
         timeout=settings.test_timeout,
     )
-    rows = []
+    rows = list(completed_rows or [])
+    completed = {(r["task"], r["repeat"]) for r in rows}
     for task in tasks:
         for repeat in range(repeats):
+            if (task.id, repeat) in completed:
+                continue
+            if should_stop and should_stop():
+                break
+            if can_begin_trial and not can_begin_trial(task.id, repeat):
+                continue
+            if on_trial:
+                on_trial(task.id, repeat)
             started = time.monotonic()
-            result = await Imece(agent_fn, settings, on_phase=on_phase).run(task.request)
+            journal = (
+                AgentJournal(
+                    journal_dir / f"{task.id}-{repeat}.sqlite",
+                    agent_fn,
+                    identity=trial_identity(task, repeat, settings, run_identity, seed),
+                )
+                if journal_dir
+                else None
+            )
+
+            def phase(name, journal=journal):
+                if journal:
+                    journal.phase(name)
+                if on_phase:
+                    on_phase(name)
+
             try:
-                oracle = await executor.run(python_files(result.deliverable), task.oracle)
-                passed, output = oracle.passed, oracle.output
+                result = await Imece(
+                    journal or agent_fn,
+                    settings,
+                    on_phase=phase,
+                    should_stop=should_stop,
+                    capture_reproductions=capture_reproductions,
+                    rng=random.Random(f"{seed}:{task.id}:{repeat}"),
+                ).run(task.request)
+            finally:
+                if journal:
+                    journal.close()
+            try:
+                passed, output = await _score_artifact(executor, task, result.deliverable)
             except ValueError as exc:
                 passed, output = False, str(exc)
             confidence = next(
@@ -163,12 +287,15 @@ async def run_benchmark(
                     "oracle_output": output,
                     "seconds": round(time.monotonic() - started, 3),
                     "tokens": result.tokens,
+                    "unknown_usage_calls": result.unknown_usage_calls,
                     "cost_usd": result.cost_usd,
                     "cost_estimated": result.cost_estimated,
                     "confidence": confidence,
                     "report": result.to_dict(),
                 }
             )
+            if on_row:
+                on_row(rows[-1])
     return {
         "schema_version": 1,
         "source": source,

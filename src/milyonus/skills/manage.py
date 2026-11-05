@@ -9,14 +9,28 @@ Every skill also carries provenance so `skills why` can show where it came from.
 
 from __future__ import annotations
 
+import hashlib
+import json
+import os
 import re
 import shutil
+import sys
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from milyonus.config.paths import skills_dir
+from milyonus.imece.execution import PythonExecutor, python_files
 from milyonus.skills.model import SkillMeta, parse_skill_md, render_skill_md
+from milyonus.skills.repair import (
+    MAX_RECEIPT_BYTES,
+    RepairSkillError,
+    _read_file,
+    _record_oracle_revocation,
+    _refuse_revoked_oracles,
+    _repair_catalog_lock,
+)
 from milyonus.skills.replay import replay_python
 from milyonus.skills.scanner import may_install, scan_skill, worst_verdict
 
@@ -54,7 +68,9 @@ class SkillManager:
             raise ValueError("skill path escapes its root")
         return target
 
-    async def create(self, meta: SkillMeta, body: str, *, force: bool = False) -> ManageResult:
+    async def create(
+        self, meta: SkillMeta, body: str, *, force: bool = False, stage_only: bool = False
+    ) -> ManageResult:
         try:
             staged = self._path(self.staging_dir, meta.name)
             target = self._path(self.live_dir, meta.name)
@@ -71,6 +87,8 @@ class SkillManager:
 
         # 2. Reproducibility gate — the skill must be validated before promotion.
         staged.mkdir(parents=True, exist_ok=True)
+        if (staged / "SKILL.md").is_symlink():
+            return ManageResult(False, "invalid staged skill file", meta.name)
         (staged / "SKILL.md").write_text(text, "utf-8")
         try:
             passed = await self.gate(meta, body)
@@ -83,10 +101,17 @@ class SkillManager:
                 meta.name,
             )
 
+        if stage_only:
+            return ManageResult(
+                True, "skill staged; two independent task replays required", meta.name
+            )
+
         # 3. Promote into the live directory.
-        if target.exists():
-            shutil.rmtree(target)
-        shutil.move(str(staged), str(target))
+        with _repair_catalog_lock(self.live_dir):
+            target = self._path(self.live_dir, meta.name)
+            if target.exists():
+                shutil.rmtree(target)
+            shutil.move(str(staged), str(target))
         return ManageResult(True, f"skill created: {meta.name}", meta.name)
 
     def delete(self, name: str) -> ManageResult:
@@ -94,12 +119,16 @@ class SkillManager:
             target = self._path(self.live_dir, name)
         except ValueError as exc:
             return ManageResult(False, str(exc), name)
-        if not target.exists():
-            return ManageResult(False, f"no such skill: {name}", name)
-        shutil.rmtree(target)
+        with _repair_catalog_lock(self.live_dir):
+            target = self._path(self.live_dir, name)
+            if not target.exists():
+                return ManageResult(False, f"no such skill: {name}", name)
+            shutil.rmtree(target)
         return ManageResult(True, f"skill deleted: {name}", name)
 
-    async def patch(self, name: str, new_body: str, *, force: bool = False) -> ManageResult:
+    async def patch(
+        self, name: str, new_body: str, *, force: bool = False, stage_only: bool = False
+    ) -> ManageResult:
         try:
             target = self._path(self.live_dir, name) / "SKILL.md"
         except ValueError as exc:
@@ -107,4 +136,125 @@ class SkillManager:
         if not target.exists():
             return ManageResult(False, f"no such skill: {name}", name)
         skill = parse_skill_md(target.read_text("utf-8"), target.parent)
-        return await self.create(skill.meta, new_body, force=force)
+        return await self.create(skill.meta, new_body, force=force, stage_only=stage_only)
+
+    async def promote_repair(self, name: str, tasks: dict[str, str]) -> ManageResult:
+        """Operator-supplied task labels and independent runnable oracles, never agent input."""
+        import ast
+
+        staged = self._path(self.staging_dir, name) / "SKILL.md"
+        target = self._path(self.live_dir, name)
+        if staged.is_symlink() or not staged.is_file():
+            return ManageResult(False, "no staged skill", name)
+        text = staged.read_text("utf-8")
+        skill = parse_skill_md(text, staged.parent)
+        if skill.meta.name != name or not may_install(scan_skill(text), force=False):
+            return ManageResult(False, "staged skill failed identity or security check", name)
+        # Snapshot caller input before any awaited replay.
+        tasks = dict(tasks)
+        trees = [ast.parse(script) for script in tasks.values()]
+        if (
+            len(tasks) < 2
+            or any(not label.strip() for label in tasks)
+            or len({label.strip() for label in tasks}) < 2
+            or len({ast.dump(tree) for tree in trees}) < 2
+            or any(not any(isinstance(n, ast.Assert) for n in ast.walk(tree)) for tree in trees)
+        ):
+            return ManageResult(
+                False, "two distinct tasks with executable assertions required", name
+            )
+        evidence = {
+            label: hashlib.sha256(script.encode()).hexdigest() for label, script in tasks.items()
+        }
+        with _repair_catalog_lock(self.live_dir) as catalog:
+            try:
+                _refuse_revoked_oracles(catalog, evidence.values())
+            except RepairSkillError as exc:
+                return ManageResult(False, str(exc), name)
+        files = python_files(skill.body)
+        executor = PythonExecutor(backend="macos" if sys.platform == "darwin" else "docker")
+        for label, script in tasks.items():
+            result = await executor.run(files, script)
+            if not result.passed:
+                return ManageResult(False, f"independent replay failed: {label}", name)
+        if not await self.gate(skill.meta, skill.body):
+            return ManageResult(False, "skill reproducibility gate failed", name)
+        # Publish exactly the reviewed bytes, never mutable files from staging.
+        with TemporaryDirectory(dir=self.live_dir, prefix=".promote-") as tmp:
+            new = Path(tmp) / "new"
+            new.mkdir()
+            (new / "SKILL.md").write_text(text, "utf-8")
+            (new / "replays.json").write_text(
+                json.dumps(
+                    {
+                        "skill_sha256": hashlib.sha256(text.encode()).hexdigest(),
+                        "backend": executor.backend,
+                        "tasks": evidence,
+                    },
+                    indent=2,
+                ),
+                "utf-8",
+            )
+            # Replays above never hold the lock. Check again while publication
+            # and revocation are mutually exclusive, including across processes.
+            with _repair_catalog_lock(self.live_dir) as catalog:
+                try:
+                    _refuse_revoked_oracles(catalog, evidence.values())
+                except RepairSkillError as exc:
+                    return ManageResult(False, str(exc), name)
+                target = self._path(self.live_dir, name)
+                backup = Path(tmp) / "previous"
+                if target.exists():
+                    target.rename(backup)
+                try:
+                    new.rename(target)
+                except OSError:
+                    if backup.exists():
+                        backup.rename(target)
+                    raise
+        return ManageResult(True, f"promoted after {len(tasks)} task replays", name)
+
+    def revoke_oracle(self, oracle_sha256: str) -> list[str]:
+        """Persistently deny an oracle, then archive dependent live versions.
+
+        The deny record survives archival errors and also covers future promotions.
+        """
+        if not re.fullmatch("[a-f0-9]{64}", oracle_sha256):
+            raise ValueError("expected a lowercase SHA-256 digest")
+        removed = []
+        with _repair_catalog_lock(self.live_dir) as catalog:
+            _record_oracle_revocation(catalog, oracle_sha256)
+            for directory in sorted(self.live_dir.iterdir()):
+                if (
+                    directory.is_symlink()
+                    or not directory.is_dir()
+                    or directory.name.startswith((".", "_"))
+                ):
+                    continue
+                # Invalid/missing receipts are already refused by the loader;
+                # they must not prevent archival of other dependent skills.
+                try:
+                    fd = os.open(
+                        directory.name,
+                        os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                        dir_fd=catalog,
+                    )
+                    try:
+                        record = json.loads(_read_file(fd, "replays.json", MAX_RECEIPT_BYTES))
+                    finally:
+                        os.close(fd)
+                except (OSError, ValueError, RecursionError):
+                    continue
+                tasks = record.get("tasks") if isinstance(record, dict) else None
+                if not isinstance(tasks, dict) or oracle_sha256 not in tasks.values():
+                    continue
+                # Keep the version and receipt outside the live catalog.
+                revoked = self.live_dir / "_revoked"
+                if revoked.is_symlink():
+                    raise ValueError("invalid revocation archive")
+                revoked.mkdir(exist_ok=True)
+                from uuid import uuid4
+
+                directory.rename(revoked / f"{directory.name}-{uuid4().hex}")
+                removed.append(directory.name)
+        return removed

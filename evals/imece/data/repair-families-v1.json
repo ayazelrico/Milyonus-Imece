@@ -1,0 +1,8 @@
+{
+  "idempotent_events": "duplicate-event-processing",
+  "pagination": "duplicate-event-processing",
+  "cost_per_success": "zero-denominator",
+  "weighted_score": "zero-denominator",
+  "fix_overlap": "half-open-interval-boundaries",
+  "interval_coverage": "half-open-interval-boundaries"
+}
