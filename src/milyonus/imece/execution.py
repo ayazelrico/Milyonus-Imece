@@ -80,6 +80,10 @@ class ExecutionResult:
     environment_id: str | None = None
 
 
+class VerificationEnvironmentChanged(RuntimeError):
+    """A frozen verification environment disappeared or changed."""
+
+
 @dataclass
 class PythonExecutor:
     backend: Literal["docker", "macos"] = "docker"
@@ -88,6 +92,7 @@ class PythonExecutor:
     max_parallel: int = 4
     cache_path: Path | None = None
     approved_evidence: frozenset[str] = frozenset()
+    expected_environment_id: str | None = None
 
     def __post_init__(self) -> None:
         if self.timeout <= 0 or self.max_parallel < 1:
@@ -286,16 +291,29 @@ class PythonExecutor:
         environment = await self.verification_environment()
         return self._environment_digest(environment) if environment is not None else None
 
+    def _require_environment(self, observed: str | None) -> None:
+        if self.expected_environment_id is not None and observed != self.expected_environment_id:
+            raise VerificationEnvironmentChanged(
+                "Docker verification environment differs from the frozen run"
+            )
+
+    async def verify_environment(self) -> None:
+        if self.expected_environment_id is not None:
+            self._require_environment(await self.environment_fingerprint())
+
     async def run(
         self, files: dict[str, str], test: str, *, deterministic: bool = False
     ) -> ExecutionResult:
         # Generated tests are untrusted/non-deterministic by default. Only a
         # trusted caller can opt into reuse with a pinned Docker image.
         if self.backend != "docker" or not re.fullmatch(r".+@sha256:[0-9a-f]{64}", self.image):
+            self._require_environment(None)
             return await self._execute(files, test)
         from milyonus.imece.evidence import EvidenceCache, evidence_key
 
         environment = await self.verification_environment()
+        environment_id = self._environment_digest(environment) if environment is not None else None
+        self._require_environment(environment_id)
         if environment is None:
             # Missing metadata must never grant reuse of a previous verdict.
             result = await self._execute(files, test)
@@ -304,7 +322,6 @@ class PythonExecutor:
             if result.failure_class == "candidate_or_oracle_runtime":
                 return replace(result, failure_class="docker_runtime_unverified")
             return result
-        environment_id = self._environment_digest(environment)
         key = evidence_key(files, test, environment, "isolated-python-v1")
         if self.cache_path is None or (not deterministic and key not in self.approved_evidence):
             return replace(

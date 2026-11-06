@@ -263,6 +263,7 @@ async def run_benchmark(
     journal_dir: Path | None = None,
     run_identity: dict | None = None,
     trial_order: str = "task-major",
+    expected_environment_id: str | None = None,
 ) -> dict[str, Any]:
     if settings.verification != "python":
         raise ValueError("benchmark requires verification='python'")
@@ -272,6 +273,7 @@ async def run_benchmark(
         backend=settings.sandbox_backend,
         image=settings.sandbox_image,
         timeout=settings.test_timeout,
+        expected_environment_id=expected_environment_id,
     )
     rows = list(completed_rows or [])
     completed = {(r["task"], r["repeat"]) for r in rows}
@@ -284,6 +286,7 @@ async def run_benchmark(
             break
         if can_begin_trial and not can_begin_trial(task.id, repeat):
             continue
+        await executor.verify_environment()
         if on_trial:
             on_trial(task.id, repeat)
         started = time.monotonic()
@@ -311,6 +314,7 @@ async def run_benchmark(
                 should_stop=should_stop,
                 capture_reproductions=capture_reproductions,
                 rng=random.Random(f"{seed}:{task.id}:{repeat}"),
+                expected_environment_id=expected_environment_id,
             ).run(task.request)
         finally:
             if journal:
@@ -319,6 +323,7 @@ async def run_benchmark(
             passed, output = await _score_artifact(executor, task, result.deliverable)
         except ValueError as exc:
             passed, output = False, str(exc)
+        await executor.verify_environment()
         confidence = next(
             (
                 d.confidence

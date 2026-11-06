@@ -427,7 +427,9 @@ async def reality(
                     }
                 )
 
-        await asyncio.gather(*(execute(c) for c in candidates))
+        async with asyncio.TaskGroup() as group:
+            for candidate in candidates:
+                group.create_task(execute(candidate))
     for cid, rep in reports.items():
         votes = tallies[cid]
         rep.pass_rate = sum(votes) / len(votes) if votes else 0.0

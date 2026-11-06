@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-6 Kasım son yerel doğrulamasında **585 test geçti**, atlanan test yok.
+6 Kasım son yerel doğrulamasında **588 test geçti**, atlanan test yok.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -77,6 +77,12 @@ yapılandırılmış eleştiri çalıştı ve bir iyileştirme önerisi revizyon
 `group_totals` takibinde iki kol da doğrulandı. Bir yazar çağrısı atlandı ve
 toplam token kullanımı %3,73 azaldı. Temsili yük ve yarı token hedefi açık.
 [Aday bazında kalibrasyon](docs/experiments/per-candidate-revision-2026-11-06.md).
+
+P0 hazırlığında sabit Docker imajıyla birlikte gerçek doğrulama ortamının
+parmak izi de dondurulur. Görev boyunca ortam uyuşmazlığı koşuyu keser ve
+çağrı kayıtları korunur. Gerçek Docker üzerinde 50 görev × 5 tekrar, iki kol
+için aynı ortam kimliğiyle hazırlandı. Bu hazırlıkta model çağrısı yapılmadı.
+[Deney hazırlığı](docs/imece-cli.md).
 P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
 önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 

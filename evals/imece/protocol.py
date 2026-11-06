@@ -357,6 +357,11 @@ def compare(
     )
     if protocol.get("runtime", {}).get("backend") != "docker" or not has_pinned_digest:
         blockers.append("pinned Docker image required")
+    environment_id = protocol.get("runtime", {}).get("verification_environment_id")
+    if cli_reports and (
+        not isinstance(environment_id, str) or not re.fullmatch(r"[0-9a-f]{64}", environment_id)
+    ):
+        blockers.append("frozen Docker verification environment required for CLI reports")
     for role, report in (("baseline", baseline), ("candidate", candidate)):
         warnings = report.get("independence_warnings")
         if independence_verified:

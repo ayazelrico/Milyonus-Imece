@@ -35,6 +35,7 @@ from milyonus.imece.codex import (
     discover_codex,
     oracle_guard,
 )
+from milyonus.imece.execution import PythonExecutor
 from milyonus.imece.irade import IradeSettings
 from milyonus.imece.journal import (
     current_journal_call,
@@ -370,6 +371,15 @@ async def run(args) -> int:
         "cli": cli,
         "agent_policy": POLICY_VERSION,
     }
+    environment_id = None
+    if args.backend == "docker" and re.fullmatch(r".+@sha256:[0-9a-f]{64}", settings.sandbox_image):
+        executor = PythonExecutor(image=settings.sandbox_image, timeout=settings.test_timeout)
+        environment_id = await executor.environment_fingerprint()
+        if environment_id is None:
+            raise ValueError(
+                "cannot freeze Docker verification environment; check daemon and pinned image"
+            )
+        runtime["verification_environment_id"] = environment_id
     revision = subprocess.check_output(
         ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True
     ).strip()
@@ -737,6 +747,7 @@ async def run(args) -> int:
             journal_dir=journal_dir,
             run_identity=frozen,
             trial_order=args.trial_order,
+            expected_environment_id=environment_id,
         )
     except BaseException:
         persist("interrupted")

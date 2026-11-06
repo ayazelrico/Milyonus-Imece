@@ -222,6 +222,7 @@ class Imece:
         on_phase: Callable[[str], None] | None = None,
         capture_reproductions: bool = False,
         rng: random.Random | None = None,
+        expected_environment_id: str | None = None,
     ):
         self.s = settings or ImeceSettings()
         self.alloc = allocate(self.s.agents)
@@ -251,6 +252,7 @@ class Imece:
                 image=self.s.sandbox_image,
                 timeout=self.s.test_timeout,
                 max_parallel=self.s.max_parallel,
+                expected_environment_id=expected_environment_id,
             )
             if self.s.verification == "python"
             else None

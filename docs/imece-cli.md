@@ -1,5 +1,20 @@
 # Codex CLI ile İmece deneyini hazırlama
 
+Sabit digest kullanan Docker deneylerinde hazırlık ve devam sırasında yerel
+Docker çalışıyor ve seçilen imaj hazır olmalıdır. Manifestteki
+`verification_environment_id`, seçilen imajı, Docker daemon kimliğini,
+kernel ve güvenlik özelliklerini, yürütme komutunu ve süre sınırını kapsar.
+İki kolun protokolleri bu alan dahil eşleşmelidir. Devam sırasında farklı
+kimlikteki ortam reddedilir. Görevden önce, yürütülebilir kontrollerde ve
+görev satırı kaydedilmeden önce kimlik tekrar denetlenir. Görev ortasında
+uyuşmazlık tespit edilirse çağrı kayıtları korunur ve koşu kesilmiş olarak
+kaydedilir. Bu kontroller sorgu ile Docker çağrısı arasında daemon üzerinde
+atomik bir kilit sağlamaz.
+
+Eski raporlar karşılaştırmada okunabilir. CLI üzerinden 5X kabulü için
+doğrulanabilir ortam kimliği alanı gerekir. Eski checkpoint'ler donmuş
+kaynak ve protokol koşullarına uygun kendi sürümleriyle devam ettirilir.
+
 Uyarlanan üretimi tek başına ölçmek için çift hazırlarken hem
 `--baseline-compact-cli-instructions` hem
 `--candidate-compact-cli-instructions` seçilebilir. İki kolun aynı kısa CLI
