@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-6 Kasım son yerel doğrulamasında **582 test geçti**, atlanan test yok.
+6 Kasım son yerel doğrulamasında **583 test geçti**, atlanan test yok.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -70,7 +70,10 @@ getirir. Her çapraz eleştiri somut kusur veya başka adaydan alınacak iyileş
 bulamadığını açıkça bildirdiğinde mevcut adaylar yeniden teste geçer. Belirsiz
 cevapta normal revizyon çalışır. Atlanan yazar çağrıları `revision_calls_avoided`
 olarak raporlanır. Gerçek Docker regresyonu hatalı entegrasyonun son onaya
-ulaşmadığını doğrular. Bu değişikliğin canlı token etkisi ölçüm bekliyor.
+ulaşmadığını doğrular. İlk canlı kalibrasyonda `left_join` iki kolda doğrulandı.
+Adaydaki bir kapı bulgusu normal revizyonu korudu. Revizyon atlamasının token
+etkisi için bu koşudan kanıt çıkmadı.
+[Kalibrasyon kaydı](docs/experiments/conditional-revision-calibration-2026-11-06.md).
 P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
 önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 

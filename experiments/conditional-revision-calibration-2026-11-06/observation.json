@@ -1,0 +1,40 @@
+{
+  "baseline": {
+    "state": "complete",
+    "status": "accepted",
+    "oracle_passed": true,
+    "tokens": 202246,
+    "calls": 31,
+    "seconds": 381.047,
+    "revision_calls": 2,
+    "revision_calls_avoided": 0,
+    "structured_critique_calls": 0
+  },
+  "candidate": {
+    "state": "complete",
+    "status": "accepted",
+    "oracle_passed": true,
+    "tokens": 193955,
+    "calls": 30,
+    "seconds": 364.348,
+    "revision_calls": 2,
+    "revision_calls_avoided": 0,
+    "structured_critique_calls": 0
+  },
+  "treatments": {
+    "factors": [
+      "skip_clean_revision"
+    ],
+    "single_factor": true,
+    "isolated_compact_prompt": false,
+    "note": "Joint treatment results cannot be attributed to an individual factor."
+  },
+  "conditional_revision_exercised": false,
+  "accepted_5x": false,
+  "report_sha256": {
+    "baseline.json": "43f9022867747d2852ad98383de8cf92fdd93245016afa5420b039b4db74bafa",
+    "candidate.json": "4313f99cc5e6d8f8f1a19750b909a1dc4607b5131f524a05618585249fa071f4",
+    "pair.json": "e6f0d71ad292d279b767d37c68759c70c3e4522c6d7e78564b8bcc8e03c26e32",
+    "comparison.json": "5cbec50b5f48a53215c8a25f3211700f2b8beeffbf66e26796224c7e5971b819"
+  }
+}
