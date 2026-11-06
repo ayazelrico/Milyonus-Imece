@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-6 Kasım son yerel doğrulaması: **561 test geçti, atlanan test yok**.
+6 Kasım son yerel doğrulamasında **582 test geçti**, atlanan test yok.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -63,6 +63,14 @@ P3 için ortak kısa CLI profiliyle yeni beş alanlı eşleşmiş koşu tamamlan
 sağlamadı; tüm görevlerde üretici sayısı aynı kaldı. Bu sonucu 120 ajana
 genellemek veya önceki profille çarparak 5X ilan etmek geçerli değildir.
 [Uyarlama ölçümü](docs/experiments/adaptive-compact-five-domains-2026-11-06.md).
+
+Uyarlamalı Python akışı, aynı tanımlı Docker ortamında bütün kontrolleri geçen
+ve kapı bulgusu olmayan birden fazla bağımsız aday için revizyonu koşullu hale
+getirir. Her çapraz eleştiri somut kusur veya başka adaydan alınacak iyileştirme
+bulamadığını açıkça bildirdiğinde mevcut adaylar yeniden teste geçer. Belirsiz
+cevapta normal revizyon çalışır. Atlanan yazar çağrıları `revision_calls_avoided`
+olarak raporlanır. Gerçek Docker regresyonu hatalı entegrasyonun son onaya
+ulaşmadığını doğrular. Bu değişikliğin canlı token etkisi ölçüm bekliyor.
 P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
 önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 

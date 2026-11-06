@@ -69,6 +69,26 @@ CANDIDATE_FORMAT = (
 
 PLAIN_DELIVERABLE = "Return the deliverable itself as plain Markdown — never wrapped in JSON. For Python files preserve named fences: ```python file=solution.py followed by the full code and a closing fence."
 
+
+def _explicit_no_change(text: str) -> bool:
+    def unique_object(pairs):
+        value = dict(pairs)
+        if len(value) != len(pairs):
+            raise ValueError("duplicate critique fields")
+        return value
+
+    try:
+        decision = json.loads(text, object_pairs_hook=unique_object)
+    except (ValueError, RecursionError):
+        return False
+    return (
+        isinstance(decision, dict)
+        and set(decision) == {"revision_needed", "findings"}
+        and decision["revision_needed"] is False
+        and decision["findings"] == []
+    )
+
+
 Status = Literal["accepted", "rejected", "stopped", "budget"]
 
 
@@ -793,29 +813,110 @@ class Imece:
             if text.strip() and not text.startswith("(agent failed")
         ]
 
+    def _revision_no_change_eligible(
+        self, survivors: list[Candidate], reports: dict[str, gates.GateReport] | None
+    ) -> bool:
+        if (
+            not self.s.adaptive_production
+            or self.executor is None
+            or reports is None
+            or len(survivors) < 2
+            or len({c.id for c in survivors}) != len(survivors)
+            or len({c.author for c in survivors}) < 2
+            or len({c.approach for c in survivors}) < 2
+        ):
+            return False
+        environments = set()
+        for candidate in survivors:
+            report = reports.get(candidate.id)
+            if (
+                report is None
+                or report.passed is not True
+                or report.findings
+                or report.verification != "python:docker"
+                or not report.test_results
+            ):
+                return False
+            for check in report.test_results:
+                environment = check.get("environment_id")
+                if (
+                    check.get("passed") is not True
+                    or type(check.get("returncode")) is not int
+                    or check["returncode"] != 0
+                    or check.get("source") != report.verification
+                    or check.get("failure_class") is not None
+                    or check.get("output_truncated") is not False
+                    or not isinstance(environment, str)
+                    or len(environment) != 64
+                    or any(c not in "0123456789abcdef" for c in environment)
+                ):
+                    return False
+                environments.add(environment)
+        return len(environments) == 1
+
     async def _cross_critique(
-        self, survivors: list[Candidate], fr: gates.Frame | None = None
+        self,
+        survivors: list[Candidate],
+        fr: gates.Frame | None = None,
+        *,
+        reports: dict[str, gates.GateReport] | None = None,
+        result: RunResult | None = None,
     ) -> list[Candidate]:
         """Role rotation: every candidate is critiqued by a builder from another
         approach (never its author), then its author revises — borrowing from
         the best other survivor (crossover)."""
+        no_change_eligible = fr is not None and self._revision_no_change_eligible(
+            survivors, reports
+        )
         critics = []
         for c in survivors:
             other = next((o for o in survivors if o.approach != c.approach), None)
+            donor = next((o for o in survivors if o.id != c.id), None)
             critic_approach = other.approach if other else "a different approach"
+            context = self._ctx(fr, ("Candidate", c.solution)) if fr is not None else c.solution
+            goal = "Critique this candidate against the frozen contract. Identify concrete within-scope failures; do not invent requirements or demand handling of inputs explicitly excluded by assumptions. Say no issues if none are demonstrable."
+            criteria = ["Bullet list of concrete flaws, most serious first."]
+            if no_change_eligible:
+                context = self._ctx(
+                    fr,
+                    ("Candidate", c.solution),
+                    ("Other candidate for crossover", donor.solution),
+                    ("Independent gate observations", reports[c.id].evidence()),
+                )
+                goal = (
+                    "Critique the candidate against the frozen contract and evaluate the other "
+                    "candidate for a concrete, strictly better within-scope idea worth adopting. "
+                    "Do not invent requirements. Set revision_needed=false only if there are no "
+                    "demonstrable flaws AND no justified crossover improvement. Otherwise describe "
+                    "the actionable changes in findings. Return only a plain JSON object."
+                )
+                criteria = ['{"revision_needed": true|false, "findings": ["actionable change"]}']
             critics.append(
                 AgentSpec(
                     block="production",
                     role=f"cross-critic from approach '{critic_approach}' (not the author)",
                     seat="pool",
-                    goal="Critique this candidate against the frozen contract. Identify concrete within-scope failures; do not invent requirements or demand handling of inputs explicitly excluded by assumptions. Say no issues if none are demonstrable.",
-                    context=self._ctx(fr, ("Candidate", c.solution))
-                    if fr is not None
-                    else c.solution,
-                    success_criteria=["Bullet list of concrete flaws, most serious first."],
+                    goal=goal,
+                    context=context,
+                    success_criteria=criteria,
                 )
             )
         critiques = await self.swarm.run(critics)
+        if (
+            no_change_eligible
+            and len(critiques) == len(survivors)
+            and all(_explicit_no_change(text) for text in critiques)
+        ):
+            count = len(survivors)
+            self.observer.metrics["revision_calls_avoided"] = (
+                self.observer.metrics.get("revision_calls_avoided", 0) + count
+            )
+            if result is not None:
+                result.notes.append(
+                    f"Kept {count} gate-passed candidates unchanged after unanimous explicit "
+                    "no-change cross-critiques; independent re-testing remains required."
+                )
+            return list(survivors)
         revisers = []
         for c, crit in zip(survivors, critiques, strict=True):
             donor = next((o for o in survivors if o.id != c.id), None)
@@ -1118,7 +1219,7 @@ class Imece:
                 shortlist = shortlist[: self.s.shortlist]
 
                 self._phase(f"Round {rnd}: cross-critique + evolutionary revision")
-                revised = await self._cross_critique(shortlist, fr)
+                revised = await self._cross_critique(shortlist, fr, reports=reports, result=res)
                 self._phase(f"Round {rnd}: re-test revised candidates")
                 revised_reports = await self._gate2(fr, revised, tests, full=False)
                 previous_reports, previous_candidates = revised_reports, revised
