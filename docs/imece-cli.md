@@ -1,5 +1,12 @@
 # Codex CLI ile İmece deneyini hazırlama
 
+Uyarlanan üretimi tek başına ölçmek için çift hazırlarken hem
+`--baseline-compact-cli-instructions` hem
+`--candidate-compact-cli-instructions` seçilebilir. İki kolun aynı kısa CLI
+talimatını kullanması talimat değişimini deneyden çıkarır; yalnızca
+`adaptive_production` farkı kalabilir. Araç bunu manifestlerin gerçek
+farklarından hesaplar; hazırlık model çağrısı yapmaz.
+
 Model çağrısı yapmadan gerçek Docker kanıt önbelleğini ölçmek için
 `uv run python -m evals.imece.cache_probe --out cache-probe.json` kullanılır.
 Sabit digest'li imaj, açık deterministik örnekler, soğuk önbellek ve açık

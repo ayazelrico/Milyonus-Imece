@@ -23,6 +23,7 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument("--agents", type=int, default=17)
     parser.add_argument("--max-tokens", type=int, default=250_000)
     parser.add_argument("--candidate-compact-cli-instructions", action="store_true")
+    parser.add_argument("--baseline-compact-cli-instructions", action="store_true")
     parser.add_argument("--out-dir", required=True, type=Path, help="must not already exist")
     parser.add_argument("--baseline-config", required=True, type=Path)
     parser.add_argument("--candidate-config", required=True, type=Path)
@@ -154,7 +155,9 @@ async def main(args) -> int:
                 argv.extend(("--seat-model", override))
             for task in args.task or []:
                 argv.extend(("--task", task))
-            if role == "candidate" and args.candidate_compact_cli_instructions:
+            if (role == "candidate" and args.candidate_compact_cli_instructions) or (
+                role == "baseline" and args.baseline_compact_cli_instructions
+            ):
                 argv.append("--compact-cli-instructions")
             prepared_args = run.make_parser().parse_args(argv)
             if await run.main(prepared_args) != 0:
