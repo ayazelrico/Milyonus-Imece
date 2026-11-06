@@ -1,0 +1,49 @@
+{
+  "baseline": {
+    "calls": 30,
+    "tokens": 189060,
+    "seconds": 318.312,
+    "verified": true,
+    "revision_calls_avoided": 0,
+    "critique": {
+      "calls": 2,
+      "tokens": 12160
+    },
+    "revision": {
+      "calls": 2,
+      "tokens": 13662
+    }
+  },
+  "candidate": {
+    "calls": 29,
+    "tokens": 182014,
+    "seconds": 297.076,
+    "verified": true,
+    "revision_calls_avoided": 1,
+    "critique": {
+      "calls": 2,
+      "tokens": 12784
+    },
+    "revision": {
+      "calls": 1,
+      "tokens": 6796
+    }
+  },
+  "implementation_hash": "77657d5d9d9007bcec51799d36ec53c6820afe3bba114dd5adb9cb9fa8fe98c7",
+  "treatments": {
+    "factors": [
+      "skip_clean_revision"
+    ],
+    "single_factor": true,
+    "isolated_compact_prompt": false,
+    "note": "Joint treatment results cannot be attributed to an individual factor."
+  },
+  "accepted_5x": false,
+  "token_reduction_percent": 3.726859198138155,
+  "report_sha256": {
+    "baseline.json": "41327c34ddc806f3851b88cc25ad44477f254aac98c90ba7f515293c6979c7d9",
+    "candidate.json": "e24108f957bcb008559fc4575c5c0f2dd6ea2bbcdb1d4d0dbceb5b3571dbd923",
+    "comparison.json": "29a1edb4dbd534d67825f4914b448341a3ec1d12a73bd2464a2370a8fb660e01",
+    "pair.json": "3b7b9305980cea0abf30bd4d590f03bfd6df97d9b89363bf38d952efaa890422"
+  }
+}

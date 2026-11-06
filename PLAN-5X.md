@@ -73,8 +73,10 @@ olarak raporlanır. Gerçek Docker regresyonu hatalı entegrasyonun son onaya
 ulaşmadığını doğrular. İlk canlı kalibrasyonda `left_join` iki kolda doğrulandı.
 Adaydaki bir kapı bulgusu normal revizyonu korudu. `group_totals` takibinde
 yapılandırılmış eleştiri çalıştı ve bir iyileştirme önerisi revizyonu tetikledi.
-İki kalibrasyonda da revizyon atlanmadı. Token etkisi açık kalıyor.
-[Kalibrasyon kaydı](docs/experiments/conditional-revision-calibration-2026-11-06.md).
+Önceki iki kalibrasyonda revizyon atlanmadı. Aday bazında kararın sonraki
+`group_totals` takibinde iki kol da doğrulandı. Bir yazar çağrısı atlandı ve
+toplam token kullanımı %3,73 azaldı. Temsili yük ve yarı token hedefi açık.
+[Aday bazında kalibrasyon](docs/experiments/per-candidate-revision-2026-11-06.md).
 P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
 önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 

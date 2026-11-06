@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "state": "prepared",
+  "engine": "codex",
+  "protocol_hash": "7094d1ff2f191abd5bc14a7a14c95961e2bb23b12704d9b7dfc61d4e8f3093a3",
+  "settings_differences": {
+    "skip_clean_revision": {
+      "baseline": false,
+      "candidate": true
+    }
+  },
+  "treatments": {
+    "factors": [
+      "skip_clean_revision"
+    ],
+    "single_factor": true,
+    "isolated_compact_prompt": false,
+    "note": "Joint treatment results cannot be attributed to an individual factor."
+  },
+  "cli_prompt_treatments": {
+    "baseline": {
+      "kind": "compact-text-only",
+      "instructions_hash": "86ec300ee8526ba441c1162c7b2c54ebd73f24fea1289c8dd030535ac62c2c5a"
+    },
+    "candidate": {
+      "kind": "compact-text-only",
+      "instructions_hash": "86ec300ee8526ba441c1162c7b2c54ebd73f24fea1289c8dd030535ac62c2c5a"
+    }
+  },
+  "reports": {
+    "baseline": {
+      "path": "baseline.json",
+      "report_hash": "a505262a9059e20aca36c24bfff88ea91cdfd57b3666c297de48b8a5b8e6b78b",
+      "protocol_hash": "7094d1ff2f191abd5bc14a7a14c95961e2bb23b12704d9b7dfc61d4e8f3093a3",
+      "revision": "e7b8c96842c8343fdcf190696b0537ff7d499bfd",
+      "implementation_hash": "77657d5d9d9007bcec51799d36ec53c6820afe3bba114dd5adb9cb9fa8fe98c7"
+    },
+    "candidate": {
+      "path": "candidate.json",
+      "report_hash": "bdb60eb373c3cf2c2d82a869dccf5e795cd3e663a9eb709f5c40f929d9309679",
+      "protocol_hash": "7094d1ff2f191abd5bc14a7a14c95961e2bb23b12704d9b7dfc61d4e8f3093a3",
+      "revision": "e7b8c96842c8343fdcf190696b0537ff7d499bfd",
+      "implementation_hash": "77657d5d9d9007bcec51799d36ec53c6820afe3bba114dd5adb9cb9fa8fe98c7"
+    }
+  },
+  "model_calls": 0,
+  "result": null,
+  "note": "Preparation only; no trials executed, no measured gain or 5X result."
+}
