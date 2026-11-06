@@ -29,6 +29,11 @@ Eksik kullanım nedeniyle bu iki alt sınırdan toplam tasarruf oranı çıkarı
 Başarılı görevler tablosu, başarısız görevin maliyetini dışlayan bir kabul
 ölçütü olarak kullanılmaz.
 
+`left_join` satırındaki `budget` durumunun notu belirsiz çağrı nedeniyle yeni
+gönderimin engellendiğini söylüyor. O görevdeki bilinen kullanım baseline'da
+115.977, adayda 104.337 token; bunlar 500.000 token tavanının aşıldığına kanıt
+değildir. Kayıtlı `CancelledError` tek başına iptalin nedenini belirlemez.
+
 İlk dört satırdan sonra süreçler durmuştu. Kullanıcının devam talimatıyla
 yalnızca eksik `evidence_votes` çalıştırıldı; belirsiz görev tekrar gönderilmedi.
 Bu sırada eski koşucu yeniden başlatmada başka göreve geçişi sessizce

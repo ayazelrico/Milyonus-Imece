@@ -1,0 +1,179 @@
+{
+  "source_revision": "9a7fcd701d735d44e827be4c85b79ef741e1e336",
+  "implementation_hash": "d83a102a20df1e2c63b0ea29fde86430c5fddaba7c5bd8d97c8aacbbb4fec7cb",
+  "current_source_matches_manifest": true,
+  "current_cli_matches_manifest": true,
+  "report_sha256": {
+    "baseline.json": "8faeceee8fe56c7c11da300623f4dd005be1143adba21ebec692ba8734e37461",
+    "candidate.json": "5bd901875573805791c3dbc0e702e69e129f0258c06d82dc9b3d4099391f0d37",
+    "comparison.json": "47118d89e229b713d5d42ed0db9d26a9fa377b8858dfe248876dd28591861cc4",
+    "pair.json": "bf2c2bb854743cf01aebdbfd1df4e6e274accc2ffb080dc2783d8faa6ca0a8df"
+  },
+  "total_tokens": {
+    "baseline": 958593,
+    "candidate": 957583
+  },
+  "candidate_to_baseline_token_ratio": 0.9989463724437796,
+  "token_reduction_percent": 0.10536275562204045,
+  "calls": {
+    "baseline": 150,
+    "candidate": 150
+  },
+  "phase_calls_and_tokens": {
+    "baseline": {
+      "framing": {
+        "calls": 30,
+        "tokens": 181641
+      },
+      "recon": {
+        "calls": 5,
+        "tokens": 30167
+      },
+      "plan": {
+        "calls": 5,
+        "tokens": 32583
+      },
+      "command": {
+        "calls": 5,
+        "tokens": 31770
+      },
+      "production": {
+        "calls": 30,
+        "tokens": 200980
+      },
+      "test_design": {
+        "calls": 5,
+        "tokens": 36591
+      },
+      "red_team": {
+        "calls": 15,
+        "tokens": 96177
+      },
+      "evidence_audit": {
+        "calls": 15,
+        "tokens": 95857
+      },
+      "irade": {
+        "calls": 15,
+        "tokens": 102527
+      },
+      "integration": {
+        "calls": 15,
+        "tokens": 91893
+      },
+      "approval": {
+        "calls": 5,
+        "tokens": 29194
+      },
+      "observer": {
+        "calls": 5,
+        "tokens": 29213
+      }
+    },
+    "candidate": {
+      "framing": {
+        "calls": 30,
+        "tokens": 182195
+      },
+      "recon": {
+        "calls": 5,
+        "tokens": 30179
+      },
+      "plan": {
+        "calls": 5,
+        "tokens": 32486
+      },
+      "command": {
+        "calls": 5,
+        "tokens": 31583
+      },
+      "production": {
+        "calls": 30,
+        "tokens": 201667
+      },
+      "test_design": {
+        "calls": 5,
+        "tokens": 36872
+      },
+      "red_team": {
+        "calls": 15,
+        "tokens": 96697
+      },
+      "evidence_audit": {
+        "calls": 15,
+        "tokens": 96270
+      },
+      "irade": {
+        "calls": 15,
+        "tokens": 98668
+      },
+      "integration": {
+        "calls": 15,
+        "tokens": 92376
+      },
+      "approval": {
+        "calls": 5,
+        "tokens": 29282
+      },
+      "observer": {
+        "calls": 5,
+        "tokens": 29308
+      }
+    }
+  },
+  "production_builders": {
+    "baseline": {
+      "stable_unique": [
+        2
+      ],
+      "fix_binary_search": [
+        2
+      ],
+      "group_totals": [
+        2
+      ],
+      "left_join": [
+        2
+      ],
+      "evidence_votes": [
+        2
+      ]
+    },
+    "candidate": {
+      "stable_unique": [
+        2
+      ],
+      "fix_binary_search": [
+        2
+      ],
+      "group_totals": [
+        2
+      ],
+      "left_join": [
+        2
+      ],
+      "evidence_votes": [
+        2
+      ]
+    }
+  },
+  "rounds": {
+    "baseline": {
+      "stable_unique": 1,
+      "fix_binary_search": 1,
+      "group_totals": 1,
+      "left_join": 1,
+      "evidence_votes": 1
+    },
+    "candidate": {
+      "stable_unique": 1,
+      "fix_binary_search": 1,
+      "group_totals": 1,
+      "left_join": 1,
+      "evidence_votes": 1
+    }
+  },
+  "cost_usd": null,
+  "accepted_5x": false,
+  "note": "Descriptive five-task calibration; no financial gain, model independence or production generalization attested."
+}

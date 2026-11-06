@@ -36,7 +36,12 @@ olarak inceler; `--apply` eşleşen ve iptal edilmemiş önceki sürümü yalnı
 canlı hedef yokken geri koyar. Gerçek süreç kesintisi, tekrar çağrı, iptal ve
 belirsiz yedek regresyonları geçti. Açılışta otomatik kurtarma ve tüm depolama
 hatalarına karşı atomiklik bu sonuçla sağlanmış sayılmaz.
-Son tam yerel koşu Docker dahil **560 geçti, atlanan test yok** sonucunu verdi.
+Ortak kısa CLI talimatıyla uyarlama ölçümü tamamlandı: iki kolda da 5/5
+doğrulanmış kabul ve 150'şer tamamlanmış çağrı; token azalması %0,105.
+17 ajanlık yapı yarı token hedefini sağlamadı. Tüm görevler iki üreticiyle
+ilk turda geçti; büyük ölçekte genişlik uyarlaması ayrıca ölçülmelidir.
+[Sonuç kaydı](experiments/adaptive-compact-five-domains-2026-11-06.md).
+Son tam yerel koşu Docker dahil **561 geçti, atlanan test yok** sonucunu verdi.
 Önceki aşamaların test sayıları aşağıda tarihçe olarak korunur.
 
 6 Kasım 2026 itibarıyla plan tamamlanmış değildir. Aşağıdaki ayrım, kod
