@@ -1,5 +1,11 @@
 # Codex CLI ile İmece deneyini hazırlama
 
+Model çağrısı yapmadan gerçek Docker kanıt önbelleğini ölçmek için
+`uv run python -m evals.imece.cache_probe --out cache-probe.json` kullanılır.
+Sabit digest'li imaj, açık deterministik örnekler, soğuk önbellek ve açık
+operatör izinleriyle çalışır. Bu sentetik tekrar yükü tam görev matrisindeki
+kazanım veya 5X kabulü değildir. [Ölçüm ve sınırları](experiments/cache-probe-2026-11-06.md).
+
 Yerel hashing hafıza gömmesi `hashing-blake2b-v1-DIM` imzasını kullanır.
 Eski `hashing-DIM` imzasıyla kaydedilmiş vektörler Python süreç tohumuna bağlı
 olduğundan yeni sorgularla karşılaştırılmaz. Hashing hafıza kullanan mevcut
@@ -30,6 +36,11 @@ uzlaştırma gerektirir; engel yalnızca yeniden başlatmada uygulanmaz. Daha ö
 başlatılmış eşzamanlı çağrılar kendi kayıtlarında tamamlanır veya iptal edilir.
 Geçersiz tamamlanma yanıtı kalıcı durum hatasıdır ve koşuyu keser. Belirsiz
 kayıt ile bilinen kullanım sayıları korunur; sıfır maliyet varsayılmaz.
+
+Gönderim kotası, belirsizlik ve token bütçesi kontrolleri yürütme sırası
+beklendikten sonra yapılır. Önceki çağrı beklerken bütçeyi tüketmiş veya görevi
+belirsiz hale getirmişse sıradaki çağrı başlatılmaz. Henüz yürütme sırası
+gelmemiş işler gerçek CLI çağrısı olarak kaydedilmez.
 
 Yeniden başlatmada geçmiş belirsiz çağrılar varsayılan olarak deneyin sonraki
 görevini de durdurur. Operatör yalnızca diğer görevlere açıkça devam etmek

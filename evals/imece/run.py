@@ -614,7 +614,7 @@ async def run(args) -> int:
     # Keep the existing total concurrency limit across all routed models.
     dispatch_slots = asyncio.Semaphore(settings.max_parallel)
 
-    async def recorded(spec):
+    async def dispatch_recorded(spec):
         from milyonus.security.redact import redact
 
         if call_limit is not None and len(transcripts) >= call_limit:
@@ -648,8 +648,7 @@ async def run(args) -> int:
         transcripts.append(entry)
         persist_call(entry)  # durable before launch
         try:
-            async with dispatch_slots:
-                reply = await adapters[model](spec)
+            reply = await adapters[model](spec)
             try:
                 payload = asdict(reply)
                 output_hash = fingerprint(payload)
@@ -668,6 +667,13 @@ async def run(args) -> int:
         trial_tokens[trial] += payload["tokens"]
         persist_call(entry)
         return reply
+
+    async def recorded(spec):
+        # Admission and reservation happen only once a slot is available.
+        # A preceding call can exhaust the budget or freeze the trial while
+        # this task waits. Queued work is not an external call/unknown charge.
+        async with dispatch_slots:
+            return await dispatch_recorded(spec)
 
     stop_experiment = bool(uncertain_trials) and not args.continue_after_uncertain_trial
 

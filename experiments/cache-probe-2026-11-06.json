@@ -1,0 +1,724 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-11-06T09:05:35.875534+00:00",
+  "kind": "synthetic-docker-cache-probe",
+  "valid": true,
+  "runtime": {
+    "image": "python@sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e",
+    "architecture": "arm64",
+    "python": "3.12.14"
+  },
+  "source_hashes": {
+    "evals/imece/cache_probe.py": "924f69eb032ce7d31a20162478346bff9fbdb57c70688b98c6bd2c16306ab2e2",
+    "src/milyonus/imece/execution.py": "6d9964c83846f90acdf6056b5c685ae99113d0b34339ea2258e4c11d4af624b8",
+    "src/milyonus/imece/evidence.py": "84ab7c9ad5b4c299c95be2ff84a54e9b8d1385ab3ff6ee577ce118b3f2ea93b3"
+  },
+  "workload_hash": "10ac687879e07f2568d01e6c0596a3baacebf877c2d26476bdaf0ee00446acf3",
+  "cache_admission": "operator-approved-baseline-evidence",
+  "approved_evidence": [
+    "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+    "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+    "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d"
+  ],
+  "repeats": 5,
+  "fixtures": 3,
+  "baseline_processes": 15,
+  "cached_processes": 3,
+  "process_reduction": 0.8,
+  "synthetic_reduction_at_least_60pct": true,
+  "invalidation_dimensions": [
+    "source",
+    "oracle",
+    "timeout"
+  ],
+  "observations": [
+    {
+      "case": "baseline:stable_unique:0",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:group_totals:0",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:clamp:0",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:stable_unique:1",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:group_totals:1",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:clamp:1",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:stable_unique:2",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:group_totals:2",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:clamp:2",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:stable_unique:3",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:group_totals:3",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:clamp:3",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:stable_unique:4",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:group_totals:4",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "baseline:clamp:4",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:stable_unique:0",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:group_totals:0",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:clamp:0",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:stable_unique:1",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:group_totals:1",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:clamp:1",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:stable_unique:2",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:group_totals:2",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:clamp:2",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:stable_unique:3",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:group_totals:3",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:clamp:3",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:stable_unique:4",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:group_totals:4",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "f3113f40587827a75846d52fb3b4ccd8fca061324e89d9d8beb1f829557e7d2d",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "cached:clamp:4",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "bb6471af580dba7de19496069cd86d76d566712c825a34ec8568d56a18a32003",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "invalidate:source",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "07a9fd2548ee817b2c6875c7933ad2c30662b69adcacc49187f0dbeeb450452e",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "reuse-changed:source",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "07a9fd2548ee817b2c6875c7933ad2c30662b69adcacc49187f0dbeeb450452e",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "invalidate:oracle",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "016414fa1f6d670ddbe59d3a949c0d57117a748e7e878c058e5b00d26818f541",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "reuse-changed:oracle",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "016414fa1f6d670ddbe59d3a949c0d57117a748e7e878c058e5b00d26818f541",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "invalidate:timeout",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "50e73b90c44a7e8afe24bca85cd7bfd697024824b48f051a2809689aa06137a5",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "reuse-changed:timeout",
+      "processes": 0,
+      "expected_reused": true,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "50e73b90c44a7e8afe24bca85cd7bfd697024824b48f051a2809689aa06137a5",
+        "reused": true,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "unapproved:0",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "failed:0",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": false,
+      "valid": true,
+      "result": {
+        "passed": false,
+        "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/work/oracle.py\", line 1, in <module>\n    assert False\n           ^^^^^\nAssertionError\n",
+        "returncode": 1,
+        "backend": "docker",
+        "evidence_id": "8ad83e80f465de466f7635e39ff934b79df440364b30ad1db9f9849700016bab",
+        "reused": false,
+        "failure_class": "candidate_or_oracle_runtime",
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "unapproved:1",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": true,
+      "valid": true,
+      "result": {
+        "passed": true,
+        "output": "",
+        "returncode": 0,
+        "backend": "docker",
+        "evidence_id": "110d144feec8dd9c2f1c990520fab9d670937d62df98a70d52926cee8bc73927",
+        "reused": false,
+        "failure_class": null,
+        "output_truncated": false
+      }
+    },
+    {
+      "case": "failed:1",
+      "processes": 1,
+      "expected_reused": false,
+      "expected_passed": false,
+      "valid": true,
+      "result": {
+        "passed": false,
+        "output": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"<frozen runpy>\", line 287, in run_path\n  File \"<frozen runpy>\", line 98, in _run_module_code\n  File \"<frozen runpy>\", line 88, in _run_code\n  File \"/work/oracle.py\", line 1, in <module>\n    assert False\n           ^^^^^\nAssertionError\n",
+        "returncode": 1,
+        "backend": "docker",
+        "evidence_id": "8ad83e80f465de466f7635e39ff934b79df440364b30ad1db9f9849700016bab",
+        "reused": false,
+        "failure_class": "candidate_or_oracle_runtime",
+        "output_truncated": false
+      }
+    }
+  ],
+  "model_calls": 0,
+  "cost_usd": null,
+  "accepted_5x": false,
+  "limitations": [
+    "Constructed repeated work; does not establish production reuse frequency or full-matrix P2/P5 acceptance.",
+    "Invalidation probes cover source, oracle and timeout; not every runtime or policy mutation.",
+    "No provider calls, fee receipts, speed claim or independent audit attestation."
+  ]
+}

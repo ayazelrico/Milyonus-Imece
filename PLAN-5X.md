@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-6 Kasım son yerel doğrulaması: **504 test geçti, atlanan test yok**.
+6 Kasım son yerel doğrulaması: **507 test geçti, atlanan test yok**.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -29,6 +29,14 @@ oranı hesaplanamıyor; `accepted_5x=false`.
 Kesinti sonrası gerçek çağrı/token hesabı, eski kimliksiz kullanımın özeti ve
 belirsiz çağrıdan sonra varsayılan duruş düzeltildi. Manifestte görev sırası
 artık açık; CLI varsayılanı her görevi tekrar etmeden önce bir kez dolaşır.
+
+P2 devamı: gerçek Docker üzerinde açık ve tekrarlanan üç örnekte soğuk
+önbellekle 15 doğrulama süreci 3'e indi (%80). Kaynak, kontrol ve timeout
+değişimleri yeniden çalıştı; onaysız ve başarısız kontroller yeniden kullanılamadı.
+Bu sentetik yük, tam matris veya üretim için P2 kabulü değildir.
+[Ölçüm kaydı](docs/experiments/cache-probe-2026-11-06.md).
+P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
+önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 
 Yerel uygulamada sürümlü görev kümesi, gizli yürütülebilir oracle, deney manifesti
 ve rapor karşılaştırma kapısı; bütçe rezervasyon defteri, kalıcı aşama/çağrı
