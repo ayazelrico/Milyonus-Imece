@@ -834,7 +834,6 @@ class Imece:
             if (
                 report is None
                 or report.passed is not True
-                or report.findings
                 or report.verification != "python:docker"
                 or not report.test_results
             ):
@@ -871,14 +870,19 @@ class Imece:
             survivors, reports
         )
         critics = []
+        eligible_ids = set()
         for c in survivors:
-            other = next((o for o in survivors if o.approach != c.approach), None)
+            other = next(
+                (o for o in survivors if o.approach != c.approach and o.author != c.author),
+                None,
+            )
             donor = next((o for o in survivors if o.id != c.id), None)
             critic_approach = other.approach if other else "a different approach"
             context = self._ctx(fr, ("Candidate", c.solution)) if fr is not None else c.solution
             goal = "Critique this candidate against the frozen contract. Identify concrete within-scope failures; do not invent requirements or demand handling of inputs explicitly excluded by assumptions. Say no issues if none are demonstrable."
             criteria = ["Bullet list of concrete flaws, most serious first."]
-            if no_change_eligible:
+            if no_change_eligible and other is not None and not reports[c.id].findings:
+                eligible_ids.add(c.id)
                 context = self._ctx(
                     fr,
                     ("Candidate", c.solution),
@@ -907,24 +911,31 @@ class Imece:
                 )
             )
         critiques = await self.swarm.run(critics)
-        if (
-            no_change_eligible
-            and len(critiques) == len(survivors)
-            and all(_explicit_no_change(text) for text in critiques)
-        ):
-            count = len(survivors)
+        unchanged = {
+            c.id
+            for c, critique in zip(survivors, critiques, strict=True)
+            if c.id in eligible_ids and _explicit_no_change(critique)
+        }
+        if unchanged:
+            count = len(unchanged)
             self.observer.metrics["revision_calls_avoided"] = (
                 self.observer.metrics.get("revision_calls_avoided", 0) + count
             )
             if result is not None:
                 result.notes.append(
-                    f"Kept {count} gate-passed candidates unchanged after unanimous explicit "
+                    f"Kept {count} gate-passed candidates unchanged after explicit "
                     "no-change cross-critiques; independent re-testing remains required."
                 )
-            return list(survivors)
         revisers = []
+        revising = []
         for c, crit in zip(survivors, critiques, strict=True):
+            if c.id in unchanged:
+                continue
+            revising.append(c)
             donor = next((o for o in survivors if o.id != c.id), None)
+            gate_findings = ""
+            if no_change_eligible and reports[c.id].findings:
+                gate_findings = "\n\n# Gate findings\n" + clip(reports[c.id].evidence(), 2000)
             revisers.append(
                 AgentSpec(
                     block="production",
@@ -937,6 +948,7 @@ class Imece:
                     context=(fr.brief() + "\n\n" if fr is not None else "")
                     + (
                         f"# Your candidate\n{clip(c.solution, 6000)}\n\n# Criticism\n{clip(crit, 2000)}"
+                        + gate_findings
                         + (
                             f"\n\n# Another candidate (for crossover)\n{clip(donor.solution, 3000)}"
                             if donor
@@ -950,16 +962,17 @@ class Imece:
                     ],
                 )
             )
-        revised = await self.swarm.run(revisers)
-        return [
-            Candidate(
+        replies = await self.swarm.run(revisers) if revisers else []
+        revised = {
+            c.id: Candidate(
                 c.id,
                 c.approach,
                 c.author,
                 r if r.strip() and not r.startswith("(agent failed") else c.solution,
             )
-            for c, r in zip(survivors, revised, strict=True)
-        ]
+            for c, r in zip(revising, replies, strict=True)
+        }
+        return [revised.get(c.id, c) for c in survivors]
 
     async def _integrate(self, fr: gates.Frame, primary: Candidate, others: list[Candidate]) -> str:
         extra = "\n\n".join(f"## {o.id} ({o.approach})\n{clip(o.solution, 2500)}" for o in others)

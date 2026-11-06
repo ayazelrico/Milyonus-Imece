@@ -88,7 +88,6 @@ async def test_non_clean_or_malformed_reviews_keep_normal_revision(answer):
         "nonadaptive",
         "missing",
         "failed",
-        "finding",
         "model",
         "environment",
         "mixed_environment",
@@ -104,8 +103,6 @@ async def test_ineligible_gate_evidence_cannot_omit_writers(proof):
         reports = None
     elif proof == "failed":
         reports["A"].passed = False
-    elif proof == "finding":
-        reports["A"].findings.append(Finding("audit", "low", "review this"))
     elif proof == "model":
         reports["A"].verification = "model"
     elif proof == "environment":
@@ -122,7 +119,10 @@ async def test_ineligible_gate_evidence_cannot_omit_writers(proof):
     assert len(specs) == 4 and "revision_calls_avoided" not in imece.observer.metrics
 
 
-async def test_one_actionable_critique_preserves_revision_for_every_candidate():
+@pytest.mark.parametrize(
+    "other_answer", ['{"revision_needed": true, "findings": ["fix"]}', "unparseable"]
+)
+async def test_only_candidate_with_actionable_or_unparseable_critique_is_revised(other_answer):
     imece, candidates, reports, specs = scenario()
     calls = 0
 
@@ -130,18 +130,36 @@ async def test_one_actionable_critique_preserves_revision_for_every_candidate():
         nonlocal calls
         specs.append(spec)
         calls += 1
-        return AgentReply(
-            CLEAN if calls == 1 else '{"revision_needed": true, "findings": ["fix"]}', 1
-        )
+        if spec.role.startswith("cross-critic"):
+            return AgentReply(CLEAN if calls == 1 else other_answer, 1)
+        return AgentReply("revised beta", 1)
 
     imece.swarm._fn = mixed
-    await imece._cross_critique(candidates, Frame("r", "p", ("correct",)), reports=reports)
-    assert len(specs) == 4 and "revision_calls_avoided" not in imece.observer.metrics
+    revised = await imece._cross_critique(
+        candidates, Frame("r", "p", ("correct",)), reports=reports
+    )
+    assert revised[0] is candidates[0]
+    assert revised[1].id == "B" and revised[1].solution == "revised beta"
+    assert len(specs) == 3 and "beta" in specs[-1].role
+    assert imece.observer.metrics["revision_calls_avoided"] == 1
+
+
+async def test_gate_finding_revises_only_affected_candidate_and_reaches_writer():
+    imece, candidates, reports, specs = scenario()
+    reports["A"].findings.append(Finding("audit", "low", "review this claim"))
+    revised = await imece._cross_critique(
+        candidates, Frame("r", "p", ("correct",)), reports=reports
+    )
+    assert revised[0].id == "A" and revised[0].solution == "revised candidate"
+    assert revised[1] is candidates[1]
+    assert "revision_needed" not in specs[0].goal and "revision_needed" in specs[1].goal
+    assert "review this claim" in specs[2].context
+    assert imece.observer.metrics["revision_calls_avoided"] == 1
 
 
 @pytest.mark.skipif(os.environ.get("MILYONUS_TEST_DOCKER") != "1", reason="Docker opt-in")
-@pytest.mark.parametrize("bad_merge", [False, True])
-async def test_real_docker_clean_revision_keeps_retest_and_final_gates(bad_merge):
+@pytest.mark.parametrize("bad_merge,mixed", [(False, False), (False, True), (True, True)])
+async def test_real_docker_clean_revision_keeps_retest_and_final_gates(bad_merge, mixed):
     from evals.imece.cache_probe import DEFAULT_IMAGE
 
     class Collective(FakeCollective):
@@ -158,7 +176,11 @@ async def test_real_docker_clean_revision_keeps_retest_and_final_gates(bad_merge
                     }
                 )
             if spec.block == "production":
-                return CLEAN if spec.role.startswith("cross-critic") else ARTIFACT
+                if spec.role.startswith("cross-critic"):
+                    if mixed and "'alpha'" in spec.role:
+                        return '{"revision_needed": true, "findings": ["clarify the explanation"]}'
+                    return CLEAN
+                return ARTIFACT
             if spec.block == "integration" and "integrity" not in spec.role:
                 return ARTIFACT.replace("x*2", "x*3") if bad_merge else ARTIFACT
             return super().answer(spec)
@@ -174,8 +196,8 @@ async def test_real_docker_clean_revision_keeps_retest_and_final_gates(bad_merge
             adaptive_production=True,
         ),
     ).run("Return twice(x)")
-    assert result.metrics["revision_calls_avoided"] == 2
-    assert not any(s.role.startswith("author revising") for s in fake.specs)
+    assert result.metrics["revision_calls_avoided"] == (1 if mixed else 2)
+    assert sum(s.role.startswith("author revising") for s in fake.specs) == int(mixed)
     assert len(result.gate_reports) >= 5  # production, unchanged re-test, integration
     assert result.status == ("rejected" if bad_merge else "accepted")
     if bad_merge:
