@@ -75,6 +75,8 @@ class SkillManager:
         The catalog lock coordinates readers and revocation, but two directory
         renames are not an atomic crash-recovery transaction.
         """
+        from milyonus.skills.publication import sync_renames, tree_digest, write_journal
+
         transaction = Path(mkdtemp(dir=self.live_dir, prefix=".publish-"))
         retain_recovery = False
         try:
@@ -88,23 +90,33 @@ class SkillManager:
                     _refuse_revoked_oracles(catalog, receipt["tasks"].values())
                 target = self._path(self.live_dir, name)
                 backup = transaction / "previous"
+                previous = None
                 if target.exists():
                     if not target.is_dir():
                         raise NotADirectoryError(f"skill target is not a directory: {target}")
-                    target.rename(backup)
+                    previous = tree_digest(catalog, name)
+                write_journal(catalog, transaction, name, previous)
                 try:
+                    if previous is not None:
+                        target.rename(backup)
+                        sync_renames(catalog, transaction)
                     new.rename(target)
+                    sync_renames(catalog, transaction)
                 except BaseException:
                     if backup.exists():
                         try:
                             backup.rename(target)
+                            sync_renames(catalog, transaction)
                         except BaseException as exc:
                             # Automatic TemporaryDirectory cleanup would delete
                             # the only remaining copy of the previous skill.
                             retain_recovery = True
+                            location = backup if backup.exists() else target
                             raise OSError(
-                                f"skill publication rollback failed; previous version retained at {backup}"
+                                f"skill publication rollback failed; previous version retained at {location}"
                             ) from exc
+                    elif not new.exists():
+                        retain_recovery = True  # published, but durability is uncertain
                     raise
         finally:
             if not retain_recovery:

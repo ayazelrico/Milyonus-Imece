@@ -103,3 +103,24 @@ def skills_revoke_oracle(sha256: str) -> None:
     console.print(f"Oracle revoked. Skills withdrawn: {len(removed)}", markup=False)
     for name in removed:
         console.print(name, markup=False)
+
+
+@skills_app.command("recover-publications")
+def skills_recover_publications(apply: bool = typer.Option(False, "--apply")) -> None:
+    """Inspect interrupted publications; --apply restores only eligible previous versions."""
+    import json
+
+    from milyonus.config.paths import skills_dir
+    from milyonus.skills.publication import recover_publications
+
+    root = skills_dir()
+    if not root.exists():
+        console.print("[]", markup=False)
+        return
+    try:
+        rows = recover_publications(root, apply=apply)
+    except (OSError, ValueError) as exc:
+        raise typer.BadParameter(str(exc)) from exc
+    console.print(json.dumps(rows, indent=2), markup=False, soft_wrap=True)
+    if any(row["status"] in {"unrecognized", "ambiguous", "recovery_failed"} for row in rows):
+        raise typer.Exit(2)

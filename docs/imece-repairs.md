@@ -162,8 +162,52 @@ kilidi altında yeniden denetlenir; kapı beklerken iptal edilmiş kaynak canlı
 çıkamaz.
 
 Bu koruma yerel dosya işlemi hatalarını kapsar. İki dizin taşıması güç kesintisi
-karşısında atomik bir işlem değildir; otomatik çökme kurtarması eklenmemiştir.
+karşısında atomik bir işlem değildir; açılışta otomatik kurtarma yapılmaz.
 Yarım kalmış `.publish-*` dizinleri incelenmeden silinmemelidir. Birim
 regresyonlar eşzamanlı staging değişimini, metadata değişimini, iki yayımlama
 yolunda taşıma/geri alma hatalarını ve iptal yarışını test eder; bunlar beceri
 başarısında veya onarım maliyetinde ölçülmüş bir iyileşme değildir.
+
+Yeni yayımlamalar, herhangi bir canlı dizin taşınmadan önce `publication.json`
+işlem kaydı üretir. Kayıt beceri adını, eski ve aday dizinlerin özetlerini içerir.
+Aday dosyalar, işlem kaydı ve ilgili dizinler `fsync` ile eşitlenir; taşıma
+sonrasında da dizin eşitlemesi yapılır. Ağaç özeti göreli yolları, normal dosya
+baytlarını, izinleri ve sembolik bağlantının hedef metnini kapsar; bağlantıyı
+izleyerek dış dosya okumaz. Desteklenmeyen özel dosyalar, 16'dan derin veya
+1024 girdiyi/64 MiB normal dosya içeriğini aşan ağaçlar taşınmadan reddedilir.
+
+Yarım kalan yeni işlemleri incelemek ve uygun eski sürümleri geri koymak için:
+
+```sh
+milyonus skills recover-publications
+milyonus skills recover-publications --apply
+```
+
+İlk komut beceri sürümü değiştirmez; ortak katalog kilidini kullanır. Çıktı
+JSON'dur. `recoverable`, canlı hedefin bulunmadığını ve hem `previous` hem
+`new` ağaçlarının kayıtla eşleştiğini gösterir. `--apply` yalnızca böyle bir
+eski sürümü geri koyar; aday sürümü hiçbir zaman yayımlamaz. Aynı beceriye ait
+birden fazla kayıt varsa sonuç `ambiguous` olur. Mevcut canlı hedef
+`live_present` olarak korunur. `no_previous` geri konacak eski sürüm olmadığını
+belirtir; bu durum tek başına adayın geçmişte yayımlanıp yayımlanmadığını kanıtlamaz.
+
+Geri koymadan önce eski makbuzdaki oracle özetleri ortak kilit altında iptal
+kayıtlarına karşı tekrar denetlenir. İptal edilmiş kaynak, bozuk/eksik kayıt,
+eşleşmeyen içerik veya sembolik bağlantı olan işlem dizini geri yüklenmez.
+İşlem kaydı bulunmayan eski `.publish-*` dizinlerinin adı/içeriğinden beceri
+tahmin edilmez; bunlar `unrecognized` olarak incelemeye bırakılır. Bu durumlar
+veya kurtarma hataları komutun çıkış kodunu `2` yapar.
+
+Kurtarma kayıtları ve adaylar otomatik silinmez. `recovery_failed` satırında
+`restored` alanı taşımanın gerçekleşip gerçekleşmediğini gösterir: dizin
+eşitlemesi sonradan başarısız olursa taşıma gerçekleşmiş olabilir. Başarılı
+geri koymadan sonra tekrar çalıştırma mevcut canlı hedefi değiştirmez.
+Kaydı ve kataloğu yeniden yazabilen yerel operatör güven sınırının dışındadır;
+bu özetler imza değildir. Depolama aygıtının `fsync` garantileri ve kilide
+uymayan dış müdahaleler için tam güç-kesintisi güvenliği iddia edilmez.
+
+Regresyonlar gerçek alt süreci `os._exit` ile, eski sürüm taşındıktan sonra ve
+yeni sürüm taşındıktan sonra ayrı ayrı durdurur. Önizleme, geri koyma,
+tekrarlanabilir çağrı, iptal, farklı canlı sürüm, içerik değişimi, çoklu yedek
+ve kurtarma sırasındaki taşıma/eşitleme hataları test edilir. Bu deneyler insan
+denetimi veya model tabanlı onarım başarısı ölçümü değildir.

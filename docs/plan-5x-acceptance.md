@@ -31,7 +31,12 @@ yolu taşıma hatasında eski sürümü geri koyar veya geri alma da başarısı
 kurtarma yolunda korur. Onarım kapısında yalnızca gerçek `True` kabul edilir.
 Yayımlama sırasında oracle iptali regresyonu geçti; otomatik çökme kurtarması
 bu değişikliğin kapsamında değildir.
-Son tam yerel koşu Docker dahil **548 geçti, atlanan test yok** sonucunu verdi.
+Yeni yayımlamalar kalıcı işlem kaydı taşır. `recover-publications` varsayılan
+olarak inceler; `--apply` eşleşen ve iptal edilmemiş önceki sürümü yalnızca
+canlı hedef yokken geri koyar. Gerçek süreç kesintisi, tekrar çağrı, iptal ve
+belirsiz yedek regresyonları geçti. Açılışta otomatik kurtarma ve tüm depolama
+hatalarına karşı atomiklik bu sonuçla sağlanmış sayılmaz.
+Son tam yerel koşu Docker dahil **560 geçti, atlanan test yok** sonucunu verdi.
 Önceki aşamaların test sayıları aşağıda tarihçe olarak korunur.
 
 6 Kasım 2026 itibarıyla plan tamamlanmış değildir. Aşağıdaki ayrım, kod

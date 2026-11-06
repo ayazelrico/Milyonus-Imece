@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-6 Kasım son yerel doğrulaması: **548 test geçti, atlanan test yok**.
+6 Kasım son yerel doğrulaması: **560 test geçti, atlanan test yok**.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -51,6 +51,11 @@ staging değişikliği canlıya sızamaz. Yeni sürüm taşınamazsa eski sürü
 konur; geri alma da başarısızsa kurtarma dizininde korunur. Onarım kapısı
 yalnızca gerçek `True` kabul eder; oracle iptali yayımlama kilidinde yeniden
 denetlenir. Çökme sonrası otomatik kurtarma henüz sağlanmıyor.
+Yeni yayımlamalarda işlem kaydı ve dosya/dizin eşitlemesi var.
+`skills recover-publications` kayıtları inceler; `--apply` yalnızca hedefi
+eksik, özetleri eşleşen ve iptal edilmemiş eski sürümü geri koyar. Gerçek alt
+süreç kesintisi testleri geçti. Bu araç açılışta otomatik kurtarma veya tüm
+depolama hatalarında atomiklik garantisi değildir.
 P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
 önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 
