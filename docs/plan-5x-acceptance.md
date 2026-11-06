@@ -22,7 +22,11 @@ engellenir. Gerçek Docker politika ve erişilemeyen bağlam testleri geçti.
 Ek kimlik sorguları dahil toplam CLI süreç azalması %26,7'dir; %80 sadece
 doğrulama konteynerleri içindir.
 [Güncel ölçüm](experiments/cache-runtime-probe-2026-11-06.md).
-Son tam yerel koşu Docker dahil **529 geçti, atlanan test yok** sonucunu verdi.
+Hata paketleri artık kapıdaki ortam/politika parmak izini taşır; dosya
+azaltma başlamadan önce ve replay sonuçlarında eşleşme aranır. Gerçek Docker
+kapı → yakalama → azaltma akışı geçti. Eski kimliksiz paketler açık izinle
+yalnızca ortamı doğrulanmamış sonuç üretebilir.
+Son tam yerel koşu Docker dahil **534 geçti, atlanan test yok** sonucunu verdi.
 Önceki aşamaların test sayıları aşağıda tarihçe olarak korunur.
 
 6 Kasım 2026 itibarıyla plan tamamlanmış değildir. Aşağıdaki ayrım, kod

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 
 from milyonus.imece.execution import python_files
 from milyonus.security.redact import redact
@@ -29,6 +30,9 @@ def capture(examples, candidates, checks, reports, executor) -> None:
                 "image": executor.image,
                 "timeout": executor.timeout,
             }
+            environment = observation.get("environment_id")
+            if isinstance(environment, str) and re.fullmatch(r"[0-9a-f]{64}", environment):
+                bundle["environment_id"] = environment
             raw = json.dumps(bundle, sort_keys=True, ensure_ascii=False)
             if not files or len(raw.encode()) > 32768 or redact(raw) != raw:
                 continue

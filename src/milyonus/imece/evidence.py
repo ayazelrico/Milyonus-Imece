@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sqlite3
 from dataclasses import asdict, fields
 from pathlib import Path
@@ -42,6 +43,8 @@ class EvidenceCache:
             and isinstance(result.output, str)
             and result.backend == "docker"
             and result.evidence_id == key
+            and isinstance(result.environment_id, str)
+            and re.fullmatch(r"[0-9a-f]{64}", result.environment_id) is not None
             and type(result.reused) is bool
             and type(result.output_truncated) is bool
             and result.failure_class is None

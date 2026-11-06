@@ -421,6 +421,7 @@ async def reality(
                         "output_truncated": outcome.output_truncated or len(outcome.output) > 2000,
                         "returncode": outcome.returncode,
                         "evidence_id": outcome.evidence_id,
+                        "environment_id": outcome.environment_id,
                         "reused": outcome.reused,
                         "failure_class": outcome.failure_class,
                     }

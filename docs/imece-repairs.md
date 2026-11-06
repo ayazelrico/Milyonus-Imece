@@ -93,6 +93,33 @@ Eksik, iptal edilmiş, değiştirilmiş veya geçersiz beceri kullanılmaz; norm
 
 Bu akışların başarı ve maliyet üzerindeki etkisi karşılaştırmalı koşularda henüz ölçülmedi.
 
+Digest ile sabitlenmiş Docker yürütmelerinde `ExecutionResult.environment_id`,
+seçilen imaj/daemon ve yürütme politikasının parmak izidir. Kapı raporu bu
+kimliği taşır; yakalanan hata paketinin özetine de dahil edilir. Kanıt
+önbelleğindeki sonuç, mevcut ortam kimliğiyle ayrıca eşleşmelidir. Eski
+alanları eksik önbellek kayıtları yeniden yürütülür.
+
+`evals.imece.reduce_reproduction`, ortamı bağlı pakette ilk replay'den önce
+mevcut kimliği denetler. Uyuşmazlık veya okunamayan ortam yürütmeyi engeller;
+her replay'in sonucu da aynı kimliği taşımak zorundadır. Ortam arada değişirse
+azaltılmış paket üretilmez. Bu bir atomik daemon kilidi değildir: sorgu ile
+yürütme arasında yetkili operatörün yaptığı bir değişimi kilitlemez.
+
+Ortam kimliği olmayan eski paketler varsayılan olarak reddedilir. İnceleme
+için böyle bir paketin yine de çalıştırılması gerekiyorsa açık seçenek gerekir:
+
+```sh
+uv run python -m evals.imece.reduce_reproduction old-bundle.json \
+  --allow-unbound-environment --out reduced.json
+```
+
+Bu sonuç `environment_verified=false` taşır. Seçenek, kimliği bulunan fakat
+ortamı farklı veya kimlik alanı bozuk bir paketin denetimini atlamaz. Sabit
+digest kullanmayan veya ortamı okunamayan yürütmeler yeni pakette doğrulanmış
+kimlik üretemez; bunların replay'i de bu açık istisnayı gerektirir.
+Dosya azaltma hâlâ aynı son tanı satırını koruyan sınırlı bir işlemdir;
+aynı kök neden veya küresel minimalite kanıtı değildir.
+
 Yürütücü çıktı sınırı aşıldığında veya kapı raporu çıktıyı 2000 karaktere
 kısalttığında `output_truncated=true` kaydedilir. Uyarlamalı durgunluk duruşu
 bu kayıtları kullanmaz; alanı olmayan eski raporlar da tam çıktı kanıtı
@@ -107,7 +134,7 @@ istenen önbellek anahtarıyla eşleşmelidir. Eksik alanlı veya başka kimliğ
 eski/bozuk kayıtlar yeniden kullanım sayılmaz; yürütücü kontrolü yeniden çalıştırır.
 Bu denetim yerel veritabanına yazabilen bir taraf için dijital imza sağlamaz.
 
-Digest ile sabitlenmiş Docker imajında her Python kapı kontrolü bir `evidence_id` üretir. Operatör, hem çözümün hem kontrolün deterministik olduğunu inceledikten sonra bu kimliği `[imece].approved_evidence` listesine ekleyebilir. İlk başarılı çalıştırma yerel önbelleğe kaydedilir. Aynı dosyalar, kontrol, imaj, mimari, süre sınırı ve yürütücüyle tekrar karşılaşıldığında başarılı sonuç kullanılabilir. Liste varsayılan olarak boştur. Dış referans değerlendirmesi ayrı çalışır. Raporun `gate_checks_reused` sayacı kapı raporlarında kaç kontrolün yeniden kullanıldığını gösterir.
+Ortam kimliği okunabilen, digest ile sabitlenmiş Docker imajında Python kapı kontrolü `evidence_id` ve `environment_id` üretir. Operatör, hem çözümün hem kontrolün deterministik olduğunu inceledikten sonra bu kimliği `[imece].approved_evidence` listesine ekleyebilir. İlk başarılı çalıştırma yerel önbelleğe kaydedilir. Aynı dosyalar, kontrol, seçilen imaj, daemon/kernel/sürüm/güvenlik özellikleri, mimari, süre sınırı ve yürütme politikasıyla tekrar karşılaşıldığında başarılı sonuç kullanılabilir. Liste varsayılan olarak boştur. Dış referans değerlendirmesi ayrı çalışır. Raporun `gate_checks_reused` sayacı kapı raporlarında kaç kontrolün yeniden kullanıldığını gösterir.
 
 Çalıştırılmış bir kontrolün hata sınıfı kapı raporunda ve hata arşivinde saklanır. Örneğin söz dizimi bozuk bir kontrol veya başlatılamayan sandbox, kod onarımı için aday seçimine kanıt oluşturmaz. Çalışma zamanı hatası tek başına adayın mı yoksa kontrolün mü yanlış olduğunu göstermez. Eski raporlarda sınıf eksikse inceleme özeti bunu `unknown` olarak sayar.
 

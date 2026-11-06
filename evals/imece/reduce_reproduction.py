@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import re
 from pathlib import Path
 
 from milyonus.imece.execution import PythonExecutor
@@ -23,7 +24,9 @@ def diagnostic(result):
     return result.output.strip().splitlines()[-1]
 
 
-async def reduce_files(bundle: dict, executor, *, max_attempts: int = 32) -> dict:
+async def reduce_files(
+    bundle: dict, executor, *, max_attempts: int = 32, allow_unbound_environment: bool = False
+) -> dict:
     """Keep the check and solution.py fixed; discard only dispensable extra files.
 
     Matching the last diagnostic is an observation, not proof of the same cause.
@@ -35,6 +38,8 @@ async def reduce_files(bundle: dict, executor, *, max_attempts: int = 32) -> dic
     if not isinstance(bundle, dict) or not all(k in bundle for k in fields):
         raise ValueError("missing reproduction contract")
     contract = {k: bundle[k] for k in fields}
+    if "environment_id" in bundle:
+        contract["environment_id"] = bundle["environment_id"]
     raw = json.dumps(contract, sort_keys=True, ensure_ascii=False)
     if hashlib.sha256(raw.encode()).hexdigest() != bundle.get("digest"):
         raise ValueError("reproduction digest mismatch")
@@ -50,10 +55,30 @@ async def reduce_files(bundle: dict, executor, *, max_attempts: int = 32) -> dic
         raise ValueError("invalid or oversized reproduction")
     if any(getattr(executor, k) != contract[k] for k in ("backend", "image", "timeout")):
         raise ValueError("executor differs from recorded reproduction")
+    expected_environment = contract.get("environment_id")
+    if "environment_id" in contract and (
+        not isinstance(expected_environment, str)
+        or not re.fullmatch(r"[0-9a-f]{64}", expected_environment)
+    ):
+        raise ValueError("invalid reproduction environment identity")
+    if expected_environment is None:
+        if not allow_unbound_environment:
+            raise ValueError(
+                "legacy reproduction has no environment identity; explicit opt-in required"
+            )
+    elif await executor.environment_fingerprint() != expected_environment:
+        raise ValueError("runtime differs from recorded reproduction")
+
+    async def replay(candidate_files):
+        result = await executor.run(candidate_files, check)
+        if expected_environment is not None and result.environment_id != expected_environment:
+            raise ValueError("runtime changed during reproduction replay")
+        return result
+
     files = dict(files)
-    first = diagnostic(await executor.run(files, check))
+    first = diagnostic(await replay(files))
     attempts = 1
-    if first is None or diagnostic(await executor.run(files, check)) != first:
+    if first is None or diagnostic(await replay(files)) != first:
         raise ValueError("failure did not reproduce twice with a stable diagnostic")
     attempts += 1
     removed = []
@@ -67,7 +92,7 @@ async def reduce_files(bundle: dict, executor, *, max_attempts: int = 32) -> dic
                 exhausted = True
                 break
             trial = {k: v for k, v in files.items() if k != name}
-            result = await executor.run(trial, check)
+            result = await replay(trial)
             attempts += 1
             if diagnostic(result) == first:
                 files = trial
@@ -89,6 +114,7 @@ async def reduce_files(bundle: dict, executor, *, max_attempts: int = 32) -> dic
         "diagnostic": first,
         "status": "file_reduced" if removed else "unchanged",
         "minimality_proven": False,
+        "environment_verified": expected_environment is not None,
     }
 
 
@@ -97,6 +123,11 @@ async def main():
     parser.add_argument("bundle", type=Path, help="one captured reproduction object")
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--max-attempts", type=int, default=32)
+    parser.add_argument(
+        "--allow-unbound-environment",
+        action="store_true",
+        help="explicitly replay legacy bundles without a verified runtime identity",
+    )
     args = parser.parse_args()
     if args.out.exists():
         raise FileExistsError(args.out)
@@ -106,7 +137,12 @@ async def main():
     )
     if executor.backend not in ("docker", "macos") or not executor.available():
         raise ValueError("recorded isolated backend unavailable")
-    result = await reduce_files(bundle, executor, max_attempts=args.max_attempts)
+    result = await reduce_files(
+        bundle,
+        executor,
+        max_attempts=args.max_attempts,
+        allow_unbound_environment=args.allow_unbound_environment,
+    )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("x") as stream:
         json.dump(result, stream, indent=2)

@@ -1,5 +1,8 @@
 """Exercise cache admission and invalidation through the executor boundary."""
 
+import hashlib
+import json
+import sqlite3
 from copy import deepcopy
 from dataclasses import replace
 
@@ -171,3 +174,30 @@ async def test_failed_execution_is_never_reused(tmp_path, monkeypatch):
             await executor.run({"solution.py": "x=1"}, "assert False", deterministic=True)
         ).reused
     assert calls == 2
+
+
+async def test_cached_environment_must_match_the_current_runtime(tmp_path, monkeypatch):
+    calls = 0
+
+    async def execute(self, files, oracle):
+        nonlocal calls
+        calls += 1
+        return ExecutionResult(True, "ok", 0, "docker")
+
+    monkeypatch.setattr(PythonExecutor, "_execute", execute)
+    executor = PythonExecutor(
+        image="python@sha256:" + "1" * 64, cache_path=tmp_path / "cache.sqlite"
+    )
+    files, check = {"solution.py": "x=1"}, "assert True"
+    first = await executor.run(files, check, deterministic=True)
+    with sqlite3.connect(executor.cache_path) as db:
+        payload = json.loads(db.execute("SELECT result FROM evidence").fetchone()[0])
+        payload["environment_id"] = "b" * 64
+        value = json.dumps(payload, sort_keys=True)
+        db.execute(
+            "UPDATE evidence SET result=?,checksum=?",
+            (value, hashlib.sha256(value.encode()).hexdigest()),
+        )
+    result = await executor.run(files, check, deterministic=True)
+    assert not result.reused and result.environment_id == first.environment_id
+    assert result.evidence_id == first.evidence_id and calls == 2

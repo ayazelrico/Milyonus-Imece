@@ -77,6 +77,7 @@ class ExecutionResult:
     reused: bool = False
     failure_class: str | None = None
     output_truncated: bool = False
+    environment_id: str | None = None
 
 
 @dataclass
@@ -258,6 +259,33 @@ class PythonExecutor:
             str(root / "oracle.py"),
         ]
 
+    async def verification_environment(self) -> dict | None:
+        """Describe the inspected, pinned runtime and actual execution policy."""
+        if self.backend != "docker" or not re.fullmatch(r".+@sha256:[0-9a-f]{64}", self.image):
+            return None
+        runtime_identity = await self._docker_identity()
+        if runtime_identity is None:
+            return None
+        return {
+            "backend": self.backend,
+            "image": self.image,
+            "timeout": self.timeout,
+            "executor": self._policy_hash,
+            "architecture": platform.machine(),
+            "docker": runtime_identity,
+            "command": self._argv(Path("/__imece_evidence__"), "imece-evidence"),
+        }
+
+    @staticmethod
+    def _environment_digest(environment: dict) -> str:
+        return hashlib.sha256(
+            json.dumps(environment, sort_keys=True, ensure_ascii=True).encode()
+        ).hexdigest()
+
+    async def environment_fingerprint(self) -> str | None:
+        environment = await self.verification_environment()
+        return self._environment_digest(environment) if environment is not None else None
+
     async def run(
         self, files: dict[str, str], test: str, *, deterministic: bool = False
     ) -> ExecutionResult:
@@ -267,8 +295,8 @@ class PythonExecutor:
             return await self._execute(files, test)
         from milyonus.imece.evidence import EvidenceCache, evidence_key
 
-        runtime_identity = await self._docker_identity()
-        if runtime_identity is None:
+        environment = await self.verification_environment()
+        if environment is None:
             # Missing metadata must never grant reuse of a previous verdict.
             result = await self._execute(files, test)
             # Some client setup failures (e.g. missing Docker context) exit 1,
@@ -276,24 +304,20 @@ class PythonExecutor:
             if result.failure_class == "candidate_or_oracle_runtime":
                 return replace(result, failure_class="docker_runtime_unverified")
             return result
-        environment = {
-            "backend": self.backend,
-            "image": self.image,
-            "timeout": self.timeout,
-            "executor": self._policy_hash,
-            "architecture": platform.machine(),
-            "docker": runtime_identity,
-            "command": self._argv(Path("/__imece_evidence__"), "imece-evidence"),
-        }
+        environment_id = self._environment_digest(environment)
         key = evidence_key(files, test, environment, "isolated-python-v1")
         if self.cache_path is None or (not deterministic and key not in self.approved_evidence):
-            return replace(await self._execute(files, test), evidence_id=key)
+            return replace(
+                await self._execute(files, test), evidence_id=key, environment_id=environment_id
+            )
         cache = EvidenceCache(self.cache_path)
         try:
             cached = cache.get(key)
-            if cached is not None:
+            if cached is not None and cached.environment_id == environment_id:
                 return replace(cached, evidence_id=key, reused=True)
-            result = replace(await self._execute(files, test), evidence_id=key)
+            result = replace(
+                await self._execute(files, test), evidence_id=key, environment_id=environment_id
+            )
             cache.put(key, result)
             return result
         finally:
