@@ -16,7 +16,13 @@ from milyonus.imece.benchmark import BenchmarkTask, _matches, _score_artifact, s
 from milyonus.imece.schedule import trial_coordinates
 
 TREATMENT_SETTINGS = frozenset(
-    {"adaptive_production", "approved_evidence", "repair_skill", "repair_skill_sha256"}
+    {
+        "adaptive_production",
+        "approved_evidence",
+        "repair_skill",
+        "repair_skill_sha256",
+        "skip_clean_revision",
+    }
 )
 
 
@@ -25,10 +31,12 @@ def execution_controls(settings: dict) -> dict:
 
 
 def describe_treatments(baseline: dict, candidate: dict) -> dict:
+    defaults = {"skip_clean_revision": True}
     factors = [
         k
         for k in sorted(TREATMENT_SETTINGS)
-        if baseline.get("settings", {}).get(k) != candidate.get("settings", {}).get(k)
+        if baseline.get("settings", {}).get(k, defaults.get(k))
+        != candidate.get("settings", {}).get(k, defaults.get(k))
     ]
     builtin = {"kind": "builtin", "instructions_hash": None}
     if baseline.get("cli_prompt_treatment", builtin) != candidate.get(

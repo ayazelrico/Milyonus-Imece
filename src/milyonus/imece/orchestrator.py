@@ -111,6 +111,7 @@ class ImeceSettings:
     irade: IradeSettings = field(default_factory=IradeSettings)
     approved_evidence: tuple[str, ...] = ()
     adaptive_production: bool = False
+    skip_clean_revision: bool = True
     repair_skill: str | None = None
     repair_skill_sha256: str | None = None
 
@@ -818,6 +819,7 @@ class Imece:
     ) -> bool:
         if (
             not self.s.adaptive_production
+            or not self.s.skip_clean_revision
             or self.executor is None
             or reports is None
             or len(survivors) < 2

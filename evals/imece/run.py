@@ -313,6 +313,7 @@ async def run(args) -> int:
         shortlist=ic.shortlist,
         approved_evidence=tuple(ic.approved_evidence),
         adaptive_production=ic.adaptive_production,
+        skip_clean_revision=ic.skip_clean_revision,
         repair_skill=ic.repair_skill,
         pass_threshold=ic.pass_threshold,
         cell_size=ic.cell_size,

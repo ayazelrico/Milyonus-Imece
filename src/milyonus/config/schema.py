@@ -169,6 +169,7 @@ class ImeceConfig(_Strict):
         default_factory=list
     )
     adaptive_production: bool = False
+    skip_clean_revision: bool = True
     repair_skill: str | None = None
     shortlist: int = Field(default=4, ge=1, le=12)
     pass_threshold: float = Field(default=0.6, ge=0.0, le=1.0)

@@ -191,10 +191,14 @@ async def main(args) -> int:
             baseline["settings"]["adaptive_production"]
             == candidate["settings"]["adaptive_production"]
         )
-        if not adaptive_pair and not (same_adaptive and prompt_difference):
-            raise ValueError(
-                "expected adaptive false/true pair or an explicit CLI prompt treatment"
-            )
+        revision_pair = (
+            same_adaptive
+            and baseline["settings"]["adaptive_production"] is True
+            and baseline["settings"]["skip_clean_revision"] is False
+            and candidate["settings"]["skip_clean_revision"] is True
+        )
+        if not (adaptive_pair or revision_pair or (same_adaptive and prompt_difference)):
+            raise ValueError("expected an adaptive, conditional revision, or CLI prompt treatment")
         if any(baseline[key] != candidate[key] for key in ("revision", "implementation_hash")):
             raise ValueError("implementation changed during pair preparation")
         pair = {
