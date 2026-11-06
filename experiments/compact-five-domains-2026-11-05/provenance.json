@@ -1,0 +1,12 @@
+{
+  "source_snapshot": "source-snapshot.json.gz",
+  "sha256": "d966a8a1514c305aab7f853f1ecb5a3a812d430163b838e5386a87eb67b49f02",
+  "implementation_hash": "f1b2551feea5f66147415f992002c81d06aa879e4cbf6bc70fe8f2d4119a66a0",
+  "task_ids": [
+    "stable_unique",
+    "fix_binary_search",
+    "group_totals",
+    "left_join",
+    "evidence_votes"
+  ]
+}

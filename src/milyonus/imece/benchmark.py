@@ -20,6 +20,7 @@ from milyonus.imece.agents import AgentFn
 from milyonus.imece.execution import PythonExecutor, python_files
 from milyonus.imece.journal import AgentJournal
 from milyonus.imece.orchestrator import Imece, ImeceSettings
+from milyonus.imece.schedule import trial_coordinates
 
 
 @dataclass(frozen=True)
@@ -261,6 +262,7 @@ async def run_benchmark(
     completed_rows=None,
     journal_dir: Path | None = None,
     run_identity: dict | None = None,
+    trial_order: str = "task-major",
 ) -> dict[str, Any]:
     if settings.verification != "python":
         raise ValueError("benchmark requires verification='python'")
@@ -273,75 +275,76 @@ async def run_benchmark(
     )
     rows = list(completed_rows or [])
     completed = {(r["task"], r["repeat"]) for r in rows}
-    for task in tasks:
-        for repeat in range(repeats):
-            if (task.id, repeat) in completed:
-                continue
-            if should_stop and should_stop():
-                break
-            if can_begin_trial and not can_begin_trial(task.id, repeat):
-                continue
-            if on_trial:
-                on_trial(task.id, repeat)
-            started = time.monotonic()
-            journal = (
-                AgentJournal(
-                    journal_dir / f"{task.id}-{repeat}.sqlite",
-                    agent_fn,
-                    identity=trial_identity(task, repeat, settings, run_identity, seed),
-                )
-                if journal_dir
-                else None
+    by_id = {task.id: task for task in tasks}
+    for task_id, repeat in trial_coordinates([t.id for t in tasks], repeats, order=trial_order):
+        task = by_id[task_id]
+        if (task.id, repeat) in completed:
+            continue
+        if should_stop and should_stop():
+            break
+        if can_begin_trial and not can_begin_trial(task.id, repeat):
+            continue
+        if on_trial:
+            on_trial(task.id, repeat)
+        started = time.monotonic()
+        journal = (
+            AgentJournal(
+                journal_dir / f"{task.id}-{repeat}.sqlite",
+                agent_fn,
+                identity=trial_identity(task, repeat, settings, run_identity, seed),
             )
+            if journal_dir
+            else None
+        )
 
-            def phase(name, journal=journal):
-                if journal:
-                    journal.phase(name)
-                if on_phase:
-                    on_phase(name)
+        def phase(name, journal=journal):
+            if journal:
+                journal.phase(name)
+            if on_phase:
+                on_phase(name)
 
-            try:
-                result = await Imece(
-                    journal or agent_fn,
-                    settings,
-                    on_phase=phase,
-                    should_stop=should_stop,
-                    capture_reproductions=capture_reproductions,
-                    rng=random.Random(f"{seed}:{task.id}:{repeat}"),
-                ).run(task.request)
-            finally:
-                if journal:
-                    journal.close()
-            try:
-                passed, output = await _score_artifact(executor, task, result.deliverable)
-            except ValueError as exc:
-                passed, output = False, str(exc)
-            confidence = next(
-                (
-                    d.confidence
-                    for d in reversed(result.decisions)
-                    if d.request_kind == "synthesis" and d.choice is not None
-                ),
-                None,
-            )
-            rows.append(
-                {
-                    "task": task.id,
-                    "repeat": repeat,
-                    "status": result.status,
-                    "oracle_passed": passed,
-                    "oracle_output": output,
-                    "seconds": round(time.monotonic() - started, 3),
-                    "tokens": result.tokens,
-                    "unknown_usage_calls": result.unknown_usage_calls,
-                    "cost_usd": result.cost_usd,
-                    "cost_estimated": result.cost_estimated,
-                    "confidence": confidence,
-                    "report": result.to_dict(),
-                }
-            )
-            if on_row:
-                on_row(rows[-1])
+        try:
+            result = await Imece(
+                journal or agent_fn,
+                settings,
+                on_phase=phase,
+                should_stop=should_stop,
+                capture_reproductions=capture_reproductions,
+                rng=random.Random(f"{seed}:{task.id}:{repeat}"),
+            ).run(task.request)
+        finally:
+            if journal:
+                journal.close()
+        try:
+            passed, output = await _score_artifact(executor, task, result.deliverable)
+        except ValueError as exc:
+            passed, output = False, str(exc)
+        confidence = next(
+            (
+                d.confidence
+                for d in reversed(result.decisions)
+                if d.request_kind == "synthesis" and d.choice is not None
+            ),
+            None,
+        )
+        rows.append(
+            {
+                "task": task.id,
+                "repeat": repeat,
+                "status": result.status,
+                "oracle_passed": passed,
+                "oracle_output": output,
+                "seconds": round(time.monotonic() - started, 3),
+                "tokens": result.tokens,
+                "unknown_usage_calls": result.unknown_usage_calls,
+                "cost_usd": result.cost_usd,
+                "cost_estimated": result.cost_estimated,
+                "confidence": confidence,
+                "report": result.to_dict(),
+            }
+        )
+        if on_row:
+            on_row(rows[-1])
     return {
         "schema_version": 1,
         "source": source,

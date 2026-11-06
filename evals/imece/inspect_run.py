@@ -10,6 +10,7 @@ from contextlib import closing
 from pathlib import Path
 
 from evals.imece.protocol import digest, validate_rows
+from milyonus.imece.schedule import trial_coordinates
 
 
 def inspect_run(path: Path) -> dict:
@@ -30,10 +31,13 @@ def inspect_run(path: Path) -> dict:
     )
     completed = {(row["task"], row["repeat"]) for row in rows}
     remaining = [
-        (task["id"], repeat)
-        for task in protocol["tasks"]
-        for repeat in range(protocol["repeats"])
-        if (task["id"], repeat) not in completed
+        (task, repeat)
+        for task, repeat in trial_coordinates(
+            [task["id"] for task in protocol["tasks"]],
+            protocol["repeats"],
+            order=protocol.get("trial_order", "task-major"),
+        )
+        if (task, repeat) not in completed
     ]
     unresolved = []
     journal_errors = []

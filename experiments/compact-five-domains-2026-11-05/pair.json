@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "state": "prepared",
+  "engine": "codex",
+  "protocol_hash": "5fa85f9fff5c21861e4d2dc7784ab540018f678b2706204d9160959953b42411",
+  "settings_differences": {},
+  "treatments": {
+    "factors": [
+      "cli_prompt"
+    ],
+    "single_factor": true,
+    "isolated_compact_prompt": true,
+    "note": "Joint treatment results cannot be attributed to an individual factor."
+  },
+  "cli_prompt_treatments": {
+    "baseline": {
+      "kind": "builtin",
+      "instructions_hash": null
+    },
+    "candidate": {
+      "kind": "compact-text-only",
+      "instructions_hash": "86ec300ee8526ba441c1162c7b2c54ebd73f24fea1289c8dd030535ac62c2c5a"
+    }
+  },
+  "reports": {
+    "baseline": {
+      "path": "baseline.json",
+      "report_hash": "00e2d9c59c7830dde5be948c581ae01af69ba0678d7a30b5eb38de58c7d834e3",
+      "protocol_hash": "5fa85f9fff5c21861e4d2dc7784ab540018f678b2706204d9160959953b42411",
+      "revision": "a7a97128bf8a8ac72a772d52bc12d3ce50449f4d",
+      "implementation_hash": "f1b2551feea5f66147415f992002c81d06aa879e4cbf6bc70fe8f2d4119a66a0"
+    },
+    "candidate": {
+      "path": "candidate.json",
+      "report_hash": "4f1d1b4e0e378c52de4803ee71faddb9b6e048429234ef831b2ed868f5063d52",
+      "protocol_hash": "5fa85f9fff5c21861e4d2dc7784ab540018f678b2706204d9160959953b42411",
+      "revision": "a7a97128bf8a8ac72a772d52bc12d3ce50449f4d",
+      "implementation_hash": "f1b2551feea5f66147415f992002c81d06aa879e4cbf6bc70fe8f2d4119a66a0"
+    }
+  },
+  "model_calls": 0,
+  "result": null,
+  "note": "Preparation only; no trials executed, no measured gain or 5X result."
+}

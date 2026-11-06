@@ -5,10 +5,15 @@ kampanyada baseline ve adayda dörder sonuç satırı kaydedildi; iki tarafta
 birer belirsiz çağrı oluştuğunda gözetmen durdu. Kullanıcı çağrı başına ücret
 dökümü bulunmadığını bildirdi. Ayrı Codex oturumlarının teknik bulguları ve
 düzeltmeleri [kampanya kaydında](audits/2026-11-05-campaign.md) bulunur.
-Son tam yerel koşu Docker dahil **479 geçti, atlanan test yok** sonucunu verdi.
+6 Kasım devamında ek beş alanlı örneklem tamamlandı: iki kolda da 4/5
+doğrulanmış kabul; bir bütçe sonucu ve bir belirsiz çağrı korundu.
+[Sonuç kaydı](experiments/compact-five-domains-2026-11-06.md).
+Kesinti sonrası token hesabı ve varsayılan duruş için ayrı model incelemesinin
+iki bulgusu yerel regresyonlarla düzeltildi.
+Son tam yerel koşu Docker dahil **504 geçti, atlanan test yok** sonucunu verdi.
 Önceki aşamaların test sayıları aşağıda tarihçe olarak korunur.
 
-5 Kasım 2026 itibarıyla plan tamamlanmış değildir. Aşağıdaki ayrım, kod
+6 Kasım 2026 itibarıyla plan tamamlanmış değildir. Aşağıdaki ayrım, kod
 bulunmasını kabul edilmiş sonuç olarak saymayı önler. Bu kayıt deney sonucu
 veya bağımsız denetim belgesi değildir.
 

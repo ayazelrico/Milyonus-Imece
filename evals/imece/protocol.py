@@ -13,6 +13,7 @@ from typing import Any
 
 from evals.imece.efficiency import paired_efficiency, repair_family_outcomes
 from milyonus.imece.benchmark import BenchmarkTask, _matches, _score_artifact, summarize
+from milyonus.imece.schedule import trial_coordinates
 
 TREATMENT_SETTINGS = frozenset(
     {"adaptive_production", "approved_evidence", "repair_skill", "repair_skill_sha256"}
@@ -59,9 +60,11 @@ def manifest(
     seed: int,
     repeats: int,
     revision: str,
+    trial_order: str = "task-major",
 ) -> dict:
     if repeats < 1 or not tasks or len({t.id for t in tasks}) != len(tasks):
         raise ValueError("nonempty unique tasks and positive repeats required")
+    trial_coordinates([t.id for t in tasks], repeats, order=trial_order)
     protocol = {
         "schema_version": 2,
         "scorer_hash": digest([inspect.getsource(_score_artifact), inspect.getsource(_matches)]),
@@ -78,6 +81,7 @@ def manifest(
         "runtime": runtime,
         "seed": seed,
         "repeats": repeats,
+        "trial_order": trial_order,
         "limits": {k: getattr(settings, k) for k in ("max_tokens", "max_rounds", "test_timeout")},
         "execution_controls": execution_controls(asdict(settings)),
     }
@@ -102,7 +106,11 @@ def validate_rows(rows: list[dict], protocol: dict, *, complete: bool = False) -
         raise ValueError("invalid task matrix")
     if not isinstance(rows, list):
         raise ValueError("invalid task/repeat matrix")
-    expected = {(t["id"], i) for t in tasks for i in range(repeats)}
+    expected = set(
+        trial_coordinates(
+            [t["id"] for t in tasks], repeats, order=protocol.get("trial_order", "task-major")
+        )
+    )
     actual = set()
     for row in rows:
         if (
@@ -126,16 +134,21 @@ def validate_rows(rows: list[dict], protocol: dict, *, complete: bool = False) -
         tokens = row.get("tokens")
         if tokens is not None and (type(tokens) is not int or tokens < 0):
             raise ValueError("invalid tokens")
-        for field in ("seconds", "elapsed_s"):
+        for field in ("seconds", "elapsed_s", "attempt_seconds"):
             if field in row and (
                 type(row[field]) not in (int, float)
                 or not math.isfinite(row[field])
                 or row[field] < 0
             ):
                 raise ValueError(f"invalid {field}")
-        for field in ("unknown_usage_calls", "observed_tokens"):
+        for field in ("unknown_usage_calls", "observed_tokens", "logical_path_tokens"):
             if field in row and (type(row[field]) is not int or row[field] < 0):
                 raise ValueError(f"invalid {field}")
+        if (
+            "usage_attribution_complete" in row
+            and type(row["usage_attribution_complete"]) is not bool
+        ):
+            raise ValueError("invalid usage attribution flag")
         if "cost_estimated" in row and type(row["cost_estimated"]) is not bool:
             raise ValueError("invalid cost estimate flag")
         confidence = row.get("confidence")

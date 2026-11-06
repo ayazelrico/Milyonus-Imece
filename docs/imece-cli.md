@@ -31,6 +31,13 @@ başlatılmış eşzamanlı çağrılar kendi kayıtlarında tamamlanır veya ip
 Geçersiz tamamlanma yanıtı kalıcı durum hatasıdır ve koşuyu keser. Belirsiz
 kayıt ile bilinen kullanım sayıları korunur; sıfır maliyet varsayılmaz.
 
+Yeniden başlatmada geçmiş belirsiz çağrılar varsayılan olarak deneyin sonraki
+görevini de durdurur. Operatör yalnızca diğer görevlere açıkça devam etmek
+istiyorsa `--resume --continue-after-uncertain-trial` kullanabilir. Görev ve
+tekrar kimliği bilinen belirsiz çağrı yine tekrar gönderilmez. Kimliksiz eski
+belirsiz kayıtlar bütün yeni gönderimleri engeller. Bu seçenek bilinmeyen
+harcamayı uzlaştırmaz ve kayıtları tamamlanmış saymaz.
+
 Günlük bütünlüğü veya kalıcı kayıt yazma hatası `FatalAgentStateError` ile
 çalışmayı keser. Ajan havuzu bu hatayı sıradan başarısız yanıt metnine
 çevirmez; aynı havuzun paralel partilerindeki çalışanlar iptal edilip beklenir.
@@ -56,6 +63,25 @@ kayıtlar, modern kayıtlardan önce gelen bir önek olarak korunur. Bunlara kim
 uydurulmaz; tamamlanmamış günlük düğümlerini kurtarmak için kullanılamazlar.
 Kimlikli fakat günlük bağlantısı eksik ara biçimler devam için reddedilir.
 Kod kimliği değiştiğinde mevcut manifest kısıtlaması ayrıca geçerlidir.
+
+Kesinti sonrası token hesabı mantıksal dalın toplamı yerine kalıcı gerçek çağrı
+kayıtlarından yeniden kurulur. Terk edilen dalın bilinen kullanımı da görev
+bütçesinde kalır; günlükten tekrar kullanılan yanıt ikinci kez sayılmaz.
+`logical_path_tokens` yeniden yürütülen dalı, `observed_tokens` bilinen gerçek
+kullanımı gösterir. Belirsiz çağrı varsa `tokens` boş kalır. Eski kimliksiz
+kayıtlar görevlere dağıtılamadığından `usage_attribution_complete=false` olur
+ve yeni gönderim uzlaştırma gerektirir. Koşu düzeyindeki
+`accounting.observed_tokens` bu kayıtların bilinen kullanımını da korur.
+Özetin `observed_tokens` alanı tüm gerçek kayıtların bilinen alt sınırıdır;
+`unassigned_observed_tokens` ve `unassigned_unknown_usage_calls` henüz görev
+satırına atanamayan kullanımı ayrıca gösterir. Bu kullanım varken toplam
+token ve doğrulanmış sonuç başına token değeri boş kalır.
+Bu sınır tamamlanan çağrıları izler; eşzamanlı veya halen çalışan çağrıların
+çıktısını önceden kesin olarak sınırlamaz.
+
+Önceki süreç görev satırını yazmadan kesilmişse toplam süre bilinmez.
+Bu durumda devam denemesinin süresi yalnızca `attempt_seconds` olarak
+kaydedilir; `seconds` yazılmaz ve toplam gecikme dağılımı eksik görünür.
 
 Yeni ajan günlüğünde şema, sürüm, koşu kimliği ve ilk aşama girdisi tek SQLite
 işleminde oluşturulur. İşlem tamamlanmadan bir kesinti olursa SQLite dosyası
@@ -249,3 +275,20 @@ maliyeti bilinmiyor kalır.
 
 Yapılandırma kaynağı: [resmi Codex referansı](https://learn.chatgpt.com/docs/config-file/config-reference),
 `model_instructions_file` alanı. Bu seçenek kullanıcı/global Codex ayarını değiştirmez.
+
+## Deney sırası ve bütçe kapsamı
+
+Yeni CLI hazırlıkları `--trial-order repeat-major` kullanır: önce her seçili
+görevin ilk tekrarı, sonra ikinci tekrarları çalışır. `task-major` önce aynı
+görevin tüm tekrarlarını bitirir. Sıra protokol kimliğine girer; iki kolun
+sırası farklıysa karşılaştırma reddedilir. İnceleme aracı aynı sıra üzerinden
+sonraki kaydı hesaplar. Sıra alanı bulunmayan eski kayıtlar incelemede
+`task-major` kabul edilir; yeni koşucu eski deneyi sessizce yeniden sıralamaz.
+Kod/protokol değişimi mevcut devam kimliği denetimine tabidir.
+
+Koşu başına `max_tokens` sınırında kalan bilinen bir `budget` sonucu kaydedilir
+ve deney sonraki göreve geçebilir. Deneyin toplam `max_cli_calls` sınırına
+ulaşılması veya bir koşunun kullanımının belirsiz kalması deney akışını
+sonuç satırı sınırında durdurur. Son izinli çağrı, yalnızca rezerve edildiği
+için çalışan işlem sırasında iptal edilmez. Belirsiz kullanım `rejected`
+sonucuyla birlikte gelse bile otomatik devamı durdurur.

@@ -1,0 +1,141 @@
+{
+  "accepted_5x": false,
+  "treatments": {
+    "factors": [
+      "cli_prompt"
+    ],
+    "single_factor": true,
+    "isolated_compact_prompt": true,
+    "note": "Joint treatment results cannot be attributed to an individual factor."
+  },
+  "blockers": [
+    "CLI model independence evidence missing or invalid",
+    "requires at least 50 tasks \u00d7 5 repeats per version",
+    "independence warning detected",
+    "unresolved charges or reservation overruns",
+    "verified billing required; estimated costs cannot establish 5X",
+    "complete positive total costs required",
+    "independent audit attestation missing or mismatched"
+  ],
+  "gain": null,
+  "receipt_hashes": {},
+  "gain_task_bootstrap_95pct": null,
+  "phase_efficiency": {
+    "gate_trials_with_identical_workload": 0,
+    "gate_trials_total": 5,
+    "matched_baseline_processes": 0,
+    "matched_candidate_processes": 0,
+    "matched_process_reduction": null,
+    "full_matrix_gate_reduction_at_least_60pct": null,
+    "candidate_to_baseline_tokens_per_verified_success": null,
+    "token_cost_at_most_half": null
+  },
+  "repair_families": {},
+  "baseline": {
+    "runs": 5,
+    "status_counts": {
+      "accepted": 4,
+      "budget": 1
+    },
+    "distributions": {
+      "seconds": {
+        "known_runs": 5,
+        "unknown_runs": 0,
+        "min": 303.016,
+        "median": 310.595,
+        "p95": 473.28819999999996,
+        "max": 491.859
+      },
+      "tokens": {
+        "known_runs": 4,
+        "unknown_runs": 1,
+        "min": null,
+        "median": null,
+        "p95": null,
+        "max": null
+      },
+      "cost_usd": {
+        "known_runs": 0,
+        "unknown_runs": 5,
+        "min": null,
+        "median": null,
+        "p95": null,
+        "max": null
+      }
+    },
+    "gate_failure_classes": {},
+    "accepted": 4,
+    "verified_successes": 4,
+    "accepted_deliverable_rate": 0.8,
+    "verified_success_rate": 0.8,
+    "false_accepts": 0,
+    "total_tokens": null,
+    "tokens_per_verified_success": null,
+    "observed_tokens": 1371076,
+    "unknown_token_runs": 1,
+    "cost_usd": null,
+    "cost_estimated": true,
+    "cost_per_accepted_usd": null,
+    "cost_per_verified_success_usd": null,
+    "calibration_ece": 0.0024999999999999467,
+    "calibration_samples": 4
+  },
+  "candidate": {
+    "runs": 5,
+    "status_counts": {
+      "accepted": 4,
+      "budget": 1
+    },
+    "distributions": {
+      "seconds": {
+        "known_runs": 5,
+        "unknown_runs": 0,
+        "min": 284.541,
+        "median": 299.952,
+        "p95": 503.6996,
+        "max": 522.644
+      },
+      "tokens": {
+        "known_runs": 4,
+        "unknown_runs": 1,
+        "min": null,
+        "median": null,
+        "p95": null,
+        "max": null
+      },
+      "cost_usd": {
+        "known_runs": 0,
+        "unknown_runs": 5,
+        "min": null,
+        "median": null,
+        "p95": null,
+        "max": null
+      }
+    },
+    "gate_failure_classes": {},
+    "accepted": 4,
+    "verified_successes": 4,
+    "accepted_deliverable_rate": 0.8,
+    "verified_success_rate": 0.8,
+    "false_accepts": 0,
+    "total_tokens": null,
+    "tokens_per_verified_success": null,
+    "observed_tokens": 875161,
+    "unknown_token_runs": 1,
+    "cost_usd": null,
+    "cost_estimated": true,
+    "cost_per_accepted_usd": null,
+    "cost_per_verified_success_usd": null,
+    "calibration_ece": 0.0,
+    "calibration_samples": 4
+  },
+  "baseline_success_wilson_95pct": [
+    0.37553462976252533,
+    0.9637758913675698
+  ],
+  "candidate_success_wilson_95pct": [
+    0.37553462976252533,
+    0.9637758913675698
+  ],
+  "note": "Intervals describe this corpus, not production generalization; audit attestation requires human provenance review."
+}

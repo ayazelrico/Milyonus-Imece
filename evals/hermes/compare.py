@@ -19,6 +19,8 @@ def paired_outcomes(imece: dict, hermes: dict) -> dict:
     for key in ("tasks", "scorer_hash", "seed", "repeats"):
         if key not in a or key not in b or a[key] != b[key]:
             raise ValueError(f"incomparable experiment field: {key}")
+    if a.get("trial_order", "task-major") != b.get("trial_order", "task-major"):
+        raise ValueError("incomparable experiment field: trial_order")
     for key in ("backend", "platform", "python", "image"):
         if key not in a["runtime"] or a["runtime"][key] != b["runtime"].get(key):
             raise ValueError(f"incomparable scorer environment: {key}")

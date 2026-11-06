@@ -13,6 +13,7 @@ import sqlite3
 import subprocess
 import tempfile
 import uuid
+from collections import Counter
 from contextlib import closing
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -379,6 +380,7 @@ async def run(args) -> int:
         seed=args.seed,
         repeats=args.repeats,
         revision=revision,
+        trial_order=args.trial_order,
     )
     frozen["implementation_hash"] = digest(
         {
@@ -534,18 +536,47 @@ async def run(args) -> int:
         for t in transcripts
         if t.get("state") == "unknown" or "error" in t
     }
+    # Dispatch records, unlike a replayed logical branch, include abandoned work.
+    trial_tokens = Counter()
+    trial_unknown = Counter()
+    preexisting_trials = {(t.get("task"), t.get("repeat")) for t in transcripts}
+    attribution_complete = all("journal" in t for t in transcripts)
+    for entry in transcripts:
+        if entry.get("state") == "completed":
+            trial_tokens[(entry["task"], entry["repeat"])] += entry["reply"]["tokens"]
+        elif entry.get("state") == "unknown" or "error" in entry:
+            trial_unknown[(entry.get("task"), entry.get("repeat"))] += 1
 
     def persist(state: str):
         checkpoint["state"] = state
         checkpoint["summary"] = summarize(checkpoint["runs"])
+        observed_tokens = sum(t.get("reply", {}).get("tokens", 0) for t in transcripts)
+        completed_trials = {(r["task"], r["repeat"]) for r in checkpoint["runs"]}
+        unassigned = [
+            t for t in transcripts if (t.get("task"), t.get("repeat")) not in completed_trials
+        ]
+        summary = checkpoint["summary"]
+        summary["observed_tokens"] = observed_tokens
+        summary["usage_attribution_complete"] = attribution_complete
+        summary["unassigned_observed_tokens"] = sum(
+            t.get("reply", {}).get("tokens", 0) for t in unassigned
+        )
+        summary["unassigned_unknown_usage_calls"] = sum(
+            t.get("state") in ("running", "unknown") or "error" in t for t in unassigned
+        )
+        if not attribution_complete or unassigned:
+            summary["total_tokens"] = None
+            summary["tokens_per_verified_success"] = None
         checkpoint["accounting"] = {
             "cost_usd": None,
             "cost_status": "unknown",
-            "token_budget": "completed-calls-only",
+            "token_budget": "all-recorded-completed-calls",
+            "observed_tokens": observed_tokens,
+            "usage_attribution_complete": attribution_complete,
             "cli_call_limit": call_limit,
             "cli_calls_reserved": len(transcripts),
             "unknown_usage_calls": sum(
-                t.get("state") in ("running", "unknown") for t in transcripts
+                t.get("state") in ("running", "unknown") or "error" in t for t in transcripts
             ),
         }
         checkpoint["updated_at"] = datetime.now(UTC).isoformat()
@@ -597,6 +628,13 @@ async def run(args) -> int:
             None,
         ) in uncertain_trials:
             raise AdmissionDenied("trial has an uncertain CLI call; reconciliation required")
+        trial = (binding["task"], binding["repeat"])
+        if not attribution_complete:
+            raise AdmissionDenied(
+                "legacy CLI usage lacks trial attribution; reconciliation required"
+            )
+        if trial_tokens[trial] >= settings.max_tokens:
+            raise AdmissionDenied("trial token budget reached before dispatch")
         entry = {
             "call_id": uuid.uuid4().hex,
             "sequence": len(transcripts),
@@ -622,29 +660,48 @@ async def run(args) -> int:
             # Freeze this trial immediately, not only after a process restart.
             # Other calls already in flight remain accounted for independently.
             uncertain_trials.add((binding["task"], binding["repeat"]))
+            trial_unknown[trial] += 1
             entry.update(state="unknown", error=redact(f"{type(exc).__name__}: {exc}"))
             persist_call(entry)
             raise
         entry.update(state="completed", reply=payload, output_hash=output_hash)
+        trial_tokens[trial] += payload["tokens"]
         persist_call(entry)
         return reply
 
+    stop_experiment = bool(uncertain_trials) and not args.continue_after_uncertain_trial
+
     def save_row(row):
-        nonlocal row_cursor
+        nonlocal row_cursor, stop_experiment
         entries = transcripts[row_cursor:]
-        if (
+        uncertain = (
             (row["task"], row["repeat"]) in uncertain_trials
             or (None, None) in uncertain_trials
             or any(t.get("state") != "completed" for t in entries)
-        ):
-            row["observed_tokens"] = row["tokens"]
-            row["tokens"] = None
+        )
+        trial = (row["task"], row["repeat"])
+        row["logical_path_tokens"] = row["tokens"]
+        row["observed_tokens"] = trial_tokens[trial]
+        row["usage_attribution_complete"] = attribution_complete
+        row["unknown_usage_calls"] = trial_unknown[trial] + trial_unknown[(None, None)]
+        row["tokens"] = None if uncertain or not attribution_complete else trial_tokens[trial]
+        if trial in preexisting_trials or not attribution_complete:
+            # The previous process did not checkpoint its elapsed wall time.
+            # The resumed attempt is measurable; end-to-end latency is not.
+            if "seconds" in row:
+                row["attempt_seconds"] = row.pop("seconds")
+            row.pop("elapsed_s", None)
+        # Decide only at a settled row boundary: reserving the last permitted
+        # call must not cancel that call while it is still running.
+        stop_experiment = (
+            uncertain
+            or not attribution_complete
+            or (call_limit is not None and len(transcripts) >= call_limit)
+        )
         row_cursor = len(transcripts)
         row["cost_usd"] = None
         checkpoint["runs"].append(row)
         persist("partial")
-
-    initial_row_count = len(checkpoint["runs"])
 
     def can_begin_trial(task_id, repeat):
         # An existing journal can finish from replay even at the limit. Any
@@ -668,13 +725,11 @@ async def run(args) -> int:
             on_row=save_row,
             capture_reproductions=frozen["capture_reproductions"],
             can_begin_trial=can_begin_trial,
-            should_stop=lambda: bool(
-                len(checkpoint["runs"]) > initial_row_count
-                and checkpoint["runs"][-1]["status"] == "budget"
-            ),
+            should_stop=lambda: stop_experiment,
             completed_rows=checkpoint["runs"],
             journal_dir=journal_dir,
             run_identity=frozen,
+            trial_order=args.trial_order,
         )
     except BaseException:
         persist("interrupted")
@@ -721,6 +776,9 @@ def make_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--max-tokens", type=int, default=250_000)
     parser.add_argument("--repeats", type=int, default=1)
+    parser.add_argument(
+        "--trial-order", choices=("task-major", "repeat-major"), default="repeat-major"
+    )
     parser.add_argument("--task", action="append")
     parser.add_argument(
         "--failure-families",
@@ -738,6 +796,11 @@ def make_parser() -> argparse.ArgumentParser:
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--resume", action="store_true")
     mode.add_argument("--prepare", action="store_true", help="atomic checkpoint, no model calls")
+    parser.add_argument(
+        "--continue-after-uncertain-trial",
+        action="store_true",
+        help="explicitly allow other trials after unknown usage; never retry the uncertain trial",
+    )
     return parser
 
 

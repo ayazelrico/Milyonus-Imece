@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-5 Kasım son yerel doğrulaması: **486 test geçti, atlanan test yok**.
+6 Kasım son yerel doğrulaması: **504 test geçti, atlanan test yok**.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -21,6 +21,14 @@ P3 devamı: isteğe bağlı kısa CLI talimat profili, tek görevlik eşleşmiş
 kalibrasyonda iki tarafta da doğrulanmış kabul sağlarken tokenı yaklaşık
 %39,5 azalttı; süre bu örnekte arttı. Bu, yarı token veya 5X kabulü değildir.
 [Kalibrasyon kaydı](docs/experiments/compact-cli-2026-11-05.md).
+
+6 Kasım devamında beş alanlı örneklem tamamlandı: iki kolda da 4/5
+doğrulanmış kabul, bir bütçe sonucu ve bir belirsiz çağrı var. Tam maliyet
+oranı hesaplanamıyor; `accepted_5x=false`.
+[Beş alanlı sonuçlar](docs/experiments/compact-five-domains-2026-11-06.md).
+Kesinti sonrası gerçek çağrı/token hesabı, eski kimliksiz kullanımın özeti ve
+belirsiz çağrıdan sonra varsayılan duruş düzeltildi. Manifestte görev sırası
+artık açık; CLI varsayılanı her görevi tekrar etmeden önce bir kez dolaşır.
 
 Yerel uygulamada sürümlü görev kümesi, gizli yürütülebilir oracle, deney manifesti
 ve rapor karşılaştırma kapısı; bütçe rezervasyon defteri, kalıcı aşama/çağrı

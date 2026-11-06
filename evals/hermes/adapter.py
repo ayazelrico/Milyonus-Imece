@@ -30,6 +30,7 @@ from milyonus.imece.benchmark import _score_artifact
 from milyonus.imece.codex import oracle_guard
 from milyonus.imece.execution import PythonExecutor
 from milyonus.imece.orchestrator import ImeceSettings
+from milyonus.imece.schedule import trial_coordinates
 
 
 def hermes_cmd() -> list[str]:
@@ -79,6 +80,7 @@ def build_manifest(
     sandbox_backend: str = "macos",
     test_timeout: float = 10.0,
     image: str = "python:3.12-slim",
+    trial_order: str = "task-major",
 ) -> dict:
     tasks = load_suite(suite)
     settings = ImeceSettings(
@@ -115,6 +117,7 @@ def build_manifest(
         seed=seed,
         repeats=repeats,
         revision=revision,
+        trial_order=trial_order,
     )
 
 
@@ -129,6 +132,7 @@ async def run_suite(
     suite: str = "core-v1",
     sandbox_backend: str = "macos",
     test_timeout: float = 10.0,
+    trial_order: str = "task-major",
 ) -> dict:
     tasks = load_suite(suite)
     image = os.environ.get("MILYONUS_HERMES_IMAGE", "python:3.12-slim")
@@ -141,6 +145,7 @@ async def run_suite(
         image=image,
         suite=suite,
         test_timeout=test_timeout,
+        trial_order=trial_order,
     )
     report: dict = {
         "manifest": frozen,
@@ -164,27 +169,28 @@ async def run_suite(
         return report
 
     executor = PythonExecutor(backend=sandbox_backend, image=image, timeout=test_timeout)  # type: ignore[arg-type]
-    for task in tasks:
-        for repeat in range(repeats):
-            started = time.monotonic()
-            artifact = await _ask_hermes(task.request, model=model, timeout=180)
-            try:
-                passed, _output = await _score_artifact(executor, task, artifact)
-            except ValueError as exc:
-                passed, _output = False, str(exc)
-            report["runs"].append(
-                {
-                    "task": task.id,
-                    "repeat": repeat,
-                    "status": "accepted" if artifact.strip() else "error",
-                    "oracle_passed": bool(passed),
-                    "oracle_output": _output,
-                    "tokens": None,
-                    "cost_usd": None,
-                    "confidence": None,
-                    "elapsed_s": round(time.monotonic() - started, 3),
-                }
-            )
+    by_id = {task.id: task for task in tasks}
+    for task_id, repeat in trial_coordinates([t.id for t in tasks], repeats, order=trial_order):
+        task = by_id[task_id]
+        started = time.monotonic()
+        artifact = await _ask_hermes(task.request, model=model, timeout=180)
+        try:
+            passed, _output = await _score_artifact(executor, task, artifact)
+        except ValueError as exc:
+            passed, _output = False, str(exc)
+        report["runs"].append(
+            {
+                "task": task.id,
+                "repeat": repeat,
+                "status": "accepted" if artifact.strip() else "error",
+                "oracle_passed": bool(passed),
+                "oracle_output": _output,
+                "tokens": None,
+                "cost_usd": None,
+                "confidence": None,
+                "elapsed_s": round(time.monotonic() - started, 3),
+            }
+        )
     report["report_hash"] = digest(report)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2) + "\n")
@@ -197,6 +203,7 @@ def main() -> int:
     p.add_argument("--model", required=True)
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--repeats", type=int, default=5)
+    p.add_argument("--trial-order", choices=("task-major", "repeat-major"), default="repeat-major")
     p.add_argument("--revision", default="hermes-adapter")
     p.add_argument("--suite", choices=("core-v1", "core-v2"), default="core-v1")
     p.add_argument("--prepare", action="store_true")
@@ -209,6 +216,7 @@ def main() -> int:
             model=args.model,
             seed=args.seed,
             repeats=args.repeats,
+            trial_order=args.trial_order,
             revision=args.revision,
             prepare_only=args.prepare,
             sandbox_backend=args.sandbox_backend,

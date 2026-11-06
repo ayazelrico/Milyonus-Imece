@@ -29,6 +29,9 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument("--suite", choices=("smoke", "core-v1", "core-v2"), default="core-v2")
     parser.add_argument("--task", action="append", help="same explicit task subset for both arms")
     parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument(
+        "--trial-order", choices=("task-major", "repeat-major"), default="repeat-major"
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--backend", choices=("docker", "macos"), default="docker")
     parser.add_argument("--image")
@@ -143,6 +146,7 @@ async def main(args) -> int:
                 ("--failure-families", args.failure_families),
                 ("--agents", args.agents),
                 ("--max-tokens", args.max_tokens),
+                ("--trial-order", args.trial_order),
             ):
                 if value is not None:
                     argv.extend((flag, str(value)))
