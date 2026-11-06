@@ -36,6 +36,7 @@ NON_BUILDER_FAILURES = frozenset(
         "timeout",
         "sandbox_launch_error",
         "docker_infrastructure_error",
+        "docker_runtime_unverified",
     }
 )
 
@@ -92,7 +93,79 @@ class PythonExecutor:
             raise ValueError("execution timeout and concurrency must be positive")
         self._sem = asyncio.Semaphore(self.max_parallel)
         self.processes_started = 0
+        self.metadata_processes_started = 0
         self._policy_hash = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+    async def _docker_metadata(self, *arguments: str) -> dict | None:
+        """Read only selected identity fields, with bounded output and lifetime."""
+        async with self._sem:
+            proc = None
+            try:
+                async with asyncio.timeout(5):
+                    proc = await asyncio.create_subprocess_exec(
+                        shutil.which("docker") or "docker",
+                        *arguments,
+                        env=self._client_environment(),
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.DEVNULL,
+                        start_new_session=True,
+                    )
+                    self.metadata_processes_started += 1
+                    assert proc.stdout is not None
+                    output = bytearray()
+                    while chunk := await proc.stdout.read(4096):
+                        output.extend(chunk)
+                        if len(output) > _LIMIT:
+                            return None
+                    if await proc.wait() != 0:
+                        return None
+                    value = json.loads(output)
+                    return value if isinstance(value, dict) else None
+            except (OSError, TimeoutError, ValueError, UnicodeError):
+                return None
+            finally:
+                if proc is not None:
+                    if proc.returncode is None:
+                        with contextlib.suppress(ProcessLookupError):
+                            os.killpg(proc.pid, signal.SIGKILL)
+                    await proc.wait()
+
+    async def _docker_identity(self) -> dict | None:
+        # A multi-platform digest alone does not identify the selected image.
+        # Host architecture also says nothing about a remote Docker daemon.
+        image, daemon = await asyncio.gather(
+            self._docker_metadata(
+                "image",
+                "inspect",
+                "--format",
+                '{"id":{{json .Id}},"os":{{json .Os}},"architecture":{{json .Architecture}}}',
+                self.image,
+            ),
+            self._docker_metadata(
+                "info",
+                "--format",
+                '{"id":{{json .ID}},"os":{{json .OSType}},"architecture":{{json .Architecture}},'
+                '"kernel":{{json .KernelVersion}},"version":{{json .ServerVersion}},'
+                '"security":{{json .SecurityOptions}}}',
+            ),
+        )
+        if image is None or daemon is None:
+            return None
+        if (
+            set(image) != {"id", "os", "architecture"}
+            or not isinstance(image["id"], str)
+            or not re.fullmatch(r"sha256:[0-9a-f]{64}", image["id"])
+            or any(not isinstance(image[k], str) or not image[k] for k in ("os", "architecture"))
+            or set(daemon) != {"id", "os", "architecture", "kernel", "version", "security"}
+            or any(
+                not isinstance(daemon[k], str) or not daemon[k]
+                for k in ("id", "os", "architecture", "kernel", "version")
+            )
+            or not isinstance(daemon["security"], list)
+            or any(not isinstance(v, str) for v in daemon["security"])
+        ):
+            return None
+        return {"image": image, "daemon": {**daemon, "security": sorted(daemon["security"])}}
 
     def available(self) -> bool:
         if self.backend == "docker":
@@ -194,12 +267,23 @@ class PythonExecutor:
             return await self._execute(files, test)
         from milyonus.imece.evidence import EvidenceCache, evidence_key
 
+        runtime_identity = await self._docker_identity()
+        if runtime_identity is None:
+            # Missing metadata must never grant reuse of a previous verdict.
+            result = await self._execute(files, test)
+            # Some client setup failures (e.g. missing Docker context) exit 1,
+            # just like an assertion inside a successfully started container.
+            if result.failure_class == "candidate_or_oracle_runtime":
+                return replace(result, failure_class="docker_runtime_unverified")
+            return result
         environment = {
             "backend": self.backend,
             "image": self.image,
             "timeout": self.timeout,
             "executor": self._policy_hash,
             "architecture": platform.machine(),
+            "docker": runtime_identity,
+            "command": self._argv(Path("/__imece_evidence__"), "imece-evidence"),
         }
         key = evidence_key(files, test, environment, "isolated-python-v1")
         if self.cache_path is None or (not deterministic and key not in self.approved_evidence):

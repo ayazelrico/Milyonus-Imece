@@ -6,6 +6,11 @@ Sabit digest'li imaj, açık deterministik örnekler, soğuk önbellek ve açık
 operatör izinleriyle çalışır. Bu sentetik tekrar yükü tam görev matrisindeki
 kazanım veya 5X kabulü değildir. [Ölçüm ve sınırları](experiments/cache-probe-2026-11-06.md).
 
+Güncel kimlik seçilen imajı, Docker daemon'unu ve yürütme komutunu da kapsar;
+metadata okunamazsa önbellek kullanılmaz. Eski onay hash'lerinin yeniden
+incelenip üretilmesi gerekir. Kimlik sorgularının ek süreçleri dahil ölçüm:
+[çalışma ortamı ve politika](experiments/cache-runtime-probe-2026-11-06.md).
+
 Yerel hashing hafıza gömmesi `hashing-blake2b-v1-DIM` imzasını kullanır.
 Eski `hashing-DIM` imzasıyla kaydedilmiş vektörler Python süreç tohumuna bağlı
 olduğundan yeni sorgularla karşılaştırılmaz. Hashing hafıza kullanan mevcut

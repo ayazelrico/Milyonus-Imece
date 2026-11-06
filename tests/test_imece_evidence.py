@@ -1,5 +1,6 @@
 """Exercise cache admission and invalidation through the executor boundary."""
 
+from copy import deepcopy
 from dataclasses import replace
 
 import pytest
@@ -7,8 +8,51 @@ import pytest
 from milyonus.imece.execution import ExecutionResult, PythonExecutor
 
 
-@pytest.mark.parametrize("change", ["files", "oracle", "image", "timeout"])
-async def test_changed_contract_or_runtime_executes_again(tmp_path, monkeypatch, change):
+@pytest.fixture(autouse=True)
+def runtime_identity(monkeypatch):
+    identity = {
+        "image": {"id": "test-image", "os": "linux", "architecture": "arm64"},
+        "daemon": {
+            "id": "test-daemon",
+            "architecture": "a",
+            "os": "linux",
+            "kernel": "1",
+            "version": "1",
+            "security": ["seccomp"],
+        },
+    }
+
+    async def inspect(self):
+        return deepcopy(identity)
+
+    monkeypatch.setattr(PythonExecutor, "_docker_identity", inspect)
+    return identity
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        "files",
+        "oracle",
+        "image",
+        "timeout",
+        "daemon",
+        "resolved_image",
+        "architecture",
+        "policy",
+        "image_os",
+        "image_architecture",
+        "daemon_os",
+        "kernel",
+        "version",
+        "security",
+        "executor",
+        "host_architecture",
+    ],
+)
+async def test_changed_contract_or_runtime_executes_again(
+    tmp_path, monkeypatch, runtime_identity, change
+):
     calls = []
 
     async def execute(self, files, oracle):
@@ -29,11 +73,61 @@ async def test_changed_contract_or_runtime_executes_again(tmp_path, monkeypatch,
         oracle = "assert 1 == 1"
     elif change == "image":
         executor.image = "python@sha256:" + "2" * 64
-    else:
+    elif change == "timeout":
         executor.timeout += 1
+    elif change == "daemon":
+        runtime_identity["daemon"]["id"] = "different-daemon"
+    elif change == "resolved_image":
+        runtime_identity["image"]["id"] = "different-selected-image"
+    elif change == "architecture":
+        runtime_identity["daemon"]["architecture"] = "b"
+    elif change in ("image_os", "image_architecture"):
+        runtime_identity["image"][change.removeprefix("image_")] = "changed"
+    elif change in ("daemon_os", "kernel", "version"):
+        runtime_identity["daemon"][change.removeprefix("daemon_")] = "changed"
+    elif change == "security":
+        runtime_identity["daemon"]["security"].append("changed")
+    elif change == "executor":
+        executor._policy_hash = "changed-executor-source"
+    elif change == "host_architecture":
+        monkeypatch.setattr("milyonus.imece.execution.platform.machine", lambda: "changed-host")
+    else:
+        original = executor._argv
+        monkeypatch.setattr(
+            executor,
+            "_argv",
+            lambda *args: [
+                "--pids-limit=16" if value == "--pids-limit=32" else value
+                for value in original(*args)
+            ],
+        )
     changed = await executor.run(files, oracle, deterministic=True)
     assert not changed.reused and changed.evidence_id != first.evidence_id
     assert len(calls) == 2
+
+
+async def test_missing_runtime_metadata_cannot_reuse_a_warm_verdict(tmp_path, monkeypatch):
+    calls = 0
+
+    async def execute(self, files, oracle):
+        nonlocal calls
+        calls += 1
+        return ExecutionResult(True, "ok", 0, "docker")
+
+    monkeypatch.setattr(PythonExecutor, "_execute", execute)
+    executor = PythonExecutor(
+        image="python@sha256:" + "1" * 64, cache_path=tmp_path / "cache.sqlite"
+    )
+    first = await executor.run({"solution.py": "x=1"}, "assert True", deterministic=True)
+    assert first.evidence_id
+
+    async def unavailable(self):
+        return None
+
+    monkeypatch.setattr(PythonExecutor, "_docker_identity", unavailable)
+    result = await executor.run({"solution.py": "x=1"}, "assert True", deterministic=True)
+    assert result.passed and not result.reused and result.evidence_id is None
+    assert calls == 2
 
 
 async def test_generated_check_cannot_reuse_trusted_cache_without_permission(tmp_path, monkeypatch):

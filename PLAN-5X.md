@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-6 Kasım son yerel doğrulaması: **507 test geçti, atlanan test yok**.
+6 Kasım son yerel doğrulaması: **529 test geçti, atlanan test yok**.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -35,6 +35,12 @@ P2 devamı: gerçek Docker üzerinde açık ve tekrarlanan üç örnekte soğuk
 değişimleri yeniden çalıştı; onaysız ve başarısız kontroller yeniden kullanılamadı.
 Bu sentetik yük, tam matris veya üretim için P2 kabulü değildir.
 [Ölçüm kaydı](docs/experiments/cache-probe-2026-11-06.md).
+Sonraki ortam kimliği düzeltmesi seçilen imajı, daemon/kernel/sürüm/güvenlik
+özelliklerini ve yürütme komutunu da kanıta bağladı. Eksik metadata eski kanıtı
+kullandıramaz. Kimlik sorguları dahil güncel toplam CLI süreci 45'ten 33'e
+indi (%26,7); %80 yalnızca doğrulama konteynerleri için geçerlidir.
+Gerçek Docker'da daha sıkı PID politikası ve erişilemeyen bağlam regresyonları
+da geçti. [Güncel ölçüm](docs/experiments/cache-runtime-probe-2026-11-06.md).
 P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
 önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 

@@ -16,7 +16,13 @@ veya tüm ortam değişimleri için kabul sağlamaz.
 [Ölçüm kaydı](experiments/cache-probe-2026-11-06.md).
 P1 gönderim kuyruğunda kabul kontrolü sıranın gelmesinden sonra yapılır;
 önceki çağrının bütçe veya belirsizlik durumu bekleyen çağrıya uygulanır.
-Son tam yerel koşu Docker dahil **507 geçti, atlanan test yok** sonucunu verdi.
+Son ortam düzeltmesi kanıtı seçilen imaj, daemon/kernel/sürüm/güvenlik
+özellikleri ve yürütme komutuna bağladı; metadata yokken yeniden kullanım
+engellenir. Gerçek Docker politika ve erişilemeyen bağlam testleri geçti.
+Ek kimlik sorguları dahil toplam CLI süreç azalması %26,7'dir; %80 sadece
+doğrulama konteynerleri içindir.
+[Güncel ölçüm](experiments/cache-runtime-probe-2026-11-06.md).
+Son tam yerel koşu Docker dahil **529 geçti, atlanan test yok** sonucunu verdi.
 Önceki aşamaların test sayıları aşağıda tarihçe olarak korunur.
 
 6 Kasım 2026 itibarıyla plan tamamlanmış değildir. Aşağıdaki ayrım, kod
@@ -27,7 +33,7 @@ veya bağımsız denetim belgesi değildir.
 | --- | --- | --- |
 | P0 | 50 görev, v2 hatalı başlangıç programları, dondurulmuş protokol, çift hazırlık, hata arşivi | Temsil gücü incelemesi; baseline ve aday için 250'şer gerçek koşu; Hermes komutunun gerçek kurulumla doğrulanması; CI sonucu |
 | P1 | Çağrı kimliği, günlükten tekrar kullanma, belirsiz çağrı engeli, durdurma, çağrı kotası, sağlayıcı rezervasyon defteri; yerel kesinti ve rezervasyon regresyonları geçti | CLI için çağrı öncesi katı dolar rezervasyonu sağlanmıyor; gerçek servis kesintisi kabulü açık |
-| P2 | Donmuş ortam ve kanıt kimliği, operatör izinli önbellek, hedefli onarım, hata sınıfları; gerçek Docker sentetik tekrar yükünde %80 süreç azalması ve üç boyutta geçersizleşme | Tam matris/temsili yükte yüzde 60 süreç azalması; diğer ortam ve politika değişimlerinin geçersizleşme kanıtı |
+| P2 | Seçilen imaj/daemon/komuta bağlı kanıt, operatör izinli önbellek, hedefli onarım, hata sınıfları; sentetik yükte %80 konteyner, metadata dahil %26,7 toplam CLI azalması; dört boyutta gerçek geçersizleşme | Tam matris/temsili yükte yüzde 60 doğrulama azalması; diğer sağlıklı imaj/daemon ortamlarında gerçek geçersizleşme kanıtı |
 | P3 | Uyarlanan üretim genişliği, ayrı onarım koltuğu, sınırlı sentez bağlamı, emsal kimliği, durgunluk duruşu | Bağımsız model kökenleri; token başına doğrulanmış sonuçta iki kat iyileşme ölçümü; davranış regresyonları |
 | P4 | Sınırlı yeniden üretim paketi, sandbox içinde dosya azaltma, inceleme şablonu, staging, iki görevle yükseltme, kalıcı kaynak iptali | Dosya azaltma küresel minimalite kanıtı değildir; bağımsız görevlerde gerçek beceri kabulü ve hata turu azalması ölçümü |
 | P5 | Tam matris, yanlış kabul ve başarı sınırı, fatura eşleştirme, denetim kökeni ve 5X karşılaştırma kapısı | Gerçek koşu raporları, doğrulanmış ücretler, bağımsız denetçi ve ölçülmüş en az 5X kazanç |

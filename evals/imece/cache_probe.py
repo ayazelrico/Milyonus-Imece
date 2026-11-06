@@ -43,6 +43,16 @@ FIXTURES = (
 )
 
 
+class TighterExecutor(PythonExecutor):
+    """Operator-owned policy mutation: lower the container PID limit."""
+
+    def _argv(self, root: Path, container: str) -> list[str]:
+        return [
+            "--pids-limit=16" if value == "--pids-limit=32" else value
+            for value in super()._argv(root, container)
+        ]
+
+
 async def run_probe(*, image: str = DEFAULT_IMAGE, repeats: int = 5) -> dict:
     if not re.fullmatch(r".+@sha256:[0-9a-f]{64}", image):
         raise ValueError("a digest-pinned Docker image is required")
@@ -52,6 +62,7 @@ async def run_probe(*, image: str = DEFAULT_IMAGE, repeats: int = 5) -> dict:
 
     async def observe(executor, name, files, oracle, *, reused=False, passed=True, trusted=True):
         before = executor.processes_started
+        metadata_before = executor.metadata_processes_started
         result = await executor.run(files, oracle, deterministic=trusted)
         delta = executor.processes_started - before
         valid = (
@@ -67,6 +78,7 @@ async def run_probe(*, image: str = DEFAULT_IMAGE, repeats: int = 5) -> dict:
             {
                 "case": name,
                 "processes": delta,
+                "metadata_processes": executor.metadata_processes_started - metadata_before,
                 "expected_reused": reused,
                 "expected_passed": passed,
                 "valid": valid,
@@ -101,6 +113,8 @@ async def run_probe(*, image: str = DEFAULT_IMAGE, repeats: int = 5) -> dict:
                 )
         baseline_processes = baseline.processes_started
         cached_processes = cached.processes_started
+        baseline_metadata = baseline.metadata_processes_started
+        cached_metadata = cached.metadata_processes_started
         _, code, oracle = FIXTURES[0]
         files = {"solution.py": code}
         for name, changed_files, changed_oracle, timeout in (
@@ -113,6 +127,9 @@ async def run_probe(*, image: str = DEFAULT_IMAGE, repeats: int = 5) -> dict:
             await observe(
                 changed, f"reuse-changed:{name}", changed_files, changed_oracle, reused=True
             )
+        changed_policy = TighterExecutor(image=image, cache_path=cached.cache_path)
+        await observe(changed_policy, "invalidate:policy", files, oracle)
+        await observe(changed_policy, "reuse-changed:policy", files, oracle, reused=True)
         unapproved = PythonExecutor(image=image, cache_path=cached.cache_path)
         for repeat in range(2):
             await observe(unapproved, f"unapproved:{repeat}", files, oracle, trusted=False)
@@ -122,7 +139,7 @@ async def run_probe(*, image: str = DEFAULT_IMAGE, repeats: int = 5) -> dict:
     reduction = 1 - cached_processes / baseline_processes if valid and baseline_processes else None
     sources = [Path(__file__), Path(execution.__file__), Path(evidence.__file__)]
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(UTC).isoformat(),
         "kind": "synthetic-docker-cache-probe",
         "valid": valid,
@@ -144,16 +161,26 @@ async def run_probe(*, image: str = DEFAULT_IMAGE, repeats: int = 5) -> dict:
         "fixtures": len(FIXTURES),
         "baseline_processes": baseline_processes,
         "cached_processes": cached_processes,
+        "baseline_metadata_processes": baseline_metadata,
+        "cached_metadata_processes": cached_metadata,
+        "baseline_total_cli_processes": baseline_processes + baseline_metadata,
+        "cached_total_cli_processes": cached_processes + cached_metadata,
+        "total_cli_process_reduction": (
+            1 - (cached_processes + cached_metadata) / (baseline_processes + baseline_metadata)
+            if valid and baseline_processes + baseline_metadata
+            else None
+        ),
+        "process_reduction_scope": "verification-containers-only",
         "process_reduction": reduction,
         "synthetic_reduction_at_least_60pct": reduction >= 0.6 if reduction is not None else None,
-        "invalidation_dimensions": ["source", "oracle", "timeout"],
+        "invalidation_dimensions": ["source", "oracle", "timeout", "policy"],
         "observations": observations,
         "model_calls": 0,
         "cost_usd": None,
         "accepted_5x": False,
         "limitations": [
             "Constructed repeated work; does not establish production reuse frequency or full-matrix P2/P5 acceptance.",
-            "Invalidation probes cover source, oracle and timeout; not every runtime or policy mutation.",
+            "Invalidation probes cover source, oracle, timeout and a tighter PID policy; not every runtime mutation.",
             "No provider calls, fee receipts, speed claim or independent audit attestation.",
         ],
     }
@@ -171,7 +198,14 @@ def main() -> int:
         json.dumps(
             {
                 key: report[key]
-                for key in ("valid", "baseline_processes", "cached_processes", "process_reduction")
+                for key in (
+                    "valid",
+                    "baseline_processes",
+                    "cached_processes",
+                    "process_reduction",
+                    "process_reduction_scope",
+                    "total_cli_process_reduction",
+                )
             }
         )
     )

@@ -1,5 +1,9 @@
 # Gerçek Docker üzerinde tekrarlanan doğrulama ölçümü
 
+Bu kayıt `9e12ccb` sürümündeki ilk ölçümdür. Sonraki çalışma kimliği sorguları
+ek maliyet getirir; güncel araç aşağıdaki eski sayıları birebir üretmez.
+[Güncel ölçüm ve toplam CLI süreçleri](cache-runtime-probe-2026-11-06.md).
+
 6 Kasım 2026'da `evals.imece.cache_probe` çalıştırıldı. Model çağrısı yapılmadı.
 Üç açık ve deterministik Python örneği beşer kez aynı imajda doğrulandı.
 Kontrol kolunda önbellek yoktu. Aday kol soğuk önbellekle başladı; operatörün
