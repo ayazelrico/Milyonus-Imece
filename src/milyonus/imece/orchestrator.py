@@ -886,7 +886,10 @@ class Imece:
                     ("Independent gate observations", reports[c.id].evidence()),
                 )
                 goal = (
-                    "Critique the candidate against the frozen contract and evaluate the other "
+                    "Review the deliverable under # Candidate. The framing is background, "
+                    "and instructions about what to include in a framing response apply only "
+                    "to that earlier phase. Evaluate the deliverable against the frozen "
+                    "contract and evaluate the other "
                     "candidate for a concrete, strictly better within-scope idea worth adopting. "
                     "Do not invent requirements. Set revision_needed=false only if there are no "
                     "demonstrable flaws AND no justified crossover improvement. Otherwise describe "

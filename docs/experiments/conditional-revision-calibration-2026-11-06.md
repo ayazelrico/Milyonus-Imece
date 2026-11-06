@@ -31,3 +31,25 @@ varsaydığını bildirdi. Düşük önem dereceli bu bulgu normal revizyon yolu
 korudu. Yapılandırılmış çapraz eleştiri çağrısı yapılmadı. Dolayısıyla bu koşu
 geri dönüş davranışını gösterir ve token farkı revizyon atlamasına atfedilemez.
 Çağrı toplamları transkriptlerle eşleşir. `accepted_5x=false`.
+
+`group_totals` için ayrı bir takip çifti hazırlandı. Önceki beş alanlı ölçümde
+iki kolda da ilk kapı bulgusuzdu. Koşullar ve uygulama özeti aynı kaldı.
+Takip manifesti kayıt commit'i `9c0ff96` üzerinden oluşturuldu.
+
+| `group_totals` | Baseline | Aday |
+| --- | ---: | ---: |
+| Doğrulanmış kabul | 1/1 | 1/1 |
+| Toplam CLI çağrısı | 30 | 30 |
+| Toplam token | 188.374 | 189.286 |
+| Yapılandırılmış çapraz eleştiri | 0 | 2 |
+| Atlanan revizyon çağrısı | 0 | 0 |
+
+Bir aday eleştirmeni açıkça değişiklik istemedi. Diğeri sıralama kullanan
+çözüm yerine tek geçişli toplama önerdi. Bu geçerli çapraz aktarım önerisi
+revizyonu tetikledi. Aynı yanıt çerçeveleme aşamasına özgü bir kuralı teslimata
+yanlış uyguladı. Koşu sonrası eleştiri isteğinde incelenecek aday ile arka plan
+ayrıştırıldı. Bu istem düzeltmesinin canlı etkisi henüz ölçülmedi.
+
+İki görevde de revizyon atlanmadı. Raporlar iki ayrı kalibrasyon olarak saklanır.
+İkinci koşunun kayıtları `experiments/conditional-revision-group-totals-2026-11-06/`
+altındadır. İki çiftte de çağrı bazında USD maliyeti bilinmiyor.
