@@ -26,7 +26,12 @@ Hata paketleri artık kapıdaki ortam/politika parmak izini taşır; dosya
 azaltma başlamadan önce ve replay sonuçlarında eşleşme aranır. Gerçek Docker
 kapı → yakalama → azaltma akışı geçti. Eski kimliksiz paketler açık izinle
 yalnızca ortamı doğrulanmamış sonuç üretebilir.
-Son tam yerel koşu Docker dahil **534 geçti, atlanan test yok** sonucunu verdi.
+Beceri yayımlamasında staging/metadata değişimi engellendi; iki yayımlama
+yolu taşıma hatasında eski sürümü geri koyar veya geri alma da başarısızsa
+kurtarma yolunda korur. Onarım kapısında yalnızca gerçek `True` kabul edilir.
+Yayımlama sırasında oracle iptali regresyonu geçti; otomatik çökme kurtarması
+bu değişikliğin kapsamında değildir.
+Son tam yerel koşu Docker dahil **548 geçti, atlanan test yok** sonucunu verdi.
 Önceki aşamaların test sayıları aşağıda tarihçe olarak korunur.
 
 6 Kasım 2026 itibarıyla plan tamamlanmış değildir. Aşağıdaki ayrım, kod

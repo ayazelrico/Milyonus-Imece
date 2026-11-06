@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-6 Kasım son yerel doğrulaması: **534 test geçti, atlanan test yok**.
+6 Kasım son yerel doğrulaması: **548 test geçti, atlanan test yok**.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -46,6 +46,11 @@ Kapıdan yakalanan gerçek Docker hatası dosya azaltmaya kadar aynı kimlikle
 taşındı. Farklı ortamda replay engellenir; kimliksiz eski paketler açık izin
 gerektirir ve ortamı doğrulanmamış sonuç üretir. Bu, P4'ün beceri başarısı ve
 hata turu azalması hedeflerinin ölçüldüğü anlamına gelmez.
+Beceri yayımlaması test edilmiş metin ve metadata kopyasından yapılır;
+staging değişikliği canlıya sızamaz. Yeni sürüm taşınamazsa eski sürüm geri
+konur; geri alma da başarısızsa kurtarma dizininde korunur. Onarım kapısı
+yalnızca gerçek `True` kabul eder; oracle iptali yayımlama kilidinde yeniden
+denetlenir. Çökme sonrası otomatik kurtarma henüz sağlanmıyor.
 P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
 önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 

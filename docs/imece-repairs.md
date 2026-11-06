@@ -139,3 +139,31 @@ Ortam kimliği okunabilen, digest ile sabitlenmiş Docker imajında Python kapı
 Çalıştırılmış bir kontrolün hata sınıfı kapı raporunda ve hata arşivinde saklanır. Örneğin söz dizimi bozuk bir kontrol veya başlatılamayan sandbox, kod onarımı için aday seçimine kanıt oluşturmaz. Çalışma zamanı hatası tek başına adayın mı yoksa kontrolün mü yanlış olduğunu göstermez. Eski raporlarda sınıf eksikse inceleme özeti bunu `unknown` olarak sayar.
 
 Uyarlamalı modda dondurulmuş bir Python kontrolünün boş veya söz dizimi açısından geçersiz olduğu kapıda görülürse koşu reddedilir ve rapora kontrol kimliği yazılır. Aynı sözleşmede yeni aday üretmek bu hatayı düzeltemez. Düzeltilmiş kontrol yeni bir doğrulama sözleşmesi gerektirir.
+
+Normal beceri oluşturma/güncelleme de onarım yükseltmesi gibi tam olarak
+incelenmiş metni yayımlar. Metadata çağrı başında kopyalanır; gate'e ayrı bir
+kopya verilir. Gate beklerken staging metni veya ek dosyaları değişse bile
+bunlar canlı sürüme taşınmaz. Bu yönetim API'si normal sürümde yalnızca
+`SKILL.md`, onarım sürümünde ayrıca doğrulanan `replays.json` üretir; staging'in
+diğer referans dosyalarını otomatik taşımaz. Staging taslağı korunur.
+
+İki yayımlama yolu aynı katalog kilidini ve taşıma/geri alma yordamını kullanır.
+Eski dizin yeni sürüm yerleşmeden silinmez. Yeni sürüm taşınamazsa eski sürüm
+referanslarıyla birlikte geri konur. Geri alma da başarısız olursa eski dizin
+`.publish-*/previous` altında korunur; hata mesajı tam kurtarma yolunu verir.
+Bu durumda işlem başarılı sayılmaz ve geçici dizin otomatik temizlenmez.
+Kurtarma içeriği katalog kökünde canlı beceri olarak listelenmez. Normal bir
+dosyayla çakışan beceri hedefi de üzerine yazılmadan reddedilir.
+
+Onarımın yeniden üretilebilirlik kapısı normal oluşturmada olduğu gibi yalnızca
+gerçek `True` sonucunu kabul eder. `1`, `"false"`, sözlük, `None` veya gate
+hatası yayımlama izni değildir. Tekrarlar sonrasında oracle iptali, yayımlama
+kilidi altında yeniden denetlenir; kapı beklerken iptal edilmiş kaynak canlıya
+çıkamaz.
+
+Bu koruma yerel dosya işlemi hatalarını kapsar. İki dizin taşıması güç kesintisi
+karşısında atomik bir işlem değildir; otomatik çökme kurtarması eklenmemiştir.
+Yarım kalmış `.publish-*` dizinleri incelenmeden silinmemelidir. Birim
+regresyonlar eşzamanlı staging değişimini, metadata değişimini, iki yayımlama
+yolunda taşıma/geri alma hatalarını ve iptal yarışını test eder; bunlar beceri
+başarısında veya onarım maliyetinde ölçülmüş bir iyileşme değildir.

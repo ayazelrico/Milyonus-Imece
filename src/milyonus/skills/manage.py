@@ -16,9 +16,10 @@ import re
 import shutil
 import sys
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import mkdtemp
 
 from milyonus.config.paths import skills_dir
 from milyonus.imece.execution import PythonExecutor, python_files
@@ -68,12 +69,54 @@ class SkillManager:
             raise ValueError("skill path escapes its root")
         return target
 
+    def _publish_reviewed(self, name: str, text: str, receipt: dict | None = None) -> None:
+        """Publish frozen bytes; keep the previous version if rollback fails.
+
+        The catalog lock coordinates readers and revocation, but two directory
+        renames are not an atomic crash-recovery transaction.
+        """
+        transaction = Path(mkdtemp(dir=self.live_dir, prefix=".publish-"))
+        retain_recovery = False
+        try:
+            new = transaction / "new"
+            new.mkdir()
+            (new / "SKILL.md").write_text(text, "utf-8")
+            if receipt is not None:
+                (new / "replays.json").write_text(json.dumps(receipt, indent=2), "utf-8")
+            with _repair_catalog_lock(self.live_dir) as catalog:
+                if receipt is not None:
+                    _refuse_revoked_oracles(catalog, receipt["tasks"].values())
+                target = self._path(self.live_dir, name)
+                backup = transaction / "previous"
+                if target.exists():
+                    if not target.is_dir():
+                        raise NotADirectoryError(f"skill target is not a directory: {target}")
+                    target.rename(backup)
+                try:
+                    new.rename(target)
+                except BaseException:
+                    if backup.exists():
+                        try:
+                            backup.rename(target)
+                        except BaseException as exc:
+                            # Automatic TemporaryDirectory cleanup would delete
+                            # the only remaining copy of the previous skill.
+                            retain_recovery = True
+                            raise OSError(
+                                f"skill publication rollback failed; previous version retained at {backup}"
+                            ) from exc
+                    raise
+        finally:
+            if not retain_recovery:
+                shutil.rmtree(transaction)
+
     async def create(
         self, meta: SkillMeta, body: str, *, force: bool = False, stage_only: bool = False
     ) -> ManageResult:
+        meta = deepcopy(meta)
         try:
             staged = self._path(self.staging_dir, meta.name)
-            target = self._path(self.live_dir, meta.name)
+            self._path(self.live_dir, meta.name)
         except ValueError as exc:
             return ManageResult(False, str(exc), meta.name)
         text = render_skill_md(meta, body)
@@ -91,7 +134,7 @@ class SkillManager:
             return ManageResult(False, "invalid staged skill file", meta.name)
         (staged / "SKILL.md").write_text(text, "utf-8")
         try:
-            passed = await self.gate(meta, body)
+            passed = await self.gate(deepcopy(meta), body)
         except Exception:
             passed = False
         if passed is not True:
@@ -106,12 +149,8 @@ class SkillManager:
                 True, "skill staged; two independent task replays required", meta.name
             )
 
-        # 3. Promote into the live directory.
-        with _repair_catalog_lock(self.live_dir):
-            target = self._path(self.live_dir, meta.name)
-            if target.exists():
-                shutil.rmtree(target)
-            shutil.move(str(staged), str(target))
+        # 3. Publish only the exact reviewed text, never mutable staging files.
+        self._publish_reviewed(meta.name, text)
         return ManageResult(True, f"skill created: {meta.name}", meta.name)
 
     def delete(self, name: str) -> ManageResult:
@@ -143,7 +182,7 @@ class SkillManager:
         import ast
 
         staged = self._path(self.staging_dir, name) / "SKILL.md"
-        target = self._path(self.live_dir, name)
+        self._path(self.live_dir, name)
         if staged.is_symlink() or not staged.is_file():
             return ManageResult(False, "no staged skill", name)
         text = staged.read_text("utf-8")
@@ -177,41 +216,24 @@ class SkillManager:
             result = await executor.run(files, script)
             if not result.passed:
                 return ManageResult(False, f"independent replay failed: {label}", name)
-        if not await self.gate(skill.meta, skill.body):
+        try:
+            passed = await self.gate(deepcopy(skill.meta), skill.body)
+        except Exception:
+            passed = False
+        if passed is not True:
             return ManageResult(False, "skill reproducibility gate failed", name)
-        # Publish exactly the reviewed bytes, never mutable files from staging.
-        with TemporaryDirectory(dir=self.live_dir, prefix=".promote-") as tmp:
-            new = Path(tmp) / "new"
-            new.mkdir()
-            (new / "SKILL.md").write_text(text, "utf-8")
-            (new / "replays.json").write_text(
-                json.dumps(
-                    {
-                        "skill_sha256": hashlib.sha256(text.encode()).hexdigest(),
-                        "backend": executor.backend,
-                        "tasks": evidence,
-                    },
-                    indent=2,
-                ),
-                "utf-8",
+        try:
+            self._publish_reviewed(
+                name,
+                text,
+                {
+                    "skill_sha256": hashlib.sha256(text.encode()).hexdigest(),
+                    "backend": executor.backend,
+                    "tasks": evidence,
+                },
             )
-            # Replays above never hold the lock. Check again while publication
-            # and revocation are mutually exclusive, including across processes.
-            with _repair_catalog_lock(self.live_dir) as catalog:
-                try:
-                    _refuse_revoked_oracles(catalog, evidence.values())
-                except RepairSkillError as exc:
-                    return ManageResult(False, str(exc), name)
-                target = self._path(self.live_dir, name)
-                backup = Path(tmp) / "previous"
-                if target.exists():
-                    target.rename(backup)
-                try:
-                    new.rename(target)
-                except OSError:
-                    if backup.exists():
-                        backup.rename(target)
-                    raise
+        except RepairSkillError as exc:
+            return ManageResult(False, str(exc), name)
         return ManageResult(True, f"promoted after {len(tasks)} task replays", name)
 
     def revoke_oracle(self, oracle_sha256: str) -> list[str]:
