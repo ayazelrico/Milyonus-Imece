@@ -67,6 +67,10 @@ Kontrol `prime_flags` görevini dış oracle'dan geçirdi. 28 tamamlanmış
 çağrıdaki 295.681 token raporla eşleşti. 20 satır kayıtlı, 19'u doğrulanmış
 başarı ve 480'i açık. Aday `fix_binary_search` ile yeni partiye başladı.
 
+Aday `fix_binary_search` görevini dış oracle'dan geçirdi. 29 tamamlanmış
+çağrıdaki 191.056 token raporla eşleşti. 21 satır kayıtlı, 20'si
+doğrulanmış başarı. Aday `fix_chunk_tail` ile devam etti.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
