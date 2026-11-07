@@ -43,6 +43,11 @@ Sırasıyla 313.998 ve 319.293 token, her görevde 30 tamamlanmış çağrıyla
 eşleşti. İki eşleşme tamamlandı ve toplam beş satır kaydedildi. Kontrol
 `rotate` göreviyle devam etti.
 
+Kontrol `rotate` görevini dış oracle'dan geçirdi. İlk üç görev iki kolda
+da doğrulandı. Kontrol toplam 951.594, aday 556.660 token kullandı. Altı
+satırın token toplamı tamamlanmış çağrı kayıtlarıyla eşleşti. 494 satır
+açık. Aday `window_sums` ile sonraki üç görevlik partiye başladı.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
