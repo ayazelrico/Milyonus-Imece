@@ -199,6 +199,9 @@ async def run(args) -> int:
     call_limit = getattr(args, "max_cli_calls", None)
     if call_limit is not None and call_limit < 1:
         raise ValueError("--max-cli-calls must be positive")
+    trial_limit = args.max_new_trials
+    if trial_limit is not None and (trial_limit < 1 or args.prepare):
+        raise ValueError("--max-new-trials must be positive and applies only to execution")
     if args.task and len(set(args.task)) != len(args.task):
         raise ValueError("duplicate task selection")
 
@@ -279,9 +282,15 @@ async def run(args) -> int:
                 "cannot freeze Docker verification environment; check daemon and pinned image"
             )
         runtime["verification_environment_id"] = environment_id
-    revision = subprocess.check_output(
-        ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True
-    ).strip()
+    # Artifact/documentation commits can advance HEAD between batches. Retain
+    # the original provenance and still compare the current implementation hash.
+    revision = (
+        previous["manifest"]["revision"]
+        if previous is not None
+        else subprocess.check_output(
+            ["git", "-C", str(ROOT), "rev-parse", "HEAD"], text=True
+        ).strip()
+    )
     frozen = manifest(
         tasks=selected,
         settings=settings,
@@ -586,6 +595,7 @@ async def run(args) -> int:
             return await dispatch_recorded(spec)
 
     stop_experiment = bool(uncertain_trials) and not args.continue_after_uncertain_trial
+    initial_rows = len(checkpoint["runs"])
 
     def save_row(row):
         nonlocal row_cursor, stop_experiment
@@ -609,14 +619,15 @@ async def run(args) -> int:
             row.pop("elapsed_s", None)
         # Decide only at a settled row boundary: reserving the last permitted
         # call must not cancel that call while it is still running.
+        checkpoint["runs"].append(row)
         stop_experiment = (
             uncertain
             or not attribution_complete
             or (call_limit is not None and len(transcripts) >= call_limit)
+            or (trial_limit is not None and len(checkpoint["runs"]) - initial_rows >= trial_limit)
         )
         row_cursor = len(transcripts)
         row["cost_usd"] = None
-        checkpoint["runs"].append(row)
         persist("partial")
 
     def can_begin_trial(task_id, repeat):
@@ -692,6 +703,11 @@ def make_parser() -> argparse.ArgumentParser:
         help="record a USD ceiling for retrospective receipt reconciliation; not enforced by CLI",
     )
     parser.add_argument("--max-tokens", type=int, default=250_000)
+    parser.add_argument(
+        "--max-new-trials",
+        type=int,
+        help="finish at most this many new trial rows in this invocation; resume keeps the full matrix",
+    )
     parser.add_argument("--repeats", type=int, default=1)
     parser.add_argument(
         "--trial-order", choices=("task-major", "repeat-major"), default="repeat-major"

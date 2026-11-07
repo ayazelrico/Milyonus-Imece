@@ -1,5 +1,12 @@
 # Codex CLI ile İmece deneyini hazırlama
 
+`--max-new-trials N` tek çağırmada kaydedilecek yeni görev satırlarını sınırlar.
+Koşucu biten görev sınırında durur ve `--resume` aynı manifestteki sıradaki
+görevden devam eder. Bu seçenek matrisin büyüklüğünü veya toplam CLI çağrı
+limitini değiştirmez. Sonuç veya belge commit'leri ilerlese de manifest ilk
+kaynak commit'ini korur. Yürütülen Python kaynaklarının özeti ve donmuş
+ayarlar her devamda tekrar karşılaştırılır.
+
 Sabit digest kullanan Docker deneylerinde hazırlık ve devam sırasında yerel
 Docker çalışıyor ve seçilen imaj hazır olmalıdır. Manifestteki
 `verification_environment_id`, seçilen imajı, Docker daemon kimliğini,

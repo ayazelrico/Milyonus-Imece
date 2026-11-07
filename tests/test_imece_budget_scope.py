@@ -13,16 +13,17 @@ from milyonus.imece.journal import AgentJournal
 
 
 @pytest.mark.parametrize(
-    "limit,fail,status,expected",
+    "limit,fail,status,expected,batch",
     [
-        (10, False, "budget", 2),
-        (1, False, "budget", 1),
-        (10, True, "budget", 1),
-        (10, True, "rejected", 1),
+        (10, False, "budget", 2, False),
+        (1, False, "budget", 1, False),
+        (10, True, "budget", 1, False),
+        (10, True, "rejected", 1, False),
+        (10, False, "rejected", 1, True),
     ],
 )
 async def test_budget_scope_at_settled_trial_boundary(
-    tmp_path, monkeypatch, limit, fail, status, expected
+    tmp_path, monkeypatch, limit, fail, status, expected, batch
 ):
     dispatched = []
 
@@ -91,6 +92,8 @@ async def test_budget_scope_at_settled_trial_boundary(
     ]
     for task in tasks:
         argv += ["--task", task.id]
+    if batch:
+        argv += ["--max-new-trials", "1"]
     args = run.make_parser().parse_args(argv)
     assert await run.main(args) == 2
     report = json.loads(args.out.read_text())
@@ -98,6 +101,15 @@ async def test_budget_scope_at_settled_trial_boundary(
     assert len(report["transcripts"]) == expected
     assert report["state"] == ("complete" if expected == 2 else "partial")
     assert report["transcripts"][-1]["state"] == ("unknown" if fail else "completed")
+    if batch:
+        monkeypatch.setattr(run.subprocess, "check_output", lambda *a, **kw: "different-head\n")
+        args.resume = True
+        assert await run.main(args) == 2
+        resumed = json.loads(args.out.read_text())
+        assert resumed["state"] == "complete"
+        assert resumed["manifest"] == report["manifest"]
+        assert resumed["runs"][:1] == report["runs"]
+        assert dispatched == [task.id for task in tasks]
     if fail:
         assert report["runs"][-1]["tokens"] is None
         args.resume = True
