@@ -38,6 +38,11 @@ Adayın ilk üç görevlik partisi tamamlandı. `runs` 180.716 token ve
 Üç görevin toplamı 556.660 token. Her satırın kullanımı tamamlanmış
 çağrı kayıtlarıyla eşleşti. 3/500 satır kayıtlı ve kontrol partisi başladı.
 
+Kontrol `stable_unique` ve `runs` görevlerinde dış oracle'dan geçti.
+Sırasıyla 313.998 ve 319.293 token, her görevde 30 tamamlanmış çağrıyla
+eşleşti. İki eşleşme tamamlandı ve toplam beş satır kaydedildi. Kontrol
+`rotate` göreviyle devam etti.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
