@@ -29,6 +29,10 @@ dış oracle'dan geçti. Kontrol 30 çağrı ve 318.871 token, aday 29 çağrı 
 Bu kayıtlar `experiments/cli-pinned-calibration-2026-11-07/` altındadır.
 Ardından tam matrisin aday kolunda ilk üç görev başlatıldı.
 
+İlk aday görevi `stable_unique` dış oracle'dan geçti. 29 tamamlanmış
+çağrıdaki 185.955 token raporla eşleşti. Matrisin ilk satırı kaydedildi
+ve aday `runs` göreviyle devam etti.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
