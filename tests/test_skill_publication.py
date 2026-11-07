@@ -29,6 +29,14 @@ def replay_executor(monkeypatch):
             self.backend = "docker"
 
         async def run(self, files, script):
+            if any(manage._REPLAY_CONTROL_ERROR in content for content in files.values()):
+                return ExecutionResult(
+                    False,
+                    f"RuntimeError: {manage._REPLAY_CONTROL_ERROR}",
+                    1,
+                    "docker",
+                    failure_class="candidate_or_oracle_runtime",
+                )
             return ExecutionResult(True, "ok", 0, "docker")
 
     monkeypatch.setattr(manage, "PythonExecutor", Executor)
@@ -91,6 +99,13 @@ async def test_real_docker_or_macos_promotion_load_and_revocation(tmp_path):
     }
     failed = await manager.promote_repair(meta.name, invalid)
     assert not failed.ok and "independent replay failed: inventory-adjustments" in failed.message
+    assert not (manager.live_dir / meta.name).exists()
+    vacuous = tasks | {"inventory-adjustments": "assert 2 + 2 == 4\n"}
+    failed = await manager.promote_repair(meta.name, vacuous)
+    assert (
+        not failed.ok
+        and "did not reject the unusable artifact: inventory-adjustments" in failed.message
+    )
     assert not (manager.live_dir / meta.name).exists()
     promoted = await manager.promote_repair(meta.name, tasks)
     assert promoted.ok, promoted.message

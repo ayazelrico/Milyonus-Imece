@@ -106,6 +106,15 @@ denetlenir. Gerçek sandbox regresyonunda hatalı oracle ile yayımlama reddi,
 iki geçerli oracle ile yükseltme ve yükleme, ardından iptal ve yeniden
 yükseltmenin engellenmesi geçici bir katalogda doğrulanır.
 
+Her bağımsız oracle için bir negatif kontrol de çalışır. Oracle, becerinin
+gerçek dosyalarıyla geçmeli ve aynı yollar kullanılamayan Python modülleriyle
+değiştirildiğinde beklenen işaretli çalışma zamanı hatasını vermelidir.
+`assert True` gibi beceri koduna bağlı olmayan bir oracle bu kapıyı geçemez.
+Zaman aşımı, altyapı hatası ve kesilmiş çıktı negatif kanıt olarak sayılmaz.
+Yeni makbuzlar bu denetimi `negative_control` alanıyla kaydeder. Bu kontrol
+oracle'ın modülü gerçekten kullandığını gösterir. Doğruluk kapsamı ve
+görevlerin bağımsızlığı ayrı koşullardır.
+
 Yeni `applied_repair_skills` kayıtlarında `response_received=true`, beceri
 bağlamı verilen onarım çağrısından kullanılabilir metin geldiğini belirtir.
 Bütçe engeli veya boş yanıt bu sayaca girmez. Eski kayıtlarda bu kanıt alanı

@@ -101,6 +101,8 @@ P4 yükseltme ve yükleme aynı belge doğrulamasını kullanır. Boyut ve sözd
 hataları replay öncesinde reddedilir. Gerçek sandbox testinde iki ayrı oracle
 ile geçici katalogda yükseltme ve yükleme çalıştı. Oracle iptali canlı örneği
 geri çekti ve yeniden yükseltmeyi engelledi.
+Her oracle, gerçek becerinin yanında kullanılamaz bir kontrol sürümüyle de
+çalıştırılır. Beceri koduna bağlı olmayan bir oracle yükseltmeyi geçemez.
 P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
 önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 

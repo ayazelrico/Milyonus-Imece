@@ -41,6 +41,7 @@ from milyonus.skills.scanner import may_install, scan_skill, worst_verdict
 # Default gate executes named Python examples in isolation; other skill types
 # require an injected domain-specific gate and otherwise remain staged.
 ReproGate = Callable[[SkillMeta, str], Awaitable[bool]]
+_REPLAY_CONTROL_ERROR = "milyonus-repair-artifact-negative-control"
 
 
 @dataclass(slots=True)
@@ -228,6 +229,7 @@ class SkillManager:
             "skill_sha256": hashlib.sha256(content).hexdigest(),
             "backend": backend,
             "tasks": evidence,
+            "negative_control": "unusable-artifact-v1",
         }
         if len(json.dumps(receipt, indent=2).encode("utf-8")) > MAX_RECEIPT_BYTES:
             return ManageResult(False, "oversized repair replay receipt", name)
@@ -247,11 +249,25 @@ class SkillManager:
             except RepairSkillError as exc:
                 return ManageResult(False, str(exc), name)
         files = python_files(skill.body)
+        if not files:
+            return ManageResult(False, "repair skill requires named Python files", name)
+        control_files = dict.fromkeys(files, f"raise RuntimeError({_REPLAY_CONTROL_ERROR!r})\n")
         executor = PythonExecutor(backend=backend)
         for label, script in tasks.items():
             result = await executor.run(files, script)
             if not result.passed:
                 return ManageResult(False, f"independent replay failed: {label}", name)
+            control = await executor.run(control_files, script)
+            if (
+                control.passed
+                or control.returncode != 1
+                or control.failure_class != "candidate_or_oracle_runtime"
+                or control.output_truncated
+                or f"RuntimeError: {_REPLAY_CONTROL_ERROR}" not in control.output.splitlines()
+            ):
+                return ManageResult(
+                    False, f"repair replay did not reject the unusable artifact: {label}", name
+                )
         try:
             passed = await self.gate(deepcopy(skill.meta), skill.body)
         except Exception:
