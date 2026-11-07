@@ -45,6 +45,12 @@ bilinmediği için `flatten` satırı `budget` olarak kaydedildi. Adayın
 bilinen 104.622 tokenı ve bir belirsiz çağrısı kayıtta. 16 satırdan 15'i
 doğrulandı, 484 satır açık. İki kol `transpose` ile devam etti.
 
+Kontrolün `transpose` koşusu aynı Docker doğrulama hatasıyla kesildi.
+Aday `transpose` dış oracle'dan geçti (177.968 token) ve `prime_flags`
+görevine başladı. Bu noktada 17 satır kayıtlı, 16'sı doğrulanmış başarı.
+Kontrolün devamı aday sürecinin kapanmasına bağlandı. Böylece bir sonraki
+kontrol partisi Docker'ı tek başına kullanacak.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
