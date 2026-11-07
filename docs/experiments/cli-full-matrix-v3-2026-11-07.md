@@ -21,6 +21,13 @@ dış oracle'dan geçti. Baseline 120 çağrı/1.269.113 token, aday 116 çağr�
 kayıtlarıyla eşleştirildi. Bu sınırda yanlış kabul veya belirsiz kullanım
 yoktu. İki kol beşinci görev `balanced` ile devam etti.
 
+Beşinci eşleşmede `balanced` iki kolda da dış oracle'dan geçti. Kontrol
+kolunda son onay aşamasındaki bir Codex bağlantı hatası nedeniyle koşunun
+tam token kullanımı bilinmiyor. Kalıcı kayıtta 306.176 gözlenen token ve
+bir belirsiz çağrı var. Aday 187.094 token kullandı. 10 satır kayıtlı,
+490 satır açık. Kontrol kolu `--continue-after-uncertain-trial` ile
+sonraki göreve geçti. Belirsiz çağrı ilk kaydıyla birlikte korunur.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
