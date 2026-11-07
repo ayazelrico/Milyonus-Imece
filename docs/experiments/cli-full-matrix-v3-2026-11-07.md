@@ -95,6 +95,17 @@ kayıtlı, 25'i doğrulanmış başarı ve 473'ü açık. Kota yenilendikten son
 Docker parmak izi donmuş ortamla eşleşti ve kontrol `fix_negative_max`
 göreviyle dört koşuluk partiye başladı.
 
+Devam denemesi ilk model çağrısından önce manifest uyuşmazlığıyla durdu.
+Uygulamanın Codex CLI sürümü `0.166.0-alpha.6` iken
+`0.167.0-alpha.3.2` olmuştu. Kaynak, Python, platform ve Docker ortam özeti
+eşleşiyordu. Eski CLI dosyasının özeti
+`508388df35319042107560d095b271a98a512f59a542848c908b23ed1bad4b44`,
+yeni dosyanın özeti
+`a636331ed87605efc4cf84028ac2884a75363f9d10ead63cffb57ea0016d486e`.
+Bu matris 27 satırla arşivlendi. Yeni yürütücü için ayrı protokol gerekiyor.
+Yeni CLI uygulaması sürüm/özet içeren sabit bir önbellek dizinine kopyalandı
+ve `--executable` ile seçilerek ayrı kalibrasyon hazırlandı.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
