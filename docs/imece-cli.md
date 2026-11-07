@@ -15,6 +15,12 @@ Eski raporlar karşılaştırmada okunabilir. CLI üzerinden 5X kabulü için
 doğrulanabilir ortam kimliği alanı gerekir. Eski checkpoint'ler donmuş
 kaynak ve protokol koşullarına uygun kendi sürümleriyle devam ettirilir.
 
+Ortam kimliği içeren tamamlanmış CLI raporlarında karşılaştırma görev satırını
+çağrı kaydıyla eşleştirir. Çağrı sırası, benzersiz çağrı ve günlük düğümü
+kimlikleri, koltuk modeli, yanıt özeti ve görev başına bilinen token toplamı
+doğrulanır. Belirsiz çağrısı olan görev için toplam token boş olmalıdır.
+USD satırları, rapordan ayrı ücret kayıtları üzerinden eşleştirilir.
+
 Uyarlanan üretimi tek başına ölçmek için çift hazırlarken hem
 `--baseline-compact-cli-instructions` hem
 `--candidate-compact-cli-instructions` seçilebilir. İki kolun aynı kısa CLI

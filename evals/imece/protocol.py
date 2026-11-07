@@ -8,9 +8,11 @@ import json
 import math
 import random
 import re
+from collections import Counter
 from dataclasses import asdict
 from typing import Any
 
+from evals.imece.calls import validate_call_records
 from evals.imece.efficiency import paired_efficiency, repair_family_outcomes
 from milyonus.imece.benchmark import BenchmarkTask, _matches, _score_artifact, summarize
 from milyonus.imece.schedule import trial_coordinates
@@ -176,6 +178,43 @@ def validate_rows(rows: list[dict], protocol: dict, *, complete: bool = False) -
     return rows
 
 
+def _validate_frozen_cli_usage(report: dict, protocol: dict, rows: list[dict]) -> None:
+    if report.get("state") != "complete":
+        raise ValueError("frozen CLI report must be complete")
+    by_trial = {(row["task"], row["repeat"]): row for row in rows}
+    calls = report.get("transcripts")
+    # An exported report has oracle hashes rather than full journal inputs.
+    # Require consistent trial bindings here; resume also validates exact hashes.
+    validate_call_records(
+        calls, models=protocol["models"], identities=dict.fromkeys(by_trial), allow_legacy=False
+    )
+    limit = protocol["limits"].get("max_cli_calls")
+    if limit is not None and (type(limit) is not int or limit < 1 or len(calls) > limit):
+        raise ValueError("CLI transcript exceeds frozen call limit")
+    observed, unknown, attempted = Counter(), Counter(), Counter()
+    for call in calls:
+        trial = (call["task"], call["repeat"])
+        attempted[trial] += 1
+        if call["state"] == "completed":
+            observed[trial] += call["reply"]["tokens"]
+        elif call["state"] == "unknown":
+            unknown[trial] += 1
+        else:
+            raise ValueError("completed CLI report contains a running call")
+    for trial, row in by_trial.items():
+        if row.get("cost_usd") is not None:
+            raise ValueError("CLI row cost requires separate external receipts")
+        if row["status"] == "accepted" and not attempted[trial]:
+            raise ValueError("accepted CLI trial has no dispatch records")
+        if (
+            row.get("usage_attribution_complete") is not True
+            or row.get("observed_tokens") != observed[trial]
+            or row.get("unknown_usage_calls") != unknown[trial]
+            or row.get("tokens") != (None if unknown[trial] else observed[trial])
+        ):
+            raise ValueError(f"CLI usage differs from dispatch records for trial {trial}")
+
+
 def validate_report(report: dict) -> list[dict]:
     if "state" in report and report["state"] != "complete":
         raise ValueError("report is not complete")
@@ -186,13 +225,18 @@ def validate_report(report: dict) -> list[dict]:
     engine = p.get("runtime", {}).get("engine")
     if engine is not None and report.get("source") != engine:
         raise ValueError("report source differs from engine manifest")
-    if (
-        engine in ("codex", "antigravity") or report.get("source") in ("codex", "antigravity")
-    ) and report.get("ledger") is not None:
+    cli_report = engine in ("codex", "antigravity") or report.get("source") in (
+        "codex",
+        "antigravity",
+    )
+    if cli_report and report.get("ledger") is not None:
         raise ValueError("CLI report cannot contain a provider ledger; external receipts required")
     if "execution_controls" in p and p["execution_controls"] != execution_controls(m["settings"]):
         raise ValueError("settings differ from frozen execution controls")
-    return validate_rows(report["runs"], p, complete=True)
+    rows = validate_rows(report["runs"], p, complete=True)
+    if cli_report and "verification_environment_id" in p["runtime"]:
+        _validate_frozen_cli_usage(report, p, rows)
+    return rows
 
 
 def wilson(successes: int, n: int) -> list[float] | None:
