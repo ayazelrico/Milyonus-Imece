@@ -62,6 +62,11 @@ Her iki satırdaki token toplamı tamamlanmış çağrı kayıtlarıyla eşleşt
 Beş eşleşme tamamlandı, toplam 11 satır kayıtlı. Kontrol `gcd_list`
 göreviyle devam etti.
 
+Kontrol `gcd_list` görevini de dış oracle'dan geçirdi. İlk altı görev
+iki kolda da doğrulanmış başarı. Kontrol toplam 1.904.163, aday 1.108.167
+token kullandı. On iki satırın toplamları tamamlanmış çağrı kayıtlarıyla
+eşleşti. 488 satır açık. Aday `divisors` ile sonraki partiye başladı.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
