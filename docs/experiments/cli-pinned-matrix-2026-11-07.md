@@ -57,6 +57,11 @@ tamamladı. Altı aday sonucu doğrulanmış başarı, toplam kullanım
 1.108.167 token. Matris dokuz satıra ulaştı. Kontrol `window_sums`
 ile sonraki üç görevlik partiye başladı.
 
+Kontrol `window_sums` ve `balanced` görevlerini dış oracle'dan geçirdi.
+Her iki satırdaki token toplamı tamamlanmış çağrı kayıtlarıyla eşleşti.
+Beş eşleşme tamamlandı, toplam 11 satır kayıtlı. Kontrol `gcd_list`
+göreviyle devam etti.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
