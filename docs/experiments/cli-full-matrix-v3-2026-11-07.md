@@ -37,6 +37,14 @@ Yedinci eşleşmede `divisors` iki kolda da dış oracle'dan geçti. Her kol
 toplam kalıcı çağrı kayıtlarıyla eşleşti. 14 satır kayıtlı, 486 satır açık.
 İki kol `flatten` ile devam etti.
 
+`flatten` sırasında Docker ortam doğrulaması iki kolu durdurdu. Daha
+sonra alınan dört parmak izi donmuş ortamla eşleşti ve iki kol günlüklerden
+devam etti. Kontrolün kesinti anında açık kalan çağrısının kullanımı
+bilinmediği için `flatten` satırı `budget` olarak kaydedildi. Adayın
+`flatten` çözümü dış oracle'dan geçti (29 çağrı, 189.045 token). Kontrolün
+bilinen 104.622 tokenı ve bir belirsiz çağrısı kayıtta. 16 satırdan 15'i
+doğrulandı, 484 satır açık. İki kol `transpose` ile devam etti.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
