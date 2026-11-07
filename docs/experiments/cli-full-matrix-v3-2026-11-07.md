@@ -81,6 +81,10 @@ Kontrol `fix_binary_search` görevini dış oracle'dan geçirdi. 30 çağrıdaki
 320.932 token raporla eşleşti. 24 satır kayıtlı, 23'ü doğrulanmış başarı
 ve 476'sı açık. Kontrol `fix_chunk_tail` ile devam etti.
 
+Kontrol `fix_chunk_tail` görevini dış oracle'dan geçirdi. 30 tamamlanmış
+çağrıdaki 318.474 token raporla eşleşti. 25 satır kayıtlı, 24'ü doğrulanmış
+başarı ve 475'i açık. Aday `fix_even_median` koşusuna başladı.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
