@@ -88,6 +88,12 @@ için aynı ortam kimliğiyle hazırlandı. Bu hazırlıkta model çağrısı ya
 iki kolda da doğrulandı. Parti sınırında kaydedilen checkpoint aynı donmuş
 matriste devam eder. [Matris kaydı](docs/experiments/cli-full-matrix-2026-11-07.md).
 
+Bu matris 29 kayıttan sonra olumsuz ön deney olarak kapatıldı. Adayda bir
+medyan çözümü iç onay alırken dış oracle'ın JSON taşıma şartını sağlamadı;
+bu şart görünür görev sözleşmesinde yoktu. Eski kayıtlar korunur. Yeni
+sözleşme ayrı sürüm/protokol gerektirir; bu deney 5X kabulü sağlamaz.
+[Bulgu analizi](docs/audits/2026-11-07-oracle-interface.md).
+
 Ortam kimliği taşıyan CLI raporlarında karşılaştırma, görev bazındaki token
 toplamlarını kalıcı çağrı kayıtlarıyla eşleştirir. Bozuk kayıt veya tutarsız
 toplam karşılaştırmayı durdurur. Belirsiz kullanımda tam token oranı boş kalır.

@@ -29,6 +29,12 @@ def matrix_status(directory: Path) -> dict:
         if digest(report["manifest"]["protocol"]) != hashes[0]:
             raise ValueError("matrix protocol hash mismatch")
     arms = {arm: inspect_run(directory / f"{arm}.json") for arm in reports}
+    for arm, report in reports.items():
+        arms[arm]["false_acceptances"] = [
+            {"task": row["task"], "repeat": row["repeat"]}
+            for row in report["runs"]
+            if row["status"] == "accepted" and row["oracle_passed"] is False
+        ]
     completed = sum(arm["completed_rows"] for arm in arms.values())
     remaining = sum(arm["remaining_rows"] for arm in arms.values())
     pairs = [

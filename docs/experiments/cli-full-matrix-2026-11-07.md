@@ -1,5 +1,11 @@
 # 500 koşuluk Codex CLI kıyaslaması
 
+Durum: **29/500 kayıtla kapatılan olumsuz ön deney.** 471 satır
+çalıştırılmadı. Aday `fix_even_median` koşusunda görünür sözleşme ile
+oracle'ın JSON arayüzü uyuşmadı. Bu matris 5X kabul kanıtı olarak
+tamamlanmayacak; eski kayıtlar değiştirilmeyecek. Yeni deney ayrı protokol
+ve ayrı checkpoint dizini kullanmalıdır.
+
 7 Kasım 2026’da `core-v2` veri kümesindeki 50 görev için beşer tekrar iki
 kolda donduruldu. Her kol 250 satır içerir. Kontrol standart CLI talimatı ve
 sabit üretim, aday kısa talimat ve uyarlanan üretim kullanır. Ölçüm bu iki
@@ -42,11 +48,26 @@ yeniden gönderilmedi. Adayın tam token ve dolar maliyeti bu nedenle
 hesaplanamıyor. Sonraki görevler baseline için `transpose`, aday için
 `fix_chunk_tail`. Kısa kullanım penceresi son kontrolde %99 doluydu.
 
-Her kol için devam komutu aşağıdaki ortak ayarları kullanır. Aday kolunda
+Kota yenilendikten sonraki beşer koşuluk partiyle baseline 13, aday 16
+satıra ulaştı. Baseline 13/13 dış doğrulama, aday 14/16 dış doğrulama
+sağladı. Adayda önceki belirsiz çağrı ve yeni bir yanlış kabul var.
+`fix_even_median` matematiksel kesir döndürdü; kamuya açık metinde
+belirtilmeyen JSON taşıma şartını sağlayamadı. Bu bulgu üzerine yeni
+parti başlatılmadı. [Bulgu analizi](../audits/2026-11-07-oracle-interface.md).
+
+Arşivlenen çalışmanın her kol için devam komutu aşağıdaki ortak ayarları
+kullanıyordu; bu kayıt komutun yeniden çalıştırılması önerisi değildir. Aday kolunda
 config `docs/imece-codex-adaptive.toml`, çıktı `candidate.json` olur ve
-`--compact-cli-instructions` eklenir.
+`--compact-cli-instructions --continue-after-uncertain-trial` eklenir.
+İkinci seçenek yalnızca diğer görevlerin devamına izin verir; kayıtlı
+belirsiz `divisors` çağrısını yeniden göndermez. Bu makinede önce
+`colima start imece-tests --activate=false` ile ayrılmış ortam açılır.
+`TMPDIR` bind mount için paylaşılan dizini, `DOCKER_CONTEXT` dondurulan
+daemon'ı seçer; varsayılan Docker bağlamı değiştirilmez.
 
 ```sh
+TMPDIR=/Users/ayazelrico/.cache/imece-docker-tests \
+DOCKER_CONTEXT=colima-imece-tests \
 uv run python -m evals.imece.run --engine codex --model gpt-6.1-sol \
   --suite core-v2 --repeats 5 --trial-order repeat-major \
   --max-tokens 500000 --max-cli-calls 12500 --max-new-trials 1 \
