@@ -12,6 +12,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from evals.imece.dataset import SUITES
+
 
 def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
@@ -27,7 +29,7 @@ def make_parser() -> argparse.ArgumentParser:
     parser.add_argument("--out-dir", required=True, type=Path, help="must not already exist")
     parser.add_argument("--baseline-config", required=True, type=Path)
     parser.add_argument("--candidate-config", required=True, type=Path)
-    parser.add_argument("--suite", choices=("smoke", "core-v1", "core-v2"), default="core-v2")
+    parser.add_argument("--suite", choices=("smoke", *SUITES), default="core-v3")
     parser.add_argument("--task", action="append", help="same explicit task subset for both arms")
     parser.add_argument("--repeats", type=int, default=5)
     parser.add_argument(

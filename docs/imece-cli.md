@@ -177,7 +177,7 @@ uv run python -m evals.imece.prepare_pair --engine codex --model gpt-6.1-sol \
   --max-cli-calls 2000 --out-dir experiments/codex-adaptive-pair
 ```
 
-Bu komut yalnızca hazırlık yapar: model çağrısı, ajan çalıştırma, görev yürütme veya benchmark başlatmaz. `--resume` ya da canlı koşu seçeneği sunmaz; yalnızca `codex` motorunu kabul eder. `--model`, `--out-dir` ve iki yapılandırma dosyası zorunludur; eksik dosyalar varsayılanlara düşmez. Ortak varsayılanlar `core-v2`, beş tekrar, seed `0` ve `docker` backend'idir. `--backend`, `--image`, `--seed`, `--suite`, `--repeats`, isteğe bağlı `--max-cli-calls` ve yerel CLI seçimi için `--executable` iki rapora aynı uygulanır. Çağrı sınırı her rapor için ayrıdır, çiftin toplam sınırı değildir; verilmezse sınırsız olarak kaydedilir. Yukarıdaki 2000 yalnızca örnek bir çağrı sınırıdır, bütçe veya tamamlanma garantisi değildir.
+Bu komut yalnızca hazırlık yapar: model çağrısı, ajan çalıştırma, görev yürütme veya benchmark başlatmaz. `--resume` ya da canlı koşu seçeneği sunmaz; yalnızca `codex` motorunu kabul eder. `--model`, `--out-dir` ve iki yapılandırma dosyası zorunludur; eksik dosyalar varsayılanlara düşmez. Ortak varsayılanlar `core-v3`, beş tekrar, seed `0` ve `docker` backend'idir. `--backend`, `--image`, `--seed`, `--suite`, `--repeats`, isteğe bağlı `--max-cli-calls` ve yerel CLI seçimi için `--executable` iki rapora aynı uygulanır. Çağrı sınırı her rapor için ayrıdır, çiftin toplam sınırı değildir; verilmezse sınırsız olarak kaydedilir. Yukarıdaki 2000 yalnızca örnek bir çağrı sınırıdır, bütçe veya tamamlanma garantisi değildir.
 
 Araç doğrudan mevcut `evals.imece.run.make_parser/main` yolunu zorunlu `--prepare` ile kullanır. Mevcut çalıştırıcı yerel Codex `--version`, `exec --help` ve `--help` komutlarını doğrular, dosya özetlerini okur ve macOS `sandbox-exec` korumasını denetler. Bu nedenle hazırlık da desteklenen yerel Codex kurulumu ve macOS gerektirir; `--backend docker` bu gereksinimi kaldırmaz. Docker veya oracle çalıştırılmaz; imaj indirilmez ve imajın erişilebilirliği doğrulanmaz. Yeni araç sağlayıcı API istemcisi oluşturmaz veya çağırmaz. Ancak mevcut runner'ın dolaylı import zinciri `milyonus.providers` üzerinden Anthropic ve OpenAI uyumlu sağlayıcı uygulama modüllerini de yükler. Bu modüllerin hiç import edilmemesi bu dört dosyalık değişiklikle sağlanmaz; mevcut paket/runner bağımlılıklarının ayrıca ayrıştırılması gerekir. Hazırlık dalı herhangi bir ajan oluşturulmadan önce döner.
 
@@ -288,6 +288,15 @@ Onarım becerisi seçilen deneyde hazırlık sırasında canlı becerinin içeri
 Yerel tanı amacıyla `--capture-reproductions` verildiğinde koşu başına en çok üç farklı çalışma zamanı hatasının dosyaları ve tek başarısız kontrolü rapora eklenir. Paket başına 32 KiB sınırı vardır. Gizli bilgi maskelemesine takılan içerik atlanır. Bu seçenek üretilen kaynak kodu rapora dahil ettiğinden varsayılan olarak kapalıdır. Paketlerin yeniden çalıştırıldığına dair kanıt yoktur; arşivden çıkarılanlar doğrulanmamış örneklerdir.
 
 `--suite core-v2`, v1’deki 50 görevi ve dış referans vakalarını kullanır. On hata düzeltme görevinin kamuya açık sözleşmesine hatalı başlangıç programı eklenir. Böylece ajan somut bir uygulamayı onarır. Sözleşme değiştiği için v1 ve v2 raporları eşleştirilemez. Hermes hazırlığı da aynı küme adını kabul eder.
+
+`--suite core-v3`, aynı 50 görevi, başlangıç programlarını ve dış vakaları
+korur; sonuçların JSON ile taşınabileceğini ve ortalama/bölme sonuçlarında
+standart Python kayan nokta semantiğini görünür sözleşmeye ekler. Geçerli
+girdilerde bu hesaplar sonlu ve temsil edilebilir aralıktadır. Kesir, Decimal,
+küme, üreteç veya özel nesne döndürmek bu arayüze uymaz; demetler JSON dizisi
+olarak taşınabilir. v1/v2 sözleşmeleri değiştirilmez. v2 ve v3 farklı protokol
+özetleri üretir; eski checkpoint yeni sürüme taşınamaz. Hazırlık varsayılanı
+v3'tür. [Canlı koşuda bulunan arayüz açığı](audits/2026-11-07-oracle-interface.md).
 
 Uyarlamalı Python sentezinde konsey, dondurulmuş sözleşmeyle birlikte önceki bağımsız kontrolleri, aday dosyalarının referans adaya göre değişen adlarını ve ilk değişikliğin sınırlı bir kesitini görür. Aday ile kanıt paketinin ayrı içerik özetleri eski emsalin değişmiş bir çözümde kullanılmasını önler. Kesitler adayların davranışça eşdeğer olduğunu kanıtlamaz.
 

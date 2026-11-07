@@ -20,7 +20,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from evals.imece.calls import validate_call_entry, validate_call_records
-from evals.imece.dataset import load_suite
+from evals.imece.dataset import SUITES, load_suite
 from evals.imece.protocol import digest, manifest, validate_rows
 from milyonus.config.loader import load_config
 from milyonus.config.paths import data_root
@@ -723,7 +723,7 @@ def make_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="include small candidate code and failing generated checks in local reports",
     )
-    parser.add_argument("--suite", choices=("smoke", "core-v1", "core-v2"), default="smoke")
+    parser.add_argument("--suite", choices=("smoke", *SUITES), default="smoke")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--image")
     mode = parser.add_mutually_exclusive_group()

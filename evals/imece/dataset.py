@@ -14,6 +14,15 @@ from pathlib import Path
 from milyonus.imece.benchmark import BenchmarkTask
 
 DATA = Path(__file__).with_name("data") / "core-v1.json"
+SUITES = ("core-v1", "core-v2", "core-v3")
+JSON_INTERFACE = (
+    " Result interface: return JSON-compatible values (null/None, bool, int, finite float, "
+    "string, lists, or dictionaries with string keys); tuples may represent arrays. "
+    "Do not return Fraction, Decimal, sets, generators, or custom objects. "
+    "For mean or division results, use standard Python binary floating-point arithmetic; "
+    "exact rational arithmetic is not required. Valid inputs keep floating-point "
+    "calculations finite and within the representable range."
+)
 
 
 def load_tasks(path: Path = DATA) -> tuple[BenchmarkTask, ...]:
@@ -56,11 +65,15 @@ def suite_digest(path: Path = DATA) -> str:
 
 
 def load_suite(name: str) -> tuple[BenchmarkTask, ...]:
-    """v2 introduces public broken starter programs, preserving the v1 contracts."""
+    """v2 adds broken starters; v3 declares the host scorer's JSON/numeric interface.
+
+    Keep v1/v2 requests unchanged: existing frozen reports retain their original
+    contracts, including the interface omission discovered in the live v2 matrix.
+    """
     tasks = load_tasks()
     if name == "core-v1":
         return tasks
-    if name != "core-v2":
+    if name not in SUITES:
         raise ValueError(f"unknown core suite: {name}")
     starters = json.loads(DATA.with_name("core-v2-starters.json").read_text(encoding="utf-8"))
     expected = {t.id for t in tasks if t.id.startswith("fix_")}
@@ -68,7 +81,7 @@ def load_suite(name: str) -> tuple[BenchmarkTask, ...]:
         isinstance(s, str) and s.strip() for s in starters.values()
     ):
         raise ValueError("incomplete v2 starter corpus")
-    return tuple(
+    tasks = tuple(
         replace(
             t,
             request=t.request
@@ -80,3 +93,6 @@ def load_suite(name: str) -> tuple[BenchmarkTask, ...]:
         else t
         for t in tasks
     )
+    if name == "core-v3":
+        return tuple(replace(t, request=t.request + JSON_INTERFACE) for t in tasks)
+    return tasks

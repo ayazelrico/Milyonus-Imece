@@ -25,3 +25,9 @@ ile taşınan dönüş değerlerini ve bölme/ortalama için standart sonlu Pyth
 kayan nokta semantiğini açıkça belirtmelidir. v2 ile v3 sonuçları aynı
 protokol altında birleştirilemez. Yeni sürüm için yeni hazırlık ve yeni
 checkpoint dizini gerekir.
+
+`core-v3` uygulandı: tüm görevler dönüş arayüzünü ve standart kayan nokta
+semantiğini açıkça taşır; eski metinler ve gizli vakalar korunur. Hazırlık
+varsayılanı v3'tür. Gerçek Docker regresyonu üç sayısal görevin referans
+çözümlerini kabul ederken Fraction dönüşünü ve eski hatalı medyanı reddetti.
+Bu kontrol yeni model çözümünün başarısını veya 5X kazancını kanıtlamaz.

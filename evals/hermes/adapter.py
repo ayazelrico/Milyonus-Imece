@@ -23,7 +23,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from evals.imece.dataset import load_suite
+from evals.imece.dataset import SUITES, load_suite
 from evals.imece.protocol import digest, manifest
 from milyonus.imece.antigravity import _read_bounded_stream
 from milyonus.imece.benchmark import _score_artifact
@@ -197,7 +197,7 @@ async def run_suite(
     return report
 
 
-def main() -> int:
+def make_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--model", required=True)
@@ -205,11 +205,15 @@ def main() -> int:
     p.add_argument("--repeats", type=int, default=5)
     p.add_argument("--trial-order", choices=("task-major", "repeat-major"), default="repeat-major")
     p.add_argument("--revision", default="hermes-adapter")
-    p.add_argument("--suite", choices=("core-v1", "core-v2"), default="core-v1")
+    p.add_argument("--suite", choices=SUITES, default="core-v1")
     p.add_argument("--prepare", action="store_true")
     p.add_argument("--test-timeout", type=float, default=10.0)
     p.add_argument("--sandbox-backend", default="macos", choices=("docker", "macos"))
-    args = p.parse_args()
+    return p
+
+
+def main() -> int:
+    args = make_parser().parse_args()
     report = asyncio.run(
         run_suite(
             out=args.out,

@@ -1,5 +1,13 @@
 # PLAN-5X kabul kaydı
 
+7 Kasım güncel durum: Docker dahil **624 test geçti, atlanan yok**. Canlı
+v2 matrisi 29 kayıtta, bir yanlış kabul ve bir belirsiz çağrıyla olumsuz
+ön deney olarak kapatıldı. Medyan görevinde görünür sözleşmede bulunmayan
+JSON dönüş şartı saptandı. Ayrı `core-v3` bu arayüzü ve sayısal semantiği
+açıkça bildirir; eski görev metinleri ve sonuçlar korunur. Yeni sürümün
+canlı kabulü, tam matrisi, ücret mutabakatı ve bağımsız denetimi açıktır.
+[Bulgu analizi](audits/2026-11-07-oracle-interface.md).
+
 Son devam: kullanıcı canlı kıyaslama ve denetim için izin verdi. Canlı
 kampanyada baseline ve adayda dörder sonuç satırı kaydedildi; iki tarafta
 birer belirsiz çağrı oluştuğunda gözetmen durdu. Kullanıcı çağrı başına ücret
