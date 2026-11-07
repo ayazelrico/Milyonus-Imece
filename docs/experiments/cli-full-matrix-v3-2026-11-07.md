@@ -89,6 +89,12 @@ Aday `fix_even_median` görevini ilk turda dış oracle'dan geçirdi. 28
 tamamlanmış çağrıdaki 181.705 token raporla eşleşti. 26 satır kayıtlı,
 25'i doğrulanmış başarı ve 474'ü açık. Aday `fix_empty_prefix` ile devam etti.
 
+Aday `fix_empty_prefix` bütünleştirme aşamasında bir CLI çağrısı başarısız
+olunca `budget` sonucu verdi. Çağrının kullanımı bilinmiyor. 27 satır
+kayıtlı, 25'i doğrulanmış başarı ve 473'ü açık. Kota yenilendikten sonra
+Docker parmak izi donmuş ortamla eşleşti ve kontrol `fix_negative_max`
+göreviyle dört koşuluk partiye başladı.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
