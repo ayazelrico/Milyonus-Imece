@@ -56,6 +56,13 @@ satırlık toparlanma partisini tamamladı. Bu noktada 18 satır kayıtlı,
 17'si doğrulanmış başarı. Kontrol `transpose` günlüğünden tek başına
 devam etmeye başladı.
 
+Kontrol `transpose` görevini tek başına sürdürdüğünde dış oracle'dan
+geçti. 30 tamamlanmış çağrıdaki 317.843 token raporla eşleşti. Adayın
+`prime_flags` kaydı 41 tamamlanmış çağrı ve 275.096 token içeriyor.
+19 satır kayıtlı, 18'i doğrulanmış başarı ve 481'i açık. Kontrol
+`prime_flags` görevine geçti. Adayın sonraki partisi kontrolün bitişine
+bağlandı.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
