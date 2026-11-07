@@ -85,6 +85,10 @@ Kontrol `fix_chunk_tail` görevini dış oracle'dan geçirdi. 30 tamamlanmış
 çağrıdaki 318.474 token raporla eşleşti. 25 satır kayıtlı, 24'ü doğrulanmış
 başarı ve 475'i açık. Aday `fix_even_median` koşusuna başladı.
 
+Aday `fix_even_median` görevini ilk turda dış oracle'dan geçirdi. 28
+tamamlanmış çağrıdaki 181.705 token raporla eşleşti. 26 satır kayıtlı,
+25'i doğrulanmış başarı ve 474'ü açık. Aday `fix_empty_prefix` ile devam etti.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
