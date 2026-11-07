@@ -33,6 +33,11 @@ Ardından tam matrisin aday kolunda ilk üç görev başlatıldı.
 çağrıdaki 185.955 token raporla eşleşti. Matrisin ilk satırı kaydedildi
 ve aday `runs` göreviyle devam etti.
 
+Adayın ilk üç görevlik partisi tamamlandı. `runs` 180.716 token ve
+28 çağrı, `rotate` 189.989 token ve 29 çağrıyla dış oracle'dan geçti.
+Üç görevin toplamı 556.660 token. Her satırın kullanımı tamamlanmış
+çağrı kayıtlarıyla eşleşti. 3/500 satır kayıtlı ve kontrol partisi başladı.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
