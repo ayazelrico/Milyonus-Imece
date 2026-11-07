@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-7 Kasım son yerel doğrulamasında **618 test geçti**, atlanan test yok.
+7 Kasım son yerel doğrulamasında **619 test geçti**, atlanan test yok.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -83,6 +83,10 @@ parmak izi de dondurulur. Görev boyunca ortam uyuşmazlığı koşuyu keser ve
 çağrı kayıtları korunur. Gerçek Docker üzerinde 50 görev × 5 tekrar, iki kol
 için aynı ortam kimliğiyle hazırlandı. Bu hazırlıkta model çağrısı yapılmadı.
 [Deney hazırlığı](docs/imece-cli.md).
+
+7 Kasım’da 500 koşuluk Codex CLI matrisi çalışmaya başladı. İlk eşleşme
+iki kolda da doğrulandı. Parti sınırında kaydedilen checkpoint aynı donmuş
+matriste devam eder. [Matris kaydı](docs/experiments/cli-full-matrix-2026-11-07.md).
 
 Ortam kimliği taşıyan CLI raporlarında karşılaştırma, görev bazındaki token
 toplamlarını kalıcı çağrı kayıtlarıyla eşleştirir. Bozuk kayıt veya tutarsız
