@@ -32,6 +32,11 @@ Altıncı eşleşmede `gcd_list` iki kolda da dış oracle'dan geçti. Kontrol
 317.173, aday 188.706 token kullandı. Kayıtlı 12 satırın kullanım bilgisi
 kalıcı çağrı kayıtlarıyla eşleşti. 488 satır açık ve sıradaki görev `divisors`.
 
+Yedinci eşleşmede `divisors` iki kolda da dış oracle'dan geçti. Her kol
+28 çağrı kaydetti. Kontrol 294.191, aday 178.179 token kullandı. Her iki
+toplam kalıcı çağrı kayıtlarıyla eşleşti. 14 satır kayıtlı, 486 satır açık.
+İki kol `flatten` ile devam etti.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
