@@ -12,6 +12,9 @@ kalır. Tam matris tamamlandığında bile USD ve bağımsız denetim şartları
 karşılanmalıdır. Bu çalışma abonelikli Codex CLI oturumunu kullanır.
 
 Checkpoint’ler `experiments/cli-full-matrix-2026-11-07/` altında.
+İki kolun toplu durumu `uv run python scripts/imece_matrix_status.py
+experiments/cli-full-matrix-2026-11-07` komutuyla okunur. Çıktı toplam kalan
+satırları, tamamlanan eşleşmeleri ve her kolun sıradaki görevini gösterir.
 İlerleme `uv run python -m evals.imece.inspect_run` komutuna ilgili JSON
 dosyası verilerek okunabilir. `--max-new-trials` değeri bir sonraki oturumda
 değiştirilebilir. Tamamlanan satırlar tekrar gönderilmez. Ortam ve kaynak
@@ -27,7 +30,17 @@ token kullandı. Üçüncü görev `rotate` aday kolunda 182.785 token ile
 doğrulandı. Toplam beş satır tamamlandı ve belirsiz çağrı oluşmadı. 7 Kasım
 sabah oturumu kısa Codex kotası %97’ye ulaştığında görev sınırında kapandı.
 Sonraki baseline görevi `rotate`, sonraki aday görevi kendi manifest
-sırasındaki dördüncü görevdir. 495 satır açık.
+sırasındaki dördüncü görevdi. O oturum sonunda 495 satır açıktı.
+
+7 Kasım öğleden sonraki devamda baseline 8, aday 11 satıra ulaştı.
+Toplam 19/500 satır kayıtlı ve 481 satır açık. Baseline sekiz görevin
+tamamında, aday on görevde dış doğrulamadan geçti. Aday `divisors`
+görevindeki bir çağrıda Codex başarısız tur bildirdi. Bu satır `budget`,
+kullanım `unknown` olarak korundu. Sonraki aday görevlerine açık
+`--continue-after-uncertain-trial` seçeneğiyle geçildi. Belirsiz çağrı
+yeniden gönderilmedi. Adayın tam token ve dolar maliyeti bu nedenle
+hesaplanamıyor. Sonraki görevler baseline için `transpose`, aday için
+`fix_chunk_tail`. Kısa kullanım penceresi son kontrolde %99 doluydu.
 
 Her kol için devam komutu aşağıdaki ortak ayarları kullanır. Aday kolunda
 config `docs/imece-codex-adaptive.toml`, çıktı `candidate.json` olur ve
