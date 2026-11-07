@@ -51,6 +51,11 @@ görevine başladı. Bu noktada 17 satır kayıtlı, 16'sı doğrulanmış başa
 Kontrolün devamı aday sürecinin kapanmasına bağlandı. Böylece bir sonraki
 kontrol partisi Docker'ı tek başına kullanacak.
 
+Aday `prime_flags` görevini ikinci turda dış oracle'dan geçirdi ve üç
+satırlık toparlanma partisini tamamladı. Bu noktada 18 satır kayıtlı,
+17'si doğrulanmış başarı. Kontrol `transpose` günlüğünden tek başına
+devam etmeye başladı.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
