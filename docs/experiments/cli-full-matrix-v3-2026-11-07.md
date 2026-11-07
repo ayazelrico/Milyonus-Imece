@@ -28,6 +28,10 @@ bir belirsiz çağrı var. Aday 187.094 token kullandı. 10 satır kayıtlı,
 490 satır açık. Kontrol kolu `--continue-after-uncertain-trial` ile
 sonraki göreve geçti. Belirsiz çağrı ilk kaydıyla birlikte korunur.
 
+Altıncı eşleşmede `gcd_list` iki kolda da dış oracle'dan geçti. Kontrol
+317.173, aday 188.706 token kullandı. Kayıtlı 12 satırın kullanım bilgisi
+kalıcı çağrı kayıtlarıyla eşleşti. 488 satır açık ve sıradaki görev `divisors`.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
