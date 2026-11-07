@@ -42,7 +42,9 @@ async def test_executor_resumes_missing_trials_in_declared_order(monkeypatch):
         async def run(self, request):
             return RunResult(status="rejected", request=request)
 
-    async def score(*args):
+    async def score(executor, *args):
+        executor.processes_started += 1
+        executor.metadata_processes_started += 2
         return False, "not executed"
 
     monkeypatch.setattr(benchmark, "Imece", FakeImece)
@@ -70,6 +72,10 @@ async def test_executor_resumes_missing_trials_in_declared_order(monkeypatch):
     )
     assert observed == [(tasks[1].id, 0), (tasks[0].id, 1), (tasks[1].id, 1)]
     assert len(report["runs"]) == 4
+    for row in report["runs"][1:]:
+        metrics = row["report"]["metrics"]
+        assert metrics["benchmark_processes_started"] == 1
+        assert metrics["benchmark_metadata_processes_started"] == 2
 
 
 @pytest.mark.parametrize("order,next_position", [("task-major", (0, 1)), ("repeat-major", (1, 0))])

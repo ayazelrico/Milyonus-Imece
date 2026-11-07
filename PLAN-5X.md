@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-7 Kasım son yerel doğrulamasında **597 test geçti**, atlanan test yok.
+7 Kasım son yerel doğrulamasında **601 test geçti**, atlanan test yok.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -87,6 +87,10 @@ için aynı ortam kimliğiyle hazırlandı. Bu hazırlıkta model çağrısı ya
 Ortam kimliği taşıyan CLI raporlarında karşılaştırma, görev bazındaki token
 toplamlarını kalıcı çağrı kayıtlarıyla eşleştirir. Bozuk kayıt veya tutarsız
 toplam karşılaştırmayı durdurur. Belirsiz kullanımda tam token oranı boş kalır.
+
+P2 raporu doğrulama başlatmalarıyla Docker kimlik sorgularını ayrı sayar.
+Eşleşmiş kapı iş yükü için iki sayacı birleştiren oran da raporlanır.
+Dış oracle ve görev sınırı kontrolleri ayrı sayaçlarda izlenir.
 P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
 önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 

@@ -286,6 +286,8 @@ async def run_benchmark(
             break
         if can_begin_trial and not can_begin_trial(task.id, repeat):
             continue
+        oracle_processes_before = executor.processes_started
+        oracle_metadata_before = executor.metadata_processes_started
         await executor.verify_environment()
         if on_trial:
             on_trial(task.id, repeat)
@@ -324,6 +326,12 @@ async def run_benchmark(
         except ValueError as exc:
             passed, output = False, str(exc)
         await executor.verify_environment()
+        result.metrics["benchmark_processes_started"] = (
+            executor.processes_started - oracle_processes_before
+        )
+        result.metrics["benchmark_metadata_processes_started"] = (
+            executor.metadata_processes_started - oracle_metadata_before
+        )
         confidence = next(
             (
                 d.confidence

@@ -21,6 +21,18 @@ kimlikleri, koltuk modeli, yanıt özeti ve görev başına bilinen token toplam
 doğrulanır. Belirsiz çağrısı olan görev için toplam token boş olmalıdır.
 USD satırları, rapordan ayrı ücret kayıtları üzerinden eşleştirilir.
 
+Görev raporunda `gate_metadata_processes_started`, iç kapılardaki Docker
+kimlik sorgularını sayar. `gate_processes_started` doğrulama başlatmalarını
+sayar. Dış oracle başlatmaları ve görev sınırındaki ortam sorguları ayrı
+`benchmark_processes_started` ve `benchmark_metadata_processes_started`
+alanlarındadır. Hazırlık ve temizlik süreçleri bu sayaçların dışındadır.
+
+Karşılaştırma aynı kanıt kimliği çoklu kümesine sahip görevleri eşler.
+`matched_process_reduction` doğrulama başlatmalarındaki farkı gösterir.
+`matched_total_gate_process_reduction` eşleşen görevlerde doğrulama ve kimlik
+sorgusu başlatmalarını birlikte sayar. Eşleşen görevlerden birinin kimlik
+sorgusu sayacı yoksa veya geçersizse bu toplam boş kalır.
+
 Uyarlanan üretimi tek başına ölçmek için çift hazırlarken hem
 `--baseline-compact-cli-instructions` hem
 `--candidate-compact-cli-instructions` seçilebilir. İki kolun aynı kısa CLI

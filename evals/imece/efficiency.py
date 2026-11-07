@@ -16,13 +16,18 @@ def _gate_sample(row: dict):
     for gate in report.get("gate_reports", []):
         for check in gate.get("test_results", []):
             identity = check.get("evidence_id")
-            if not identity or type(check.get("reused")) is not bool:
+            if (
+                not isinstance(identity, str)
+                or not identity
+                or type(check.get("reused")) is not bool
+            ):
                 return None
             workload[identity] += 1
             reused += check["reused"]
     if not workload or sum(workload.values()) != started + reused:
         return None
-    return workload, started
+    metadata = metrics.get("gate_metadata_processes_started")
+    return workload, started, metadata if type(metadata) is int and metadata >= 0 else None
 
 
 def paired_efficiency(
@@ -30,6 +35,7 @@ def paired_efficiency(
 ) -> dict:
     indexed = {(r["task"], r["repeat"]): r for r in cand}
     matched = base_calls = cand_calls = 0
+    metadata_pairs = base_metadata = cand_metadata = 0
     for row in base:
         other = indexed[row["task"], row["repeat"]]
         left, right = _gate_sample(row), _gate_sample(other)
@@ -37,7 +43,14 @@ def paired_efficiency(
             matched += 1
             base_calls += left[1]
             cand_calls += right[1]
+            if left[2] is not None and right[2] is not None:
+                metadata_pairs += 1
+                base_metadata += left[2]
+                cand_metadata += right[2]
     reduction = 1 - cand_calls / base_calls if base_calls else None
+    metadata_complete = matched > 0 and metadata_pairs == matched
+    base_total = base_calls + base_metadata if metadata_complete else None
+    cand_total = cand_calls + cand_metadata if metadata_complete else None
     b = baseline_summary["tokens_per_verified_success"]
     c = candidate_summary["tokens_per_verified_success"]
     ratio = c / b if b is not None and b > 0 and c is not None else None
@@ -47,6 +60,14 @@ def paired_efficiency(
         "matched_baseline_processes": base_calls,
         "matched_candidate_processes": cand_calls,
         "matched_process_reduction": reduction,
+        "matched_gate_trials_with_metadata_counts": metadata_pairs,
+        "matched_baseline_gate_metadata_processes": base_metadata if metadata_complete else None,
+        "matched_candidate_gate_metadata_processes": cand_metadata if metadata_complete else None,
+        "matched_baseline_total_gate_processes": base_total,
+        "matched_candidate_total_gate_processes": cand_total,
+        "matched_total_gate_process_reduction": (
+            1 - cand_total / base_total if base_total and cand_total is not None else None
+        ),
         "full_matrix_gate_reduction_at_least_60pct": (
             reduction >= 0.6 if reduction is not None and matched == len(base) else None
         ),

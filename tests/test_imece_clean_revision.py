@@ -199,6 +199,10 @@ async def test_real_docker_clean_revision_keeps_retest_and_final_gates(bad_merge
     assert result.metrics["revision_calls_avoided"] == (1 if mixed else 2)
     assert sum(s.role.startswith("author revising") for s in fake.specs) == int(mixed)
     assert len(result.gate_reports) >= 5  # production, unchanged re-test, integration
+    assert (
+        result.metrics["gate_metadata_processes_started"]
+        == 2 * result.metrics["gate_checks_reported"]
+    )
     assert result.status == ("rejected" if bad_merge else "accepted")
     if bad_merge:
         assert result.round_outcomes == ["integration_gate_rejected"]

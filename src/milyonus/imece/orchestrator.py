@@ -1367,6 +1367,9 @@ class Imece:
         if self.executor is not None:
             outcomes = [r for gate in res.gate_reports for r in gate.test_results]
             res.metrics["gate_processes_started"] = self.executor.processes_started
+            res.metrics["gate_metadata_processes_started"] = (
+                self.executor.metadata_processes_started
+            )
             res.metrics["gate_checks_reported"] = len(outcomes)
             res.metrics["gate_checks_reused"] = sum(r.get("reused") is True for r in outcomes)
         if res.status in ("accepted", "rejected") and self.swarm.events and not self._should_stop():
