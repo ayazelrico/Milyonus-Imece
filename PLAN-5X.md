@@ -94,6 +94,11 @@ bu şart görünür görev sözleşmesinde yoktu. Eski kayıtlar korunur. Yeni
 sözleşme ayrı sürüm/protokol gerektirir; bu deney 5X kabulü sağlamaz.
 [Bulgu analizi](docs/audits/2026-11-07-oracle-interface.md).
 
+`core-v3` JSON dönüş arayüzünü ve sayısal semantiği baştan bildirir.
+Ayrı medyan kalibrasyonunda iki kol ilk turda dış oracle'dan geçti.
+Yeni 500 koşuluk matris ayrı checkpoint'lerle başlatıldı; eski 29 satır
+bu matrise taşınmaz. [Yeni matris](docs/experiments/cli-full-matrix-v3-2026-11-07.md).
+
 Ortam kimliği taşıyan CLI raporlarında karşılaştırma, görev bazındaki token
 toplamlarını kalıcı çağrı kayıtlarıyla eşleştirir. Bozuk kayıt veya tutarsız
 toplam karşılaştırmayı durdurur. Belirsiz kullanımda tam token oranı boş kalır.
