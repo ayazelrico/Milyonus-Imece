@@ -160,7 +160,7 @@ class RunResult:
     reproductions: list[dict] = field(default_factory=list)
     round_outcomes: list[str] = field(default_factory=list)
     production_schedule: list[dict[str, int | str]] = field(default_factory=list)
-    applied_repair_skills: list[dict[str, int | str]] = field(default_factory=list)
+    applied_repair_skills: list[dict[str, int | str | bool]] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         d = {
@@ -755,6 +755,7 @@ class Imece:
             )
             for name, _i in jobs
         ]
+        repair_briefing = None
         if repair and specs:
             previous, report = repair
             example = ""
@@ -771,10 +772,11 @@ class Imece:
                         result.warnings.append(f"Round {rnd}: repair skill rejected: {exc}")
                 else:
                     example = skill.example_context()
-                    if result is not None:
-                        result.applied_repair_skills.append(
-                            {"round": rnd, "name": skill.name, "skill_sha256": skill.sha256}
-                        )
+                    repair_briefing = {
+                        "round": rnd,
+                        "name": skill.name,
+                        "skill_sha256": skill.sha256,
+                    }
             jobs[0] = (previous.approach, jobs[0][1])
             specs[0] = AgentSpec(
                 block="production",
@@ -810,6 +812,13 @@ class Imece:
                 )
             )
         texts = await self.swarm.run(specs)
+        if (
+            result is not None
+            and repair_briefing is not None
+            and texts[0].strip()
+            and not texts[0].startswith("(agent failed")
+        ):
+            result.applied_repair_skills.append({**repair_briefing, "response_received": True})
         return [
             Candidate(f"R{rnd}-C{i + 1}", name, author, text)
             for i, ((name, author), text) in enumerate(zip(jobs, texts, strict=True))

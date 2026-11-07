@@ -36,10 +36,14 @@ def describe_treatments(baseline: dict, candidate: dict) -> dict:
     defaults = {"skip_clean_revision": True}
     factors = [
         k
-        for k in sorted(TREATMENT_SETTINGS)
+        for k in sorted(TREATMENT_SETTINGS - {"repair_skill_sha256"})
         if baseline.get("settings", {}).get(k, defaults.get(k))
         != candidate.get("settings", {}).get(k, defaults.get(k))
     ]
+    if "repair_skill" not in factors and baseline.get("settings", {}).get(
+        "repair_skill_sha256"
+    ) != candidate.get("settings", {}).get("repair_skill_sha256"):
+        factors.append("repair_skill")
     builtin = {"kind": "builtin", "instructions_hash": None}
     if baseline.get("cli_prompt_treatment", builtin) != candidate.get(
         "cli_prompt_treatment", builtin

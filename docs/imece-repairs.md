@@ -93,6 +93,22 @@ Eksik, iptal edilmiş, değiştirilmiş veya geçersiz beceri kullanılmaz; norm
 
 Bu akışların başarı ve maliyet üzerindeki etkisi karşılaştırmalı koşularda henüz ölçülmedi.
 
+Onarım becerisini tek fark olarak ölçmek için `evals.imece.prepare_pair`
+komutuna aynı uyarlamalı ayarları kullanan iki config verilir. Yalnızca aday
+config'i yükseltilmiş `repair_skill` içerir. `--failure-families` ile görev
+eşlemesi önceden belirlenir. Beceri adı ve içerik özeti manifestte birlikte
+tek faktör olarak gösterilir.
+
+Yeni `applied_repair_skills` kayıtlarında `response_received=true`, beceri
+bağlamı verilen onarım çağrısından kullanılabilir metin geldiğini belirtir.
+Bütçe engeli veya boş yanıt bu sayaca girmez. Eski kayıtlarda bu kanıt alanı
+bulunmadığında aile eşiği hesaplanmaz. Eşik için aynı ailede en az iki farklı
+aday görevinin bu kanıtı taşıması, kontrol kolunda beceri kullanılmaması ve
+tüm eşleşmelerin geçerli bir tur geçmişi içermesi gerekir. Hesaplanan eşik
+başarısız tur sayısında en az %50 azalma ve dış doğrulamada gerileme olmaması
+koşullarını birlikte gösterir. Bu gözlem kıyaslamadaki diğer değişkenlerden
+bağımsız bir beceri etkisi ölçümü sağlamaz.
+
 Digest ile sabitlenmiş Docker yürütmelerinde `ExecutionResult.environment_id`,
 seçilen imaj/daemon ve yürütme politikasının parmak izidir. Kapı raporu bu
 kimliği taşır; yakalanan hata paketinin özetine de dahil edilir. Kanıt

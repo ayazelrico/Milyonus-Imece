@@ -197,8 +197,20 @@ async def main(args) -> int:
             and baseline["settings"]["skip_clean_revision"] is False
             and candidate["settings"]["skip_clean_revision"] is True
         )
-        if not (adaptive_pair or revision_pair or (same_adaptive and prompt_difference)):
-            raise ValueError("expected an adaptive, conditional revision, or CLI prompt treatment")
+        repair_pair = (
+            not prompt_difference
+            and set(differences) == {"repair_skill", "repair_skill_sha256"}
+            and candidate["settings"]["adaptive_production"] is True
+            and baseline["settings"]["repair_skill"] is None
+            and candidate["settings"]["repair_skill_sha256"] is not None
+            and bool(candidate["protocol"].get("failure_families"))
+        )
+        if not (
+            adaptive_pair or revision_pair or repair_pair or (same_adaptive and prompt_difference)
+        ):
+            raise ValueError(
+                "expected an adaptive, conditional revision, repair skill, or CLI prompt treatment"
+            )
         if any(baseline[key] != candidate[key] for key in ("revision", "implementation_hash")):
             raise ValueError("implementation changed during pair preparation")
         pair = {

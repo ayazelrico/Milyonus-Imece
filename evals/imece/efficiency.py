@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 
 
@@ -80,6 +81,7 @@ def repair_family_outcomes(base: list[dict], cand: list[dict], families: dict[st
     """Use the frozen task assignment, including trials where no repair was attempted."""
     right = {(r["task"], r["repeat"]): r for r in cand}
     result = {}
+    exposed_tasks: dict[str, set[str]] = {}
     rejected = {
         "no_candidate",
         "production_gate_rejected",
@@ -88,6 +90,47 @@ def repair_family_outcomes(base: list[dict], cand: list[dict], families: dict[st
         "polish_gate_rejected",
         "approval_rejected",
     }
+    terminal = rejected | {"accepted"}
+
+    def skill_briefing(trial):
+        report = trial.get("report") or {}
+        briefings = report.get("applied_repair_skills", [])
+        rounds = report.get("rounds")
+        if not isinstance(briefings, list):
+            return None
+        if not briefings:
+            return False
+        if type(rounds) is not int or any(
+            not isinstance(entry, dict)
+            or entry.get("response_received") is not True
+            or type(entry.get("round")) is not int
+            or not 2 <= entry["round"] <= rounds
+            or not isinstance(entry.get("name"), str)
+            or not entry["name"].strip()
+            or not isinstance(entry.get("skill_sha256"), str)
+            or not re.fullmatch(r"[0-9a-f]{64}", entry["skill_sha256"])
+            for entry in briefings
+        ):
+            return None
+        return True
+
+    def failed_rounds(trial):
+        report = trial.get("report") or {}
+        history, rounds = report.get("round_outcomes"), report.get("rounds")
+        status = trial["status"]
+        if (
+            status not in ("accepted", "rejected")
+            or not isinstance(history, list)
+            or not history
+            or type(rounds) is not int
+            or len(history) != rounds
+            or any(not isinstance(outcome, str) or outcome not in terminal for outcome in history)
+            or history.count("accepted") != int(status == "accepted")
+            or (status == "accepted" and history[-1] != "accepted")
+        ):
+            return None
+        return sum(outcome in rejected for outcome in history)
+
     for row in base:
         family = families.get(row["task"])
         if family is None:
@@ -97,6 +140,8 @@ def repair_family_outcomes(base: list[dict], cand: list[dict], families: dict[st
             {
                 "paired_trials": 0,
                 "candidate_trials_with_skill_briefing": 0,
+                "baseline_trials_with_skill_briefing": 0,
+                "pairs_with_invalid_skill_briefing": 0,
                 "baseline_verified_in_exposed_pairs": 0,
                 "candidate_verified_in_exposed_pairs": 0,
                 "incomplete_pairs": 0,
@@ -108,32 +153,27 @@ def repair_family_outcomes(base: list[dict], cand: list[dict], families: dict[st
         )
         other = right[row["task"], row["repeat"]]
         group["paired_trials"] += 1
-        exposed = bool((other.get("report") or {}).get("applied_repair_skills"))
-        group["candidate_trials_with_skill_briefing"] += int(exposed)
-        failures = []
+        baseline_exposed, exposed = skill_briefing(row), skill_briefing(other)
+        group["pairs_with_invalid_skill_briefing"] += int(
+            baseline_exposed is None or exposed is None
+        )
+        group["candidate_trials_with_skill_briefing"] += int(exposed is True)
+        group["baseline_trials_with_skill_briefing"] += int(baseline_exposed is True)
+        if exposed:
+            exposed_tasks.setdefault(family, set()).add(row["task"])
         for label, trial in (("baseline", row), ("candidate", other)):
             verified = int(trial["status"] == "accepted" and trial["oracle_passed"])
             group[label + "_verified"] += verified
             if exposed:
                 group[label + "_verified_in_exposed_pairs"] += verified
-            report = trial.get("report") or {}
-            history = report.get("round_outcomes")
-            if (
-                trial["status"] not in ("accepted", "rejected")
-                or not isinstance(history, list)
-                or len(history) != report.get("rounds")
-                or any(outcome not in rejected | {"accepted"} for outcome in history)
-                or history.count("accepted") != int(trial["status"] == "accepted")
-            ):
-                continue
-            failures.append(sum(outcome in rejected for outcome in history))
-        if len(failures) == 2:
-            group["baseline_failed_rounds"] += failures[0]
-            group["candidate_failed_rounds"] += failures[1]
+        b, c = failed_rounds(row), failed_rounds(other)
+        if b is not None and c is not None:
+            group["baseline_failed_rounds"] += b
+            group["candidate_failed_rounds"] += c
         else:
             group["incomplete_pairs"] += 1
 
-    for group in result.values():
+    for family, group in result.items():
         b, c = group["baseline_failed_rounds"], group["candidate_failed_rounds"]
         group["failed_round_reduction"] = 1 - c / b if b and not group["incomplete_pairs"] else None
         group["verified_rate_change_pp"] = (
@@ -141,4 +181,18 @@ def repair_family_outcomes(base: list[dict], cand: list[dict], families: dict[st
             * (group["candidate_verified"] - group["baseline_verified"])
             / group["paired_trials"]
         )
+        group["candidate_distinct_tasks_with_skill_briefing"] = len(exposed_tasks.get(family, ()))
+        group["observed_family_threshold_met"] = None
+        if (
+            group["failed_round_reduction"] is not None
+            and group["candidate_distinct_tasks_with_skill_briefing"] >= 2
+            and group["baseline_trials_with_skill_briefing"] == 0
+            and group["pairs_with_invalid_skill_briefing"] == 0
+        ):
+            group["observed_family_threshold_met"] = (
+                group["failed_round_reduction"] >= 0.5
+                and group["candidate_verified"] >= group["baseline_verified"]
+                and group["candidate_verified_in_exposed_pairs"]
+                >= group["baseline_verified_in_exposed_pairs"]
+            )
     return result
