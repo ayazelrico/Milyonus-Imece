@@ -23,10 +23,11 @@ Manifest gerçek doğrulama ortamını ve kaynak özetini içerir. Kollar sıray
 çalıştırılır. Makinedeki komutlar `DOCKER_CONTEXT=colima-imece-tests` ve
 `TMPDIR=/Users/ayazelrico/.cache/imece-docker-tests` kullanır.
 
-Önce ayrı tek görevlik medyan kalibrasyonu hazırlandı. Aday ilk turda
-dış oracle'dan geçti ve 188.327 token kullandı. Kontrol kalibrasyonu
-başlatıldı. Bu kayıtlar `experiments/cli-pinned-calibration-2026-11-07/`
-altındadır. Tam matris kalibrasyon sonrasında başlatılacaktır.
+Önce ayrı tek görevlik medyan kalibrasyonu tamamlandı. İki kol ilk turda
+dış oracle'dan geçti. Kontrol 30 çağrı ve 318.871 token, aday 29 çağrı ve
+188.327 token kullandı. Her iki rapor `validate_report` ile doğrulandı.
+Bu kayıtlar `experiments/cli-pinned-calibration-2026-11-07/` altındadır.
+Ardından tam matrisin aday kolunda ilk üç görev başlatıldı.
 
 Güncel matris durumu şu komutla okunur.
 
