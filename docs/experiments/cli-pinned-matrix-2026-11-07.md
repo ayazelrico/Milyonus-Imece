@@ -52,6 +52,11 @@ Aday `window_sums` ve `balanced` görevlerinde dış oracle'dan geçti.
 Bu iki satırın token kullanımı tamamlanmış çağrı kayıtlarıyla eşleşti.
 Toplam sekiz satır kaydedildi, aday `gcd_list` görevine başladı.
 
+Aday `gcd_list` görevini de dış oracle'dan geçirerek ikinci partiyi
+tamamladı. Altı aday sonucu doğrulanmış başarı, toplam kullanım
+1.108.167 token. Matris dokuz satıra ulaştı. Kontrol `window_sums`
+ile sonraki üç görevlik partiye başladı.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
