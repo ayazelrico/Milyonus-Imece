@@ -14,6 +14,13 @@ Bu kalibrasyon ana 500 satıra dahil değildir.
 doğrulandı. [Kalibrasyon sonucu](cli-v3-interface-2026-11-07.md).
 Ardından tam matrisin ilk dörder görevlik partisi başlatıldı.
 
+İlk parti tamamlandığında 8/500 satır kayıtlı, 492 satır açıktı. İlk dört
+görev (`stable_unique`, `runs`, `rotate`, `window_sums`) iki kolda da
+dış oracle'dan geçti. Baseline 120 çağrı/1.269.113 token, aday 116 çağrı/
+757.194 token kullandı. Her satırın token toplamı tamamlanan kalıcı çağrı
+kayıtlarıyla eşleştirildi. Bu sınırda yanlış kabul veya belirsiz kullanım
+yoktu. İki kol beşinci görev `balanced` ile devam etti.
+
 Kontrol standart CLI talimatı ve sabit üretim, aday kısa CLI talimatı ve
 uyarlanan üretim kullanır. Sonuç iki değişikliğin birleşik etkisini ölçer.
 Her kol 250 satır, görev sırası `repeat-major`, her koltuk
