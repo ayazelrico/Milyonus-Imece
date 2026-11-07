@@ -22,6 +22,13 @@ dizinleri aynı makinede korunmalıdır.
 311.706 token ve 30 çağrı, aday 182.755 token ve 29 çağrı kullandı.
 Bu satırlar tam matrisin parçasıdır. Güncel kalan sayı checkpoint’lerden okunur.
 
+İkinci görev `runs` da iki kolda doğrulandı. Kontrol 314.961, aday 177.298
+token kullandı. Üçüncü görev `rotate` aday kolunda 182.785 token ile
+doğrulandı. Toplam beş satır tamamlandı ve belirsiz çağrı oluşmadı. 7 Kasım
+sabah oturumu kısa Codex kotası %97’ye ulaştığında görev sınırında kapandı.
+Sonraki baseline görevi `rotate`, sonraki aday görevi kendi manifest
+sırasındaki dördüncü görevdir. 495 satır açık.
+
 Her kol için devam komutu aşağıdaki ortak ayarları kullanır. Aday kolunda
 config `docs/imece-codex-adaptive.toml`, çıktı `candidate.json` olur ve
 `--compact-cli-instructions` eklenir.
