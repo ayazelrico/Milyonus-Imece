@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "manifest": {
+    "protocol": {
+      "schema_version": 2,
+      "scorer_hash": "f71872d73b44dd99b5a0d0fe90921a67ed4ad4c251f83998edacc493ebf4eab9",
+      "tasks": [
+        {
+          "id": "fix_even_median",
+          "contract": "1664e3ac07ee3587a807bfefa194c0edc0dcce52f8a976a6656ed7f9a9efdd25",
+          "oracle": "aa91e74f34a2c3e311d8c86e57f5af5078c055e282ed516c0d880abd7a3ceed9",
+          "scoring_mode": "host_cases"
+        }
+      ],
+      "models": {
+        "pool": "gpt-6.1-sol",
+        "repair": "gpt-6.1-sol",
+        "framing": "gpt-6.1-sol",
+        "test_design": "gpt-6.1-sol",
+        "red_team": "gpt-6.1-sol",
+        "evidence_audit": "gpt-6.1-sol",
+        "compliance": "gpt-6.1-sol",
+        "observer": "gpt-6.1-sol",
+        "approval": "gpt-6.1-sol",
+        "council:correctness": "gpt-6.1-sol",
+        "council:risk": "gpt-6.1-sol",
+        "council:user_impact": "gpt-6.1-sol",
+        "council:cost_speed": "gpt-6.1-sol",
+        "council:devils_advocate": "gpt-6.1-sol"
+      },
+      "runtime": {
+        "backend": "docker",
+        "image": "python@sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e",
+        "python": "3.12.14",
+        "platform": "macOS-26.6.2-arm64-arm-64bit",
+        "engine": "codex",
+        "cli": {
+          "executable": "/Users/ayazelrico/.cache/imece-cli/0.167.0-alpha.3.2-a636331ed876/CodexCLI.app/Contents/MacOS/codex",
+          "version": "codex-cli 0.167.0-alpha.3.2",
+          "sha256": "a636331ed87605efc4cf84028ac2884a75363f9d10ead63cffb57ea0016d486e"
+        },
+        "agent_policy": "text-only-seatbelt-oracle-deny-v2",
+        "verification_environment_id": "5f98212a0d1fcae5b60a0e64799628efd91e32203586201cd0e597f2364ed850"
+      },
+      "seed": 0,
+      "repeats": 1,
+      "trial_order": "repeat-major",
+      "limits": {
+        "max_tokens": 500000,
+        "max_rounds": 4,
+        "test_timeout": 10.0,
+        "max_cli_calls": 12500
+      },
+      "execution_controls": {
+        "agents": 17,
+        "max_parallel": 1,
+        "max_tokens": 500000,
+        "max_rounds": 4,
+        "max_clusters": 9,
+        "max_options": 12,
+        "shortlist": 4,
+        "pass_threshold": 0.6,
+        "verification": "python",
+        "sandbox_backend": "docker",
+        "sandbox_image": "python@sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e",
+        "test_timeout": 10.0,
+        "agent_timeout": 300.0,
+        "cell_size": 9,
+        "irade": {
+          "veto_floor": 0.5,
+          "hard_veto_floor": 0.2,
+          "spread_threshold": 0.15,
+          "min_vote_share": 0.6,
+          "min_confidence": 0.55,
+          "audit_rate": 0.05,
+          "precedent_confidence": 0.8
+        }
+      }
+    },
+    "protocol_hash": "afe281cc1a973161176e4192364b0a965b597fe1e9ddb5c4f0568544c179aa2a",
+    "settings": {
+      "agents": 17,
+      "max_parallel": 1,
+      "max_tokens": 500000,
+      "max_rounds": 4,
+      "max_clusters": 9,
+      "max_options": 12,
+      "shortlist": 4,
+      "pass_threshold": 0.6,
+      "verification": "python",
+      "sandbox_backend": "docker",
+      "sandbox_image": "python@sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e",
+      "test_timeout": 10.0,
+      "agent_timeout": 300.0,
+      "cell_size": 9,
+      "irade": {
+        "veto_floor": 0.5,
+        "hard_veto_floor": 0.2,
+        "spread_threshold": 0.15,
+        "min_vote_share": 0.6,
+        "min_confidence": 0.55,
+        "audit_rate": 0.05,
+        "precedent_confidence": 0.8
+      },
+      "approved_evidence": [],
+      "adaptive_production": false,
+      "skip_clean_revision": true,
+      "repair_skill": null,
+      "repair_skill_sha256": null
+    },
+    "revision": "c4f2d5665ba04dd91e0ce1456dc6aba4f4ba8327",
+    "implementation_hash": "48f98bb0f3c65419119d85e82fdb609b638f48043a46d3b784d7a70a5e3c9912",
+    "capture_reproductions": false,
+    "engine": "codex",
+    "cli_prompt_treatment": {
+      "kind": "builtin",
+      "instructions_hash": null
+    },
+    "max_output_tokens": null,
+    "catalog_prices": null,
+    "shared_model_limitation": "Shared CLI model identifiers by seat: {\"gpt-6.1-sol\": [\"pool\", \"repair\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence."
+  },
+  "source": "codex",
+  "engine": "codex",
+  "models": {
+    "pool": "gpt-6.1-sol",
+    "repair": "gpt-6.1-sol",
+    "framing": "gpt-6.1-sol",
+    "test_design": "gpt-6.1-sol",
+    "red_team": "gpt-6.1-sol",
+    "evidence_audit": "gpt-6.1-sol",
+    "compliance": "gpt-6.1-sol",
+    "observer": "gpt-6.1-sol",
+    "approval": "gpt-6.1-sol",
+    "council:correctness": "gpt-6.1-sol",
+    "council:risk": "gpt-6.1-sol",
+    "council:user_impact": "gpt-6.1-sol",
+    "council:cost_speed": "gpt-6.1-sol",
+    "council:devils_advocate": "gpt-6.1-sol"
+  },
+  "runs": [],
+  "transcripts": [],
+  "ledger": null,
+  "catalog_prices": null,
+  "price_note": "CLI usage is not a billing receipt. Dollar cost is unknown (null), including failures/cancellations; no subscription-to-token price is invented. Token totals are null when any call lacks usage; observed_tokens is only a known lower bound.",
+  "independence_warnings": [
+    "Shared CLI model identifiers by seat: {\"gpt-6.1-sol\": [\"pool\", \"repair\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence."
+  ],
+  "shared_model_limitation": "Shared CLI model identifiers by seat: {\"gpt-6.1-sol\": [\"pool\", \"repair\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence.",
+  "state": "running",
+  "summary": {
+    "runs": 0,
+    "status_counts": {},
+    "distributions": {
+      "seconds": {
+        "known_runs": 0,
+        "unknown_runs": 0,
+        "min": null,
+        "median": null,
+        "p95": null,
+        "max": null
+      },
+      "tokens": {
+        "known_runs": 0,
+        "unknown_runs": 0,
+        "min": null,
+        "median": null,
+        "p95": null,
+        "max": null
+      },
+      "cost_usd": {
+        "known_runs": 0,
+        "unknown_runs": 0,
+        "min": null,
+        "median": null,
+        "p95": null,
+        "max": null
+      }
+    },
+    "gate_failure_classes": {},
+    "accepted": 0,
+    "verified_successes": 0,
+    "accepted_deliverable_rate": null,
+    "verified_success_rate": null,
+    "false_accepts": 0,
+    "total_tokens": null,
+    "tokens_per_verified_success": null,
+    "observed_tokens": 0,
+    "unknown_token_runs": 0,
+    "cost_usd": null,
+    "cost_estimated": false,
+    "cost_per_accepted_usd": null,
+    "cost_per_verified_success_usd": null,
+    "calibration_ece": null,
+    "calibration_samples": 0,
+    "usage_attribution_complete": true,
+    "unassigned_observed_tokens": 0,
+    "unassigned_unknown_usage_calls": 0
+  },
+  "accounting": {
+    "cost_usd": null,
+    "cost_status": "unknown",
+    "token_budget": "all-recorded-completed-calls",
+    "observed_tokens": 0,
+    "usage_attribution_complete": true,
+    "cli_call_limit": 12500,
+    "cli_calls_reserved": 0,
+    "unknown_usage_calls": 0
+  },
+  "updated_at": "2026-11-07T16:55:14.410354+00:00"
+}

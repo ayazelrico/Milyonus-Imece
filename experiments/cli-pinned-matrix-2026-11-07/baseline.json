@@ -1,0 +1,505 @@
+{
+  "schema_version": 1,
+  "manifest": {
+    "protocol": {
+      "schema_version": 2,
+      "scorer_hash": "f71872d73b44dd99b5a0d0fe90921a67ed4ad4c251f83998edacc493ebf4eab9",
+      "tasks": [
+        {
+          "id": "stable_unique",
+          "contract": "0d4548ec4555288eca197959f953c434dfb658ccd07103778f8bea47d89f1c78",
+          "oracle": "d81859eee982a27f06dd116978d86d2657a92ea65633b0ff13324469e9f68972",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "runs",
+          "contract": "d79372aaec03e1cd183ccaa8200d113ba2e7019d3fb66b623ad8200ae8f92c26",
+          "oracle": "bdfd7cce197515b1924ae190d51098dcf5effb9bba5eac28b9bd430ca1c3762a",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "rotate",
+          "contract": "57ac1d92282fb2e40a0de3e425e93c5450d3f1ce16f6ed87b4e319810e00f2a7",
+          "oracle": "dbd1efdabbfd4690dfc7dadf64ab7baa29184f0b8ff221d002810abef9f78f46",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "window_sums",
+          "contract": "0b06c1cec371b2a233e3dde2d5cf047d5008294fa7ab548991299bbd5fd6b470",
+          "oracle": "7659de4297dccf12a340f9702f9daf018f4e9169ce96f519aa2e32daff4a5029",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "balanced",
+          "contract": "34051a9f9561bad494387ac04b09db7516b00a9227545a268a1717c6d4462445",
+          "oracle": "427a83606dfcdcf5c6738f15a82f44ee07c46792fda929ebff2f67709fc1f462",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "gcd_list",
+          "contract": "ca6246e45bc02bda5fc2fd042dffac7f4ef9849c6dc5ca8874cf0874a126b692",
+          "oracle": "2fe0aceef3b286712d75d5dc1f7740a01372c5f36dd9dc7e860ee388f75b841c",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "divisors",
+          "contract": "fd09b75c4ee14c620bb239846b16a2cff9ffc2001d5bc5035190884dee75020e",
+          "oracle": "1326016f356224db42748577abfc438454e496a581c50e2f53a1145314a4c9af",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "flatten",
+          "contract": "10218d2c039a872eb63bbefd69b86863f0d730d5686e5bf842d25c2b3411f5df",
+          "oracle": "40fdc2d3922314f15b0effd63780f5752fa43678a8af92205fab63233e6a0699",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "transpose",
+          "contract": "3a6134426ff8b9525be994c9edb75fc7f06ff9b1032d4efedcf75d3b835f7354",
+          "oracle": "d95e7b6efaaa1b986fd3e012caa85b7377c3e6b0690b4c0d574a19d9ac682a2a",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "prime_flags",
+          "contract": "5a461ace35c6c37b50f4d34bce53835460438a2014f8c32db141ff32a0a988b8",
+          "oracle": "ad99f21fbb8fb8353a6524a14a652ebda310d115324b97277d163c0c6a2f72f4",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "fix_binary_search",
+          "contract": "3d46299e26c7322664f3c5e1b7960bb30747f44c58c740dc8686ea60119f47cb",
+          "oracle": "6e6930ca4fb691918175cd8bea59dd73a636f1fde746ac893a36a959cc883a88",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "fix_chunk_tail",
+          "contract": "b8bb7f24c10398ad798d11cb0fb8e74434dc8dcd95eece5135a391c26bef2ba8",
+          "oracle": "141398b7b5c610535525888aa68fa674bc58193ca283c4415a9b2482f68005db",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "fix_negative_max",
+          "contract": "bf7251a3d3ed7a8b0e8260a63ba7b02a2226d14715ca76be3086f2738d41a307",
+          "oracle": "d91e20b207640596f85645b49d9c9ec3f858c434ffa1d9484b031b8d2af0910a",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "fix_even_median",
+          "contract": "1664e3ac07ee3587a807bfefa194c0edc0dcce52f8a976a6656ed7f9a9efdd25",
+          "oracle": "aa91e74f34a2c3e311d8c86e57f5af5078c055e282ed516c0d880abd7a3ceed9",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "fix_empty_prefix",
+          "contract": "cee7ea42a6d8dd723bfc0dbc220217571bd7dc1ef96d490675f404a2978df71c",
+          "oracle": "2496d82e0dbe57ba64e26ad3c7dcd5c86ef72af59124e504de2e38a015501651",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "fix_duplicate_pairs",
+          "contract": "83945b8f5413373a6412631428329d0a907045deec3e205275ea01569315197b",
+          "oracle": "fe579cd42db6bde3505abba5cf7fdb44e3d4629026dcc9ea39f7904d8d4f2b89",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "fix_leap_year",
+          "contract": "d702f4bbb18ba325aadef4cfdc19bac2c0ccacc5a76c117cf85c37f8f20538db",
+          "oracle": "364f94b9d3ab1072aae5948ce38d6e2c6ae6ac8d198b440a6c65e7eef08f702b",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "fix_overlap",
+          "contract": "b16192e7fb7dceb1c9623e9b34cae940d317eb59dfc0669e4a1355e5eb87fcb4",
+          "oracle": "56b25c04dab273321c8cc51e4eeda5945abf4eac0297ed1290f969f722520f73",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "fix_percent_decode",
+          "contract": "bf2fd79557a4a2a2516fad3eb5267c031a0523778b5df11f385be2998aa079cc",
+          "oracle": "2a9b3727efea9bda013c6d9cfe2b57b8db64dc6fb759fbb564e6ac16db3333ae",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "fix_truthy_zero",
+          "contract": "8dc3999beefe37fd931c91f59ba8c959b914fb062cce7534ba003e130a422b0e",
+          "oracle": "97bb2799a4175fd538242872214f6e10b74b94a2abcb55b3e8c9ae0847109b61",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "group_totals",
+          "contract": "e189be2d7ed02dc9e4c80c86bbe2a9dc5e5c02386e52ec3725175ed474627a02",
+          "oracle": "5506a43e1ecf59ea43407078f858e03bcfdab5c68f3f32eb8ee40b25502e0c9a",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "csv_rows",
+          "contract": "886dedf3d40d607348f74bf8e4f77833330de7bc008c064bbf444ccd4bbcba54",
+          "oracle": "7f45166bbd81d7c4a48f6301a348bc2eeda1539602a6cb3c5dfdf7e6685cc43a",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "invert_multimap",
+          "contract": "d78adb72d9aefa6ee6a1b96517807f110d8ce708da98ed9286f134b0b1c07e3b",
+          "oracle": "2c69695ffe052e1a2895267ee1e402ac1b1868eb5e1339c56477c9be234d15a2",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "pivot_counts",
+          "contract": "0384e6ed5566198b6cac4b00996db8a6f752b084a9061c9ff63f722ae228afce",
+          "oracle": "f314da48d3e6dbe17665275e0037a085fe464e313f8139195456074abbe7fc6e",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "normalize_words",
+          "contract": "becd5c863b10ae870b544eb0f19ae4f7eb033b0f42d5858f52c2826aab7ba3e3",
+          "oracle": "bcf7f545cb5821c4e15e11eb75ce30fe2c97089df9c20d5e0e4a579e6e14ff83",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "records_latest",
+          "contract": "3c79a73e797cda30ca6321d24d2ee476dab9846bfb283af15c4b1613f8482572",
+          "oracle": "8502df0ce726ce1c79a9ca74dac34792c46cf85651af53f57b526df757de8be1",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "query_pairs",
+          "contract": "7725e2f02bd094b498c933d8efe2c43d73867bf7330a5138ab92c91e2056dd94",
+          "oracle": "a5afc3f6cb07b24ecf1fff3ff309de5d2f6ffe34d634e527e3043c1eec88baef",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "json_lines",
+          "contract": "ad84b63d1fb87cb3643e75ed738be745963efe25db9fbec45d760a447c8e7091",
+          "oracle": "90150b1c38c09a3d0be5f77da579dda77749521fdfde0b83bf94c0c1f7a1ed69",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "unflatten_keys",
+          "contract": "4f5cbf287456d44a2d42cfd9266c26b8ff805a7e44a9b897e7cd783960fafbcc",
+          "oracle": "e8158c0da4aed568d4e5b188146b05245ba3fc87594b7818b4302c0656470e43",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "sort_records",
+          "contract": "d51f04e169c40b2a75e40d5d02042577dd172a0baa84e208dd65898b0f69947b",
+          "oracle": "902f1534a00fed65ea75c1cf62c32b6ae706094a4d3299e5826f04a093c3560b",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "left_join",
+          "contract": "0a088e99d73c637f8ff8807d32ab45e1d741a88c9c72c7cf22c2b620dec3ff83",
+          "oracle": "daadf3e47d3f1593ff4749ca73dc374ad402afc2fdc44fea1e27a15b1259bc12",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "pagination",
+          "contract": "4c31d2cd0717e83d22ed9d507220a486db0e99c31e74c483b91b4672f4018667",
+          "oracle": "4df7c5b2015e55aeb89032ffc938153afd280e750ef7cd1a4d9463ba7f26fb33",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "retry_delays",
+          "contract": "2f9d8c5dc94bdc826678cf84de847ec445facc62c4ca995ebb5a01eabf4fbf7c",
+          "oracle": "0903d54f6445a11a9af1c50028abecee49bbb5f5c84cc315c3845557c01ef1ca",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "idempotent_events",
+          "contract": "ea1e8284057b155f77be327fde2d63e6c63da1fe7fa89f065dc6b073d2aa7489",
+          "oracle": "03b8d415f3a0f9a7acb4a346332e24bc6bee5fcafc8a4b201bbdfccb00f702a1",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "http_retry",
+          "contract": "955e3ec1de65925ac5adc698680b33b5ef45a00d824a96ff27134bc532f53b55",
+          "oracle": "43d3ad0e5510a040498be89bff992220352f557b6dfe2f9f0bacb8ff472d2d44",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "headers",
+          "contract": "4bf4fd4ff70cb5a9adfb4fe8013f71f4301ad65297a2ce4c0ddf1f0899fa235b",
+          "oracle": "03cf918cc58e897bbf9c4a501a0e2bf13b4727e80b192ba2d66c2cdf350b49a3",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "path_params",
+          "contract": "bac914dfc38ce5036e784a3bacbfcff2c2619953dd8e7ca4975657cb81b13245",
+          "oracle": "44d21ced34b994726ed1ba8a143e7084f0e97f4677357867a87f1403bc34239f",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "config_overlay",
+          "contract": "389d467cf3632ee71ccc3dcde5d12494a5a788934d02ee6bd5ae9bdd4d028008",
+          "oracle": "e4e3f14772e614957d84483026b73d04b8c0074f7209d70874d340203bb8943c",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "dependency_order",
+          "contract": "804395c18da7dc05e713b8e3681e900c057ae5ccec37e59bc69738dc80b1e455",
+          "oracle": "3dd2de6443f72afdc96920a66014e5e1754862a80212fcdd27cd59039378d4b0",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "balance_events",
+          "contract": "63dffdb0fd9127dcf8e04d07288b58ee5f5ee85c98052925d347bcbb467d348b",
+          "oracle": "c1f24318b2aa5ccd6031dcf9cd83ca66755e4fa39edea0237cd89a6a0c24b1b2",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "evidence_votes",
+          "contract": "87f20333f7641dd98de26f3d737c1a93177d5be9e9e8862b362279231e102e4a",
+          "oracle": "2503630f63c8a3a498a9a275c91a87cc46320784217dc368ac1cebf4eee03fbf",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "contradictions",
+          "contract": "54ddf0a912d23142658b697edf0405d03e3158f7f5b24f46dc05bc03fc4c1b68",
+          "oracle": "2bf98841b74f3578007e00d57a106974ca26b0cc04710f4191e3e1dd91019311",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "weighted_score",
+          "contract": "5a89fd2d3a3f3a38a50740725e572b64872a133aaad62141783b583295e434c4",
+          "oracle": "6ffbd9d6f24abc9cc9b844820cfd71daee5fbfc9c0175d16911f67b15fcb6f88",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "pareto",
+          "contract": "1aa4b278138726402f7a3a26f6047465b68ab9aca222a2dc5cfc9b2cf5d7a827",
+          "oracle": "7c30fe9c512b969a886854df7afd08b5255e9ecff9425364a7ca63870c550b90",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "coverage_gaps",
+          "contract": "9cdacdf56c214a52178a5eaecc26efd48e9969f3ce1decc5bda376b0f5cd7ebd",
+          "oracle": "0ed826af4e52bf1f266c0d66405aabf08a1228b1efa2722638b99eeefc6107cc",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "confusion_counts",
+          "contract": "b56db7266238ed83174fa38feacc34953a87366de21a6f9808171e1e07e4d4fc",
+          "oracle": "27a3a9f2c078843d32e0b3791f0c00080302fb5280c86fcbefb2a01fca3a53f9",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "cost_per_success",
+          "contract": "cf361a9e7ac5b8ff36240ab8d48a011127828c5031cd15afec0e5b16e6cb0da6",
+          "oracle": "fb9303763b14560795fcc8afbc07168cef2cec5a502e579c03379e7519cf378f",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "longest_streak",
+          "contract": "7e0413a45a7b240cdc25711d19f3139bcb7c2e91358a3d591b2439d081cffc2a",
+          "oracle": "13abc95619fa7bb947e0ce36e2042a54cc3231c2a568be47cb5ffbc455b0f000",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "rank_ties",
+          "contract": "976522854e27ce64ba4d0447d2aff1d2868d72c6eeb321238921b95057ea4b96",
+          "oracle": "c2021a927834f810dbfe4adbe1685ed9aa72b11b14b95d9cf91deced90979a7b",
+          "scoring_mode": "host_cases"
+        },
+        {
+          "id": "interval_coverage",
+          "contract": "6d43c0351aa6b3f93b8be5dd437ef2c8e8c21718d385092baf61a09bcdaf9807",
+          "oracle": "2587ea510eb304c2c8ee9babfb72f5aacaf1cbaccf385888030f89ebac0200ca",
+          "scoring_mode": "host_cases"
+        }
+      ],
+      "models": {
+        "pool": "gpt-6.1-sol",
+        "repair": "gpt-6.1-sol",
+        "framing": "gpt-6.1-sol",
+        "test_design": "gpt-6.1-sol",
+        "red_team": "gpt-6.1-sol",
+        "evidence_audit": "gpt-6.1-sol",
+        "compliance": "gpt-6.1-sol",
+        "observer": "gpt-6.1-sol",
+        "approval": "gpt-6.1-sol",
+        "council:correctness": "gpt-6.1-sol",
+        "council:risk": "gpt-6.1-sol",
+        "council:user_impact": "gpt-6.1-sol",
+        "council:cost_speed": "gpt-6.1-sol",
+        "council:devils_advocate": "gpt-6.1-sol"
+      },
+      "runtime": {
+        "backend": "docker",
+        "image": "python@sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e",
+        "python": "3.12.14",
+        "platform": "macOS-26.6.2-arm64-arm-64bit",
+        "engine": "codex",
+        "cli": {
+          "executable": "/Users/ayazelrico/.cache/imece-cli/0.167.0-alpha.3.2-a636331ed876/CodexCLI.app/Contents/MacOS/codex",
+          "version": "codex-cli 0.167.0-alpha.3.2",
+          "sha256": "a636331ed87605efc4cf84028ac2884a75363f9d10ead63cffb57ea0016d486e"
+        },
+        "agent_policy": "text-only-seatbelt-oracle-deny-v2",
+        "verification_environment_id": "5f98212a0d1fcae5b60a0e64799628efd91e32203586201cd0e597f2364ed850"
+      },
+      "seed": 0,
+      "repeats": 5,
+      "trial_order": "repeat-major",
+      "limits": {
+        "max_tokens": 500000,
+        "max_rounds": 4,
+        "test_timeout": 10.0,
+        "max_cli_calls": 12500
+      },
+      "execution_controls": {
+        "agents": 17,
+        "max_parallel": 1,
+        "max_tokens": 500000,
+        "max_rounds": 4,
+        "max_clusters": 9,
+        "max_options": 12,
+        "shortlist": 4,
+        "pass_threshold": 0.6,
+        "verification": "python",
+        "sandbox_backend": "docker",
+        "sandbox_image": "python@sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e",
+        "test_timeout": 10.0,
+        "agent_timeout": 300.0,
+        "cell_size": 9,
+        "irade": {
+          "veto_floor": 0.5,
+          "hard_veto_floor": 0.2,
+          "spread_threshold": 0.15,
+          "min_vote_share": 0.6,
+          "min_confidence": 0.55,
+          "audit_rate": 0.05,
+          "precedent_confidence": 0.8
+        }
+      }
+    },
+    "protocol_hash": "184b5c558256183bb147bb8c7b3a53d177f22e929c86f0edd52c863017d3fe70",
+    "settings": {
+      "agents": 17,
+      "max_parallel": 1,
+      "max_tokens": 500000,
+      "max_rounds": 4,
+      "max_clusters": 9,
+      "max_options": 12,
+      "shortlist": 4,
+      "pass_threshold": 0.6,
+      "verification": "python",
+      "sandbox_backend": "docker",
+      "sandbox_image": "python@sha256:e695ab189fa2d082b1c61c69a6b888a5adeca61ceeccad107b1ed2a125721a9e",
+      "test_timeout": 10.0,
+      "agent_timeout": 300.0,
+      "cell_size": 9,
+      "irade": {
+        "veto_floor": 0.5,
+        "hard_veto_floor": 0.2,
+        "spread_threshold": 0.15,
+        "min_vote_share": 0.6,
+        "min_confidence": 0.55,
+        "audit_rate": 0.05,
+        "precedent_confidence": 0.8
+      },
+      "approved_evidence": [],
+      "adaptive_production": false,
+      "skip_clean_revision": true,
+      "repair_skill": null,
+      "repair_skill_sha256": null
+    },
+    "revision": "6192d8c9c053937baa270b5b0d89f9527f41e8c4",
+    "implementation_hash": "48f98bb0f3c65419119d85e82fdb609b638f48043a46d3b784d7a70a5e3c9912",
+    "capture_reproductions": false,
+    "engine": "codex",
+    "cli_prompt_treatment": {
+      "kind": "builtin",
+      "instructions_hash": null
+    },
+    "max_output_tokens": null,
+    "catalog_prices": null,
+    "shared_model_limitation": "Shared CLI model identifiers by seat: {\"gpt-6.1-sol\": [\"pool\", \"repair\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence."
+  },
+  "source": "codex",
+  "engine": "codex",
+  "models": {
+    "pool": "gpt-6.1-sol",
+    "repair": "gpt-6.1-sol",
+    "framing": "gpt-6.1-sol",
+    "test_design": "gpt-6.1-sol",
+    "red_team": "gpt-6.1-sol",
+    "evidence_audit": "gpt-6.1-sol",
+    "compliance": "gpt-6.1-sol",
+    "observer": "gpt-6.1-sol",
+    "approval": "gpt-6.1-sol",
+    "council:correctness": "gpt-6.1-sol",
+    "council:risk": "gpt-6.1-sol",
+    "council:user_impact": "gpt-6.1-sol",
+    "council:cost_speed": "gpt-6.1-sol",
+    "council:devils_advocate": "gpt-6.1-sol"
+  },
+  "runs": [],
+  "transcripts": [],
+  "ledger": null,
+  "catalog_prices": null,
+  "price_note": "CLI usage is not a billing receipt. Dollar cost is unknown (null), including failures/cancellations; no subscription-to-token price is invented. Token totals are null when any call lacks usage; observed_tokens is only a known lower bound.",
+  "independence_warnings": [
+    "Shared CLI model identifiers by seat: {\"gpt-6.1-sol\": [\"pool\", \"repair\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence."
+  ],
+  "shared_model_limitation": "Shared CLI model identifiers by seat: {\"gpt-6.1-sol\": [\"pool\", \"repair\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence.",
+  "state": "prepared",
+  "summary": {
+    "runs": 0,
+    "status_counts": {},
+    "distributions": {
+      "seconds": {
+        "known_runs": 0,
+        "unknown_runs": 0,
+        "min": null,
+        "median": null,
+        "p95": null,
+        "max": null
+      },
+      "tokens": {
+        "known_runs": 0,
+        "unknown_runs": 0,
+        "min": null,
+        "median": null,
+        "p95": null,
+        "max": null
+      },
+      "cost_usd": {
+        "known_runs": 0,
+        "unknown_runs": 0,
+        "min": null,
+        "median": null,
+        "p95": null,
+        "max": null
+      }
+    },
+    "gate_failure_classes": {},
+    "accepted": 0,
+    "verified_successes": 0,
+    "accepted_deliverable_rate": null,
+    "verified_success_rate": null,
+    "false_accepts": 0,
+    "total_tokens": null,
+    "tokens_per_verified_success": null,
+    "observed_tokens": 0,
+    "unknown_token_runs": 0,
+    "cost_usd": null,
+    "cost_estimated": false,
+    "cost_per_accepted_usd": null,
+    "cost_per_verified_success_usd": null,
+    "calibration_ece": null,
+    "calibration_samples": 0,
+    "usage_attribution_complete": true,
+    "unassigned_observed_tokens": 0,
+    "unassigned_unknown_usage_calls": 0
+  },
+  "accounting": {
+    "cost_usd": null,
+    "cost_status": "unknown",
+    "token_budget": "all-recorded-completed-calls",
+    "observed_tokens": 0,
+    "usage_attribution_complete": true,
+    "cli_call_limit": 12500,
+    "cli_calls_reserved": 0,
+    "unknown_usage_calls": 0
+  },
+  "updated_at": "2026-11-07T16:50:18.141365+00:00"
+}
