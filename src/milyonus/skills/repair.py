@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from milyonus.config.paths import skills_dir
-from milyonus.skills.model import parse_skill_md
+from milyonus.skills.model import Skill, SkillParseError, parse_skill_md
 from milyonus.skills.scanner import may_install, scan_skill
 
 MAX_BODY_CHARS = 6000
@@ -138,6 +138,23 @@ def _read_file(directory: int, name: str, limit: int) -> bytes:
     return content
 
 
+def _parse_repair_snapshot(content: bytes, name: str, path: Path) -> Skill:
+    if len(content) > MAX_SKILL_BYTES:
+        raise RepairSkillError("oversized repair skill file")
+    try:
+        text = content.decode("utf-8")
+        skill = parse_skill_md(text, path)
+    except (SkillParseError, UnicodeError, TypeError, AttributeError, RecursionError) as exc:
+        raise RepairSkillError("malformed repair skill document") from exc
+    if skill.meta.name != name:
+        raise RepairSkillError("repair skill identity mismatch")
+    if not skill.body or len(skill.body) > MAX_BODY_CHARS:
+        raise RepairSkillError("repair skill body must be 1..6000 characters")
+    if not may_install(scan_skill(text), force=False):
+        raise RepairSkillError("repair skill security scan rejected")
+    return skill
+
+
 def load_repair_skill(name: str, *, live_dir: Path | None = None) -> RepairSkill:
     """Validate live bytes against the local promotion receipt on every use.
 
@@ -174,14 +191,7 @@ def load_repair_skill(name: str, *, live_dir: Path | None = None) -> RepairSkill
             ):
                 raise RepairSkillError("two distinct task labels and oracle hashes required")
             _refuse_revoked_oracles(catalog, tasks.values())
-            text = content.decode("utf-8")
-            skill = parse_skill_md(text, root / name)
-            if skill.meta.name != name:
-                raise RepairSkillError("repair skill identity mismatch")
-            if not skill.body or len(skill.body) > MAX_BODY_CHARS:
-                raise RepairSkillError("repair skill body must be 1..6000 characters")
-            if not may_install(scan_skill(text), force=False):
-                raise RepairSkillError("repair skill security scan rejected")
+            skill = _parse_repair_snapshot(content, name, root / name)
             return RepairSkill(name, digest, skill.body)
     except RepairSkillError:
         raise

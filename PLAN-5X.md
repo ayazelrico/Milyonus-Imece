@@ -10,7 +10,7 @@ Kapsam İmece ve ajan çekirdeğidir. Web ürünü `PLAN-WEB.md` altındadır.
 Madde bazında uygulama ve açık kabul koşulları:
 [kabul kaydı](docs/plan-5x-acceptance.md).
 
-7 Kasım son yerel doğrulamasında **613 test geçti**, atlanan test yok.
+7 Kasım son yerel doğrulamasında **618 test geçti**, atlanan test yok.
 Gerçek Docker izolasyonu, dosya azaltma, kurtarma ve önbellek regresyonları dahil;
 Kullanıcının sonraki izniyle canlı kıyaslama denendi: iki tarafta dörder
 satır kaydedildi, belirsiz çağrılarda duruldu. Gerçek çağrı bazlı USD dökümü
@@ -96,6 +96,11 @@ P4 çift hazırlığı, yalnızca aday koluna yükseltilmiş onarım becerisi ek
 deneyi destekler. Aile eşiği iki farklı görevde kullanılabilir beceri yanıtı
 ve tam tur geçmişi gerektirir. Yerel regresyonlar geçti. Hata turu azalması
 canlı görevlerde ölçüm bekliyor. [Onarım kılavuzu](docs/imece-repairs.md).
+
+P4 yükseltme ve yükleme aynı belge doğrulamasını kullanır. Boyut ve sözdizimi
+hataları replay öncesinde reddedilir. Gerçek sandbox testinde iki ayrı oracle
+ile geçici katalogda yükseltme ve yükleme çalıştı. Oracle iptali canlı örneği
+geri çekti ve yeniden yükseltmeyi engelledi.
 P1'de sırada bekleyen çağrıların kabul kontrolleri gönderim anına taşındı;
 önceki çağrı bütçeyi tüketince veya belirsiz kalınca yeni çağrı başlatılmaz.
 

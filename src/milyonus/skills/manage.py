@@ -26,7 +26,9 @@ from milyonus.imece.execution import PythonExecutor, python_files
 from milyonus.skills.model import SkillMeta, parse_skill_md, render_skill_md
 from milyonus.skills.repair import (
     MAX_RECEIPT_BYTES,
+    MAX_SKILL_BYTES,
     RepairSkillError,
+    _parse_repair_snapshot,
     _read_file,
     _record_oracle_revocation,
     _refuse_revoked_oracles,
@@ -193,23 +195,27 @@ class SkillManager:
         """Operator-supplied task labels and independent runnable oracles, never agent input."""
         import ast
 
-        staged = self._path(self.staging_dir, name) / "SKILL.md"
-        self._path(self.live_dir, name)
-        if staged.is_symlink() or not staged.is_file():
+        try:
+            staged = self._path(self.staging_dir, name)
+            self._path(self.live_dir, name)
+            directory = os.open(staged, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                content = _read_file(directory, "SKILL.md", MAX_SKILL_BYTES)
+            finally:
+                os.close(directory)
+            skill = _parse_repair_snapshot(content, name, staged)
+        except FileNotFoundError:
             return ManageResult(False, "no staged skill", name)
-        text = staged.read_text("utf-8")
-        skill = parse_skill_md(text, staged.parent)
-        if skill.meta.name != name or not may_install(scan_skill(text), force=False):
-            return ManageResult(False, "staged skill failed identity or security check", name)
+        except (OSError, ValueError) as exc:
+            return ManageResult(False, str(exc), name)
+        text = content.decode("utf-8")
         # Snapshot caller input before any awaited replay.
         tasks = dict(tasks)
-        trees = [ast.parse(script) for script in tasks.values()]
         if (
             len(tasks) < 2
-            or any(not label.strip() for label in tasks)
+            or any(not isinstance(label, str) or not label.strip() for label in tasks)
             or len({label.strip() for label in tasks}) < 2
-            or len({ast.dump(tree) for tree in trees}) < 2
-            or any(not any(isinstance(n, ast.Assert) for n in ast.walk(tree)) for tree in trees)
+            or any(not isinstance(script, str) for script in tasks.values())
         ):
             return ManageResult(
                 False, "two distinct tasks with executable assertions required", name
@@ -217,13 +223,31 @@ class SkillManager:
         evidence = {
             label: hashlib.sha256(script.encode()).hexdigest() for label, script in tasks.items()
         }
+        backend = "macos" if sys.platform == "darwin" else "docker"
+        receipt = {
+            "skill_sha256": hashlib.sha256(content).hexdigest(),
+            "backend": backend,
+            "tasks": evidence,
+        }
+        if len(json.dumps(receipt, indent=2).encode("utf-8")) > MAX_RECEIPT_BYTES:
+            return ManageResult(False, "oversized repair replay receipt", name)
+        try:
+            trees = [ast.parse(script) for script in tasks.values()]
+        except (SyntaxError, ValueError, RecursionError):
+            return ManageResult(False, "invalid repair replay Python", name)
+        if len({ast.dump(tree) for tree in trees}) < 2 or any(
+            not any(isinstance(n, ast.Assert) for n in ast.walk(tree)) for tree in trees
+        ):
+            return ManageResult(
+                False, "two distinct tasks with executable assertions required", name
+            )
         with _repair_catalog_lock(self.live_dir) as catalog:
             try:
                 _refuse_revoked_oracles(catalog, evidence.values())
             except RepairSkillError as exc:
                 return ManageResult(False, str(exc), name)
         files = python_files(skill.body)
-        executor = PythonExecutor(backend="macos" if sys.platform == "darwin" else "docker")
+        executor = PythonExecutor(backend=backend)
         for label, script in tasks.items():
             result = await executor.run(files, script)
             if not result.passed:
@@ -238,11 +262,7 @@ class SkillManager:
             self._publish_reviewed(
                 name,
                 text,
-                {
-                    "skill_sha256": hashlib.sha256(text.encode()).hexdigest(),
-                    "backend": executor.backend,
-                    "tasks": evidence,
-                },
+                receipt,
             )
         except RepairSkillError as exc:
             return ManageResult(False, str(exc), name)

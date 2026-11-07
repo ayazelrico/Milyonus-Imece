@@ -99,6 +99,13 @@ config'i yükseltilmiş `repair_skill` içerir. `--failure-families` ile görev
 eşlemesi önceden belirlenir. Beceri adı ve içerik özeti manifestte birlikte
 tek faktör olarak gösterilir.
 
+Yükseltme, yükleyiciyle aynı belge, gövde, ad ve tarama koşullarını uygular.
+Hazırlık belgesi sınırlı ve sembolik bağlantı izlemeyen bir okumayla alınır.
+Makbuzun bayt sınırı ve oracle Python sözdizimi, sandbox replay başlamadan
+denetlenir. Gerçek sandbox regresyonunda hatalı oracle ile yayımlama reddi,
+iki geçerli oracle ile yükseltme ve yükleme, ardından iptal ve yeniden
+yükseltmenin engellenmesi geçici bir katalogda doğrulanır.
+
 Yeni `applied_repair_skills` kayıtlarında `response_received=true`, beceri
 bağlamı verilen onarım çağrısından kullanılabilir metin geldiğini belirtir.
 Bütçe engeli veya boş yanıt bu sayaca girmez. Eski kayıtlarda bu kanıt alanı

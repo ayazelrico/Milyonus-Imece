@@ -2,6 +2,8 @@
 
 import asyncio
 import hashlib
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -10,6 +12,7 @@ from milyonus.imece.execution import ExecutionResult
 from milyonus.skills import manage
 from milyonus.skills.manage import SkillManager
 from milyonus.skills.model import SkillMeta, parse_skill_md, render_skill_md
+from milyonus.skills.repair import RepairSkillError, load_repair_skill
 
 BODY = "```python file=solution.py\ndef identity(x): return x\n```"
 TASKS = {
@@ -37,6 +40,67 @@ def stage(manager):
     text = render_skill_md(SkillMeta(name="sample", description="d"), BODY)
     (directory / "SKILL.md").write_text(text)
     return text
+
+
+@pytest.mark.parametrize("bad", ["body", "file", "receipt", "syntax"])
+async def test_unloadable_repair_is_refused_before_replay(tmp_path, monkeypatch, bad):
+    def forbidden(**kwargs):
+        pytest.fail("invalid promotion started a sandbox replay")
+
+    monkeypatch.setattr(manage, "PythonExecutor", forbidden)
+    manager = SkillManager(live_dir=tmp_path / "live")
+    text = stage(manager)
+    path = manager.staging_dir / "sample" / "SKILL.md"
+    tasks = TASKS.copy()
+    if bad == "body":
+        path.write_text(text + "\n" + "a" * 6001)
+    elif bad == "file":
+        path.write_text(text + "a" * 65537)
+    elif bad == "receipt":
+        tasks["long-label-" + "x" * 32769] = "assert True"
+    else:
+        tasks["positive"] = "assert ("
+    before = path.read_bytes()
+    outcome = await manager.promote_repair("sample", tasks)
+    assert not outcome.ok
+    assert not (manager.live_dir / "sample").exists()
+    assert path.read_bytes() == before
+
+
+@pytest.mark.skipif(
+    sys.platform != "darwin" and os.environ.get("MILYONUS_TEST_DOCKER") != "1",
+    reason="real macOS or opt-in Docker replay",
+)
+async def test_real_docker_or_macos_promotion_load_and_revocation(tmp_path):
+    manager = SkillManager(live_dir=tmp_path / "live")
+    meta = SkillMeta(name="example", description="Initialize totals before accumulating values")
+    body = (
+        "Initialize each total to zero before adding amounts.\n\n"
+        "```python file=solution.py\ndef totals(rows):\n"
+        "    result = {}\n    for key, value in rows:\n"
+        "        result[key] = result.get(key, 0) + value\n    return result\n```\n\n"
+        "```python test=skill\nfrom solution import totals\nassert totals([]) == {}\n```"
+    )
+    assert (await manager.create(meta, body, stage_only=True)).ok
+    tasks = {
+        "invoice-credits": "from solution import totals\nassert totals([('invoice', 5), ('invoice', -5)]) == {'invoice': 0}\n",
+        "inventory-adjustments": "from solution import totals\nassert totals([('x', -2), ('y', 3), ('x', 1)]) == {'x': -1, 'y': 3}\n",
+    }
+    invalid = tasks | {
+        "inventory-adjustments": "from solution import totals\nassert totals([]) == {'x': 1}\n"
+    }
+    failed = await manager.promote_repair(meta.name, invalid)
+    assert not failed.ok and "independent replay failed: inventory-adjustments" in failed.message
+    assert not (manager.live_dir / meta.name).exists()
+    promoted = await manager.promote_repair(meta.name, tasks)
+    assert promoted.ok, promoted.message
+    assert load_repair_skill(meta.name, live_dir=manager.live_dir).body == body
+    revoked = hashlib.sha256(tasks["invoice-credits"].encode()).hexdigest()
+    assert manager.revoke_oracle(revoked) == [meta.name]
+    with pytest.raises(RepairSkillError):
+        load_repair_skill(meta.name, live_dir=manager.live_dir)
+    blocked = await manager.promote_repair(meta.name, tasks)
+    assert not blocked.ok and "revoked" in blocked.message
 
 
 async def test_create_publishes_reviewed_snapshot_when_staging_changes(tmp_path):
