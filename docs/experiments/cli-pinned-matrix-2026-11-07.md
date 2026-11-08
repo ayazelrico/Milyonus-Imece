@@ -1,5 +1,9 @@
 # Sabit yürütücüyle core-v3 kıyaslaması
 
+Kontrol `fix_overlap` da dış oracle'dan geçti: 30 çağrı, 364.921 token.
+Çağrı toplamı satırla eşleşti. 35 kayıt, 30 doğrulanmış başarı, 5 `budget`
+sonucu ve 465 açık satır var. Kontrol `fix_percent_decode` görevine geçti.
+
 Son kontrol koşusu `fix_leap_year` dış oracle'dan geçti; 362.088 token
 tamamlanmış çağrı kayıtlarıyla eşleşti. Matris 34 kayda, 29 doğrulanmış
 başarıya ulaştı; 466 satır açık. Kontrol partisi `fix_overlap` ve
