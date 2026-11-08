@@ -1,5 +1,11 @@
 # Sabit yürütücüyle core-v3 kıyaslaması
 
+Kontrolün üç görevlik partisi `fix_percent_decode` kabulüyle tamamlandı:
+30 çağrı ve 364.916 token, tamamlanmış çağrı kayıtlarıyla eşleşti.
+36/500 kayıt, 31 doğrulanmış başarı, 5 `budget` sonucu ve 464 açık satır
+var. Kontrolde yeni belirsizlik oluşmadı. Aday `fix_overlap` göreviyle
+sıradaki üç görevlik partiye başladı.
+
 Kontrol `fix_overlap` da dış oracle'dan geçti: 30 çağrı, 364.921 token.
 Çağrı toplamı satırla eşleşti. 35 kayıt, 30 doğrulanmış başarı, 5 `budget`
 sonucu ve 465 açık satır var. Kontrol `fix_percent_decode` görevine geçti.
