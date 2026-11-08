@@ -1,5 +1,15 @@
 # Sabit yürütücüyle core-v3 kıyaslaması
 
+Aday `fix_overlap` dış oracle'dan geçti: 29 çağrı ve 231.866 token,
+tamamlanmış çağrı kayıtlarıyla eşleşti. 37/500 kayıt, 32 doğrulanmış başarı,
+5 `budget` sonucu ve 463 açık satır var. Aday `fix_percent_decode` ile
+devam ediyor. Mevcut aday partisinden sonra daha az kaydı bulunan kolu
+tek görevlik partilerle ilerleten yerel devam süreci sıraya alındı. Bu
+süreç yeni belirsiz çağrıda, beklenmeyen çıkış/satır sayısında, yanlış
+kabulde, çalışan günlük düğümünde veya protokol değişikliğinde durur.
+Kayıtlı belirsiz koordinatları yeniden çalıştırmaz; ücret veya denetim
+kapılarını tamamlanmış saymaz.
+
 Kontrolün üç görevlik partisi `fix_percent_decode` kabulüyle tamamlandı:
 30 çağrı ve 364.916 token, tamamlanmış çağrı kayıtlarıyla eşleşti.
 36/500 kayıt, 31 doğrulanmış başarı, 5 `budget` sonucu ve 464 açık satır
