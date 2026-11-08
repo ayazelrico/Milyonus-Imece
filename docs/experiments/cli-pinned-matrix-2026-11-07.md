@@ -99,6 +99,11 @@ Aday `fix_chunk_tail` görevini dış oracle'dan geçirdi. Tamamlanmış çağr�
 kayıtları token toplamıyla eşleşti. 21 satır kayıtlı, 18'i doğrulanmış
 başarı ve 479'u açık. Kontrol `prime_flags` ile sonraki partiye başladı.
 
+Kontrol `prime_flags` ve `fix_binary_search` görevlerinde dış oracle'dan
+geçti. Her satırın token toplamı tamamlanmış çağrı kayıtlarıyla eşleşti.
+23 satır kayıtlı, 20'si doğrulanmış başarı. Kontrol `fix_chunk_tail`
+göreviyle devam etti.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
