@@ -67,6 +67,12 @@ iki kolda da doğrulanmış başarı. Kontrol toplam 1.904.163, aday 1.108.167
 token kullandı. On iki satırın toplamları tamamlanmış çağrı kayıtlarıyla
 eşleşti. 488 satır açık. Aday `divisors` ile sonraki partiye başladı.
 
+Aday `divisors` görevini dış oracle'dan geçirdi. 28 çağrıdaki 181.143
+token raporla eşleşti. Sonraki `flatten` görevi model listesini yenileme
+sırasında CLI bağlantı hatasıyla `budget` sonucuna ulaştı. Bu çağrının
+kullanımı bilinmiyor. 14 satır kayıtlı, 13'ü doğrulanmış başarı ve 486'sı
+açık. 8 Kasım devamında kontrol kolu `divisors` ile yeniden başlatıldı.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
