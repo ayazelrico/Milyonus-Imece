@@ -1,5 +1,10 @@
 # Sabit yürütücüyle core-v3 kıyaslaması
 
+Aday `fix_truthy_zero` dış oracle'dan geçti. 28 çağrıdaki 222.296 token
+satırla eşleşti. Matris 39/500 kayda ve 34 doğrulanmış başarıya ulaştı;
+5 `budget` sonucu ve 461 açık satır var. Yerel devam süreci partiyi
+devraldı ve kontrol kolunda `fix_truthy_zero` görevini başlattı.
+
 Aday `fix_percent_decode` dış oracle'dan geçti. 28 çağrıdaki 222.846
 token satırla eşleşti. Matris 38 kayda ve 33 doğrulanmış başarıya ulaştı;
 5 `budget` sonucu ve 462 açık satır var. Aday `fix_truthy_zero` ile sürüyor.
