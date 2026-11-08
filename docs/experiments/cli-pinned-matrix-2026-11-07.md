@@ -1,5 +1,9 @@
 # Sabit yürütücüyle core-v3 kıyaslaması
 
+Aday `fix_percent_decode` dış oracle'dan geçti. 28 çağrıdaki 222.846
+token satırla eşleşti. Matris 38 kayda ve 33 doğrulanmış başarıya ulaştı;
+5 `budget` sonucu ve 462 açık satır var. Aday `fix_truthy_zero` ile sürüyor.
+
 Aday `fix_overlap` dış oracle'dan geçti: 29 çağrı ve 231.866 token,
 tamamlanmış çağrı kayıtlarıyla eşleşti. 37/500 kayıt, 32 doğrulanmış başarı,
 5 `budget` sonucu ve 463 açık satır var. Aday `fix_percent_decode` ile
