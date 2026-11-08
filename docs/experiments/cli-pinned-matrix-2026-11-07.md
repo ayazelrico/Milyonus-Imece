@@ -1,5 +1,10 @@
 # Sabit yürütücüyle core-v3 kıyaslaması
 
+Son kontrol koşusu `fix_leap_year` dış oracle'dan geçti; 362.088 token
+tamamlanmış çağrı kayıtlarıyla eşleşti. Matris 34 kayda, 29 doğrulanmış
+başarıya ulaştı; 466 satır açık. Kontrol partisi `fix_overlap` ve
+`fix_percent_decode` ile devam ediyor.
+
 8 Kasım ara kaydı: 33/500 satır kayıtlı, 28 doğrulanmış başarı, 5 `budget`
 sonucu ve 467 açık satır var. Son aday `fix_duplicate_pairs` koşusu 29 çağrı
 ve 190.576 tokenla dış oracle'dan geçti. Aday `fix_leap_year` ve kontrol
