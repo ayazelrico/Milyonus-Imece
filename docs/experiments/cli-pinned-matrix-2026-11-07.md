@@ -95,6 +95,10 @@ geçirdi. Sırasıyla 179.509 ve 193.530 token, tamamlanmış çağrı kayıtlar
 eşleşti. 20 satır kayıtlı, 17'si doğrulanmış başarı. Aday `fix_chunk_tail`
 görevine geçti.
 
+Aday `fix_chunk_tail` görevini dış oracle'dan geçirdi. Tamamlanmış çağrı
+kayıtları token toplamıyla eşleşti. 21 satır kayıtlı, 18'i doğrulanmış
+başarı ve 479'u açık. Kontrol `prime_flags` ile sonraki partiye başladı.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
