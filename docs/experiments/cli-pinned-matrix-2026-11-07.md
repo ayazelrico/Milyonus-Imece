@@ -73,6 +73,10 @@ sırasında CLI bağlantı hatasıyla `budget` sonucuna ulaştı. Bu çağrını
 kullanımı bilinmiyor. 14 satır kayıtlı, 13'ü doğrulanmış başarı ve 486'sı
 açık. 8 Kasım devamında kontrol kolu `divisors` ile yeniden başlatıldı.
 
+Kontrol `divisors` görevini dış oracle'dan geçirdi. Token toplamı
+tamamlanmış çağrı kayıtlarıyla eşleşti. 15 satır kayıtlı, 14'ü doğrulanmış
+başarı. Kontrol `flatten` göreviyle devam etti.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
