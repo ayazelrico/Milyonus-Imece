@@ -1,5 +1,10 @@
 # Sabit yürütücüyle core-v3 kıyaslaması
 
+Aday `invert_multimap` dış doğrulamadan geçti. 28 çağrının toplamı
+223.473 token ile eşleşti. Matris 45/500 kayda ve 39 doğrulanmış başarıya
+ulaştı. Haftalık kota %99 kullanılmışken erişim açıktı ve aynı görev
+kontrol kolunda tek koşu olarak başlatıldı.
+
 Matris 44/500 kayda ulaştı. 38 koşu dış doğrulamadan geçti ve 6 koşu
 `budget` sonucuyla kaydedildi. Kontrol `fix_truthy_zero`, `group_totals`
 ve `csv_rows` görevlerini, aday `group_totals` görevini doğruladı.
