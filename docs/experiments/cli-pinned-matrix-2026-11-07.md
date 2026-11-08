@@ -62,6 +62,10 @@ Her iki satırdaki token toplamı tamamlanmış çağrı kayıtlarıyla eşleşt
 Beş eşleşme tamamlandı, toplam 11 satır kayıtlı. Kontrol `gcd_list`
 göreviyle devam etti.
 
+Kontrol `fix_empty_prefix` görevini dış oracle'dan geçirdi. Token toplamı
+tamamlanmış çağrı kayıtlarıyla eşleşti. 30 satır kayıtlı, 27'si doğrulanmış
+başarı ve 470'i açık. Aday `fix_duplicate_pairs` ile sonraki partiye başladı.
+
 Kontrol `fix_chunk_tail` görevini dış oracle'dan geçirdi ve partisini
 tamamladı. Token toplamı tamamlanmış çağrı kayıtlarıyla eşleşti. 24 satır
 kayıtlı, 21'i doğrulanmış başarı ve 476'sı açık. Aday `fix_negative_max`
