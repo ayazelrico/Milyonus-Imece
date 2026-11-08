@@ -77,6 +77,14 @@ Kontrol `divisors` görevini dış oracle'dan geçirdi. Token toplamı
 tamamlanmış çağrı kayıtlarıyla eşleşti. 15 satır kayıtlı, 14'ü doğrulanmış
 başarı. Kontrol `flatten` göreviyle devam etti.
 
+Kontrol `flatten` sırasında model listesini yenileyen CLI bağlantı
+hatasıyla durdu. Ardından aday `transpose` ilk aşamada başarısız bir CLI
+turu bildirdi. Her iki satır `budget`, çağrı kullanımları bilinmiyor.
+17 satır kayıtlı, 14'ü doğrulanmış başarı. 8 Kasım saat 13.03 kontrolünde
+CLI oturumu açık, genel ChatGPT HTTPS bağlantısı erişilebilir ve kısa
+kota %18 kullanılmıştı. Kontrol sonraki `transpose` görevine tek koşuluk
+partiyle devam etti.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh

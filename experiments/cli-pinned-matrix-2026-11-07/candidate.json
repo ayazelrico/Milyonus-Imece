@@ -4492,6 +4492,80 @@
       "logical_path_tokens": 23505,
       "observed_tokens": 23505,
       "usage_attribution_complete": true
+    },
+    {
+      "task": "transpose",
+      "repeat": 0,
+      "status": "budget",
+      "oracle_passed": false,
+      "oracle_output": "missing Python artifacts",
+      "seconds": 30.747,
+      "tokens": null,
+      "unknown_usage_calls": 1,
+      "cost_usd": null,
+      "cost_estimated": true,
+      "confidence": null,
+      "report": {
+        "status": "budget",
+        "request": "Deliver solution.py containing solve(value). Input: rectangular matrix of integers. Return transpose as lists; [] and rows of length zero return []. Do not mutate the input. Inputs follow the stated contract; no additional validation is required. Standard library only, no external I/O or deployment. Include a named code fence ```python file=solution.py. Result interface: return JSON-compatible values (null/None, bool, int, finite float, string, lists, or dictionaries with string keys); tuples may represent arrays. Do not return Fraction, Decimal, sets, generators, or custom objects. For mean or division results, use standard Python binary floating-point arithmetic; exact rational arithmetic is not required. Valid inputs keep floating-point calculations finite and within the representable range.",
+        "deliverable": "",
+        "rounds": 0,
+        "tokens": 0,
+        "unknown_usage_calls": 1,
+        "cost_usd": null,
+        "cost_estimated": true,
+        "calls_by_block": {
+          "framing": 1
+        },
+        "failed_by_block": {
+          "framing": 1
+        },
+        "warnings": [
+          "100% of agent runs failed — check providers/keys"
+        ],
+        "metrics": {
+          "agent_failure_rate": 1.0,
+          "budget_pressure": 0.0,
+          "gate_processes_started": 0,
+          "gate_metadata_processes_started": 0,
+          "gate_checks_reported": 0,
+          "gate_checks_reused": 0,
+          "benchmark_processes_started": 0,
+          "benchmark_metadata_processes_started": 6
+        },
+        "retrospective": [],
+        "notes": [
+          "trial has an uncertain CLI call; reconciliation required"
+        ],
+        "production_schedule": [],
+        "applied_repair_skills": [],
+        "round_outcomes": [],
+        "reproductions": [],
+        "decisions": [],
+        "gate_reports": [],
+        "allocation": {
+          "production": 2,
+          "domain_experts": 0,
+          "test_design": 1,
+          "test_exec": 1,
+          "recon": 1,
+          "red_team": 1,
+          "plan": 1,
+          "command": 1,
+          "integration": 1,
+          "evidence_audit": 1,
+          "framing": 5,
+          "compliance": 0,
+          "polish": 0,
+          "observer": 1,
+          "approval": 1,
+          "human_interface": 0,
+          "exploration": 0
+        }
+      },
+      "logical_path_tokens": 0,
+      "observed_tokens": 0,
+      "usage_attribution_complete": true
     }
   ],
   "transcripts": [
@@ -11805,6 +11879,36 @@
       "model": "gpt-6.1-sol",
       "state": "unknown",
       "error": "CodexError: Codex exited 1; usage/charge unknown; diagnostic: 2026-11-07T18:18:52.458828Z ERROR codex_models_manager::manager: failed to refresh available models: Connection failed: error sending request\n"
+    },
+    {
+      "call_id": "ebf3ca8142404e1683f86ab4c215582f",
+      "sequence": 205,
+      "task": "transpose",
+      "repeat": 0,
+      "journal": {
+        "identity_hash": "93c7db42e57356749d78e2b0f4e0c9d88b1b9e3cfcd9579bf69973dafd7f9166",
+        "node_id": "dea30148411f593382ea795ae8dad9a4d86fb7b4323e284d460270b548920c24",
+        "spec_hash": "33c9049c57927ad7fce5f2f30304a98682ed32ee5fec9b9a44d4ea8acd8b818b",
+        "task": "transpose",
+        "repeat": 0
+      },
+      "spec": {
+        "block": "framing",
+        "role": "framing cell 1",
+        "goal": "Re-formulate this problem independently through your lens: literal: what exactly was asked. Define how success will be measured.",
+        "context": "# Request\nDeliver solution.py containing solve(value). Input: rectangular matrix of integers. Return transpose as lists; [] and rows of length zero return []. Do not mutate the input. Inputs follow the stated contract; no additional validation is required. Standard library only, no external I/O or deployment. Include a named code fence ```python file=solution.py. Result interface: return JSON-compatible values (null/None, bool, int, finite float, string, lists, or dictionaries with string keys); tuples may represent arrays. Do not return Fraction, Decimal, sets, generators, or custom objects. For mean or division results, use standard Python binary floating-point arithmetic; exact rational arithmetic is not required. Valid inputs keep floating-point calculations finite and within the representable range.",
+        "success_criteria": [
+          "Reply with one JSON object: {\"problem\": \"one paragraph re-formulation\", \"success_criteria\": [\"measurable criterion\"], \"out_of_scope\": [\"...\"], \"assumptions\": [\"...\"], \"disciplines\": [\"expertise needed\"]}"
+        ],
+        "seat": "framing",
+        "forbidden": [
+          "Do not solve the problem — only frame it."
+        ],
+        "use_tools": false
+      },
+      "model": "gpt-6.1-sol",
+      "state": "unknown",
+      "error": "CodexError: Codex reported a failed turn; charge reconciliation required"
     }
   ],
   "ledger": null,
@@ -11816,23 +11920,23 @@
   "shared_model_limitation": "Shared CLI model identifiers by seat: {\"gpt-6.1-sol\": [\"pool\", \"repair\", \"framing\", \"test_design\", \"red_team\", \"evidence_audit\", \"compliance\", \"observer\", \"approval\", \"council:correctness\", \"council:risk\", \"council:user_impact\", \"council:cost_speed\", \"council:devils_advocate\"]}. CLI model identifiers are aliases, not evidence of independent models or providers. Distinct aliases do not establish council or approval independence.",
   "state": "partial",
   "summary": {
-    "runs": 8,
+    "runs": 9,
     "status_counts": {
       "accepted": 7,
-      "budget": 1
+      "budget": 2
     },
     "distributions": {
       "seconds": {
-        "known_runs": 8,
+        "known_runs": 9,
         "unknown_runs": 0,
-        "min": 88.275,
-        "median": 297.221,
-        "p95": 321.05875,
+        "min": 30.747,
+        "median": 294.773,
+        "p95": 319.859,
         "max": 329.457
       },
       "tokens": {
         "known_runs": 7,
-        "unknown_runs": 1,
+        "unknown_runs": 2,
         "min": null,
         "median": null,
         "p95": null,
@@ -11840,7 +11944,7 @@
       },
       "cost_usd": {
         "known_runs": 0,
-        "unknown_runs": 8,
+        "unknown_runs": 9,
         "min": null,
         "median": null,
         "p95": null,
@@ -11850,13 +11954,13 @@
     "gate_failure_classes": {},
     "accepted": 7,
     "verified_successes": 7,
-    "accepted_deliverable_rate": 0.875,
-    "verified_success_rate": 0.875,
+    "accepted_deliverable_rate": 0.7777777777777778,
+    "verified_success_rate": 0.7777777777777778,
     "false_accepts": 0,
     "total_tokens": null,
     "tokens_per_verified_success": null,
     "observed_tokens": 1312815,
-    "unknown_token_runs": 1,
+    "unknown_token_runs": 2,
     "cost_usd": null,
     "cost_estimated": true,
     "cost_per_accepted_usd": null,
@@ -11874,10 +11978,10 @@
     "observed_tokens": 1312815,
     "usage_attribution_complete": true,
     "cli_call_limit": 12500,
-    "cli_calls_reserved": 205,
-    "unknown_usage_calls": 1
+    "cli_calls_reserved": 206,
+    "unknown_usage_calls": 2
   },
-  "updated_at": "2026-11-07T18:32:32.449173+00:00",
+  "updated_at": "2026-11-08T10:03:06.733778+00:00",
   "settings": {
     "agents": 17,
     "max_parallel": 1,
@@ -11908,5 +12012,5 @@
     "repair_skill": null,
     "repair_skill_sha256": null
   },
-  "generated_at": "2026-11-07T18:32:32.448988+00:00"
+  "generated_at": "2026-11-08T10:03:06.733547+00:00"
 }
