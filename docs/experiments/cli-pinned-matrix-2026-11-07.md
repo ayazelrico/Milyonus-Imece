@@ -90,6 +90,11 @@ geçirdi. Token kullanımı tamamlanmış çağrı kayıtlarıyla eşleşti.
 18 satır kayıtlı, 15'i doğrulanmış başarı ve 482'si açık. Aday
 `prime_flags` ile sonraki üç görevlik partiye başladı.
 
+Aday `prime_flags` ve `fix_binary_search` görevlerini dış oracle'dan
+geçirdi. Sırasıyla 179.509 ve 193.530 token, tamamlanmış çağrı kayıtlarıyla
+eşleşti. 20 satır kayıtlı, 17'si doğrulanmış başarı. Aday `fix_chunk_tail`
+görevine geçti.
+
 Güncel matris durumu şu komutla okunur.
 
 ```sh
