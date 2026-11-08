@@ -1,5 +1,12 @@
 # Sabit yürütücüyle core-v3 kıyaslaması
 
+Matris 44/500 kayda ulaştı. 38 koşu dış doğrulamadan geçti ve 6 koşu
+`budget` sonucuyla kaydedildi. Kontrol `fix_truthy_zero`, `group_totals`
+ve `csv_rows` görevlerini, aday `group_totals` görevini doğruladı.
+Aday `csv_rows` çağrısının iptali otomatik devamı durdurdu. Haftalık
+kota %98 kullanılmışken ve erişim açıkken aday `invert_multimap` ile
+tek koşuluk bir parti başlatıldı.
+
 Aday `fix_truthy_zero` dış oracle'dan geçti. 28 çağrıdaki 222.296 token
 satırla eşleşti. Matris 39/500 kayda ve 34 doğrulanmış başarıya ulaştı;
 5 `budget` sonucu ve 461 açık satır var. Yerel devam süreci partiyi
