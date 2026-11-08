@@ -67,6 +67,11 @@ tamamladı. Token toplamı tamamlanmış çağrı kayıtlarıyla eşleşti. 24 s
 kayıtlı, 21'i doğrulanmış başarı ve 476'sı açık. Aday `fix_negative_max`
 göreviyle sonraki partiye başladı.
 
+Aday `fix_negative_max` ve `fix_even_median` görevlerini dış oracle'dan
+geçirdi. Her iki satırın token toplamları tamamlanmış çağrı kayıtlarıyla
+eşleşti. 26 satır kayıtlı, 23'ü doğrulanmış başarı. Aday `fix_empty_prefix`
+görevine geçti.
+
 Kontrol `gcd_list` görevini de dış oracle'dan geçirdi. İlk altı görev
 iki kolda da doğrulanmış başarı. Kontrol toplam 1.904.163, aday 1.108.167
 token kullandı. On iki satırın toplamları tamamlanmış çağrı kayıtlarıyla
