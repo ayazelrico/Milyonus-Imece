@@ -1,5 +1,12 @@
 # PLAN-5X kabul kaydı
 
+8 Kasım güncel canlı çalışma: sabit Codex CLI yürütücüsüyle ayrı `core-v3`
+matrisi sürüyor. 33/500 kayıt, 28 dış oracle ile doğrulanmış başarı ve
+5 belirsiz çağrı içeren `budget` sonucu var. 467 koşu açık. Önceki CLI
+sürümüyle alınmış sonuçlar bu matrise eklenmedi. Çağrı bazında gerçek USD
+dökümü ve bağımsız denetçi kabulü bulunmadığından 5X kabulü ilan edilemez.
+Güncel ilerleme ve devam komutu [sabit matris kaydında](experiments/cli-pinned-matrix-2026-11-07.md).
+
 7 Kasım güncel durum: Docker dahil **624 test geçti, atlanan yok**. Canlı
 v2 matrisi 29 kayıtta, bir yanlış kabul ve bir belirsiz çağrıyla olumsuz
 ön deney olarak kapatıldı. Medyan görevinde görünür sözleşmede bulunmayan
