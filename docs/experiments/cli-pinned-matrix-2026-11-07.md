@@ -1,5 +1,14 @@
 # Sabit yürütücüyle core-v3 kıyaslaması
 
+8 Kasım ara kaydı: 33/500 satır kayıtlı, 28 doğrulanmış başarı, 5 `budget`
+sonucu ve 467 açık satır var. Son aday `fix_duplicate_pairs` koşusu 29 çağrı
+ve 190.576 tokenla dış oracle'dan geçti. Aday `fix_leap_year` ve kontrol
+`fix_duplicate_pairs` çağrıları CLI çıkış kodu 1 ile kesildi; tanı alanları
+boş ve kullanımları bilinmiyor. Bu koordinatlar yeniden çalıştırılmadı.
+İki koldaki kısmi satırlar, manifest özetleri ve çağrı bazındaki token
+eşleştirmesi doğrulandı. Tam rapor doğrulaması henüz uygulanamaz: matris
+tamamlanmış değil. Kontrol `fix_leap_year` ile yeni partiye devam etti.
+
 Önceki v3 matrisi CLI otomatik güncellemesi nedeniyle 27 kayıtla arşivlendi.
 Yeni deney `0.167.0-alpha.3.2` sürümüne ve yürütücü SHA-256 özetine bağlı.
 İki kol da açık `--executable` ile şu sabit kopyayı kullanır.
