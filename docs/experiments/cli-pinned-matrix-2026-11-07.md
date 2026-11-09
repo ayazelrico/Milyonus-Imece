@@ -1,5 +1,12 @@
 # Sabit yürütücüyle core-v3 kıyaslaması
 
+9 Kasım commit kaydı. Matris 47/500 kayıt içeriyor. 40 koşu dış
+doğrulamadan geçti, 7 koşu `budget` sonucuyla kaydedildi ve 453 koşu açık.
+Aday `pivot_counts` sentez aşamasında CLI çıkış kodu 1 ile kesildi.
+Tanı alanı boş, ilgili çağrının kullanımı bilinmiyor. İki kolun manifest
+özetleri, kısmi satırları ve gözlenen token toplamlarının tamamlanmış
+çağrılarla eşleşmesi doğrulandı. Commit sırasında çalışan koşu bulunmuyor.
+
 Kontrol `invert_multimap` dış doğrulamadan geçti. 30 çağrının toplamı
 364.776 token ile eşleşti. Matris 46/500 kayda ve 40 doğrulanmış başarıya
 ulaştı. Erişim açıkken aday `pivot_counts` tek koşu olarak başlatıldı.
