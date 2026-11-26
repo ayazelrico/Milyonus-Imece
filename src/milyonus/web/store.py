@@ -126,6 +126,29 @@ CREATE TABLE IF NOT EXISTS message_feedback (
     created_at REAL NOT NULL,
     PRIMARY KEY (user_id, message_id)
 );
+CREATE TABLE IF NOT EXISTS imece_runs (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    task TEXT NOT NULL,
+    agents INTEGER NOT NULL,
+    verification TEXT NOT NULL,
+    mode TEXT NOT NULL,
+    state TEXT NOT NULL,
+    current_phase TEXT NOT NULL DEFAULT 'queued',
+    report_json TEXT,
+    error TEXT,
+    created_at REAL NOT NULL,
+    ended_at REAL
+);
+CREATE INDEX IF NOT EXISTS idx_imece_runs_user ON imece_runs(user_id);
+CREATE TABLE IF NOT EXISTS imece_events (
+    run_id TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    type TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    PRIMARY KEY (run_id, seq)
+);
 """
 
 
@@ -548,6 +571,11 @@ class WebStore:
             c.execute("DELETE FROM api_keys WHERE tenant_id=?", (user_id,))
             c.execute("DELETE FROM attachments WHERE tenant_id=?", (user_id,))
             c.execute("DELETE FROM message_feedback WHERE user_id=?", (user_id,))
+            c.execute(
+                "DELETE FROM imece_events WHERE run_id IN (SELECT id FROM imece_runs WHERE user_id=?)",
+                (user_id,),
+            )
+            c.execute("DELETE FROM imece_runs WHERE user_id=?", (user_id,))
 
     def save_feedback(
         self,
@@ -793,3 +821,105 @@ class WebStore:
             "approvals_pending": int(pending_approvals),
             "tokens_used_total": int(tokens),
         }
+
+    def tool_results_for_session(self, session_id: str) -> list[dict]:
+        rows = self._fetchall(
+            "SELECT tr.turn_id, tr.call_id, tr.tool_name, tr.ok, tr.duration_ms, tr.content, tr.created_at "
+            "FROM tool_results tr JOIN turns t ON t.id=tr.turn_id "
+            "WHERE t.session_id=? ORDER BY tr.created_at ASC",
+            (session_id,),
+        )
+        return [
+            {
+                "turn_id": r["turn_id"],
+                "call_id": r["call_id"],
+                "tool_name": r["tool_name"],
+                "ok": bool(r["ok"]),
+                "duration_ms": r["duration_ms"],
+                "content": r["content"],
+                "created_at": r["created_at"],
+            }
+            for r in rows
+        ]
+
+    # --- Live İmece War Room runs (PLAN-MOONSHOT M3) --------------------
+
+    def create_imece_run(
+        self,
+        *,
+        user_id: str,
+        task: str,
+        agents: int,
+        verification: str,
+        mode: str,
+    ) -> str:
+        rid = "im_" + uuid.uuid4().hex[:12]
+        with self._tx() as c:
+            c.execute(
+                "INSERT INTO imece_runs(id, user_id, task, agents, verification, mode, state, "
+                "current_phase, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+                (rid, user_id, task, agents, verification, mode, "running", "starting", _now()),
+            )
+        return rid
+
+    def update_imece_phase(self, run_id: str, phase: str) -> None:
+        with self._tx() as c:
+            c.execute("UPDATE imece_runs SET current_phase=? WHERE id=?", (phase, run_id))
+
+    def finish_imece_run(
+        self,
+        run_id: str,
+        *,
+        state: str,
+        report: dict | None = None,
+        error: str | None = None,
+    ) -> None:
+        with self._tx() as c:
+            c.execute(
+                "UPDATE imece_runs SET state=?, report_json=?, error=?, ended_at=? WHERE id=?",
+                (
+                    state,
+                    json.dumps(report, ensure_ascii=False) if report is not None else None,
+                    error,
+                    _now(),
+                    run_id,
+                ),
+            )
+
+    def list_imece_runs(self, user_id: str, *, limit: int = 30) -> list[dict]:
+        rows = self._fetchall(
+            "SELECT id, task, agents, verification, mode, state, current_phase, error, "
+            "created_at, ended_at FROM imece_runs WHERE user_id=? ORDER BY created_at DESC LIMIT ?",
+            (user_id, limit),
+        )
+        return [dict(r) for r in rows]
+
+    def get_imece_run(self, user_id: str, run_id: str) -> dict | None:
+        row = self._fetchone(
+            "SELECT * FROM imece_runs WHERE id=? AND user_id=?",
+            (run_id, user_id),
+        )
+        if row is None:
+            return None
+        d = dict(row)
+        raw_rep = d.pop("report_json", None)
+        d["report"] = json.loads(raw_rep) if raw_rep else None
+        return d
+
+    def append_imece_event(self, run_id: str, seq: int, typ: str, payload: dict) -> dict:
+        event = {"seq": seq, "type": typ, **payload}
+        with self._tx() as c:
+            c.execute(
+                "INSERT INTO imece_events(run_id, seq, type, payload_json, created_at) "
+                "VALUES (?,?,?,?,?)",
+                (run_id, seq, typ, json.dumps(payload, ensure_ascii=False), _now()),
+            )
+        return event
+
+    def imece_events_from(self, run_id: str, from_seq: int = 0) -> list[dict]:
+        rows = self._fetchall(
+            "SELECT seq, type, payload_json FROM imece_events "
+            "WHERE run_id=? AND seq>=? ORDER BY seq",
+            (run_id, from_seq),
+        )
+        return [{"seq": r["seq"], "type": r["type"], **json.loads(r["payload_json"])} for r in rows]

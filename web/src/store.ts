@@ -38,6 +38,7 @@ type UiState = {
   railOpen: boolean;
   sidebarOpen: boolean;
   settingsOpen: boolean;
+  warRoomOpen: boolean;
   locale: Locale;
   quietMemory: boolean;
   toolsEnabled: boolean;
@@ -56,6 +57,7 @@ type UiState = {
   setRailOpen: (v: boolean) => void;
   setSidebarOpen: (v: boolean) => void;
   setSettingsOpen: (v: boolean) => void;
+  setWarRoomOpen: (v: boolean) => void;
   setLocale: (l: Locale) => void;
   setQuietMemory: (v: boolean) => void;
   setToolsEnabled: (v: boolean) => void;
@@ -74,6 +76,7 @@ export const useUi = create<UiState>((set) => ({
   railOpen: true,
   sidebarOpen: false,
   settingsOpen: false,
+  warRoomOpen: false,
   locale: "en",
   quietMemory: false,
   toolsEnabled: true,
@@ -107,6 +110,7 @@ export const useUi = create<UiState>((set) => ({
   setRailOpen: (v) => set({ railOpen: v }),
   setSidebarOpen: (v) => set({ sidebarOpen: v }),
   setSettingsOpen: (v) => set({ settingsOpen: v }),
+  setWarRoomOpen: (v) => set({ warRoomOpen: v }),
   setLocale: (l) => set({ locale: l }),
   setQuietMemory: (v) => set({ quietMemory: v }),
   setToolsEnabled: (v) => set({ toolsEnabled: v }),

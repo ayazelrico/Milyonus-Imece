@@ -26,6 +26,8 @@ jobs:
         run: uv run mypy src/milyonus
       - name: Safety regression evals
         run: uv run python -m evals.safety.run
+      - name: Adversarial chaos autopilot
+        run: uv run milyonus chaos run --min-score 100
       - name: Test
         run: uv run pytest -q
       - name: Prepare isolated Python execution image

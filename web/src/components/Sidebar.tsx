@@ -256,13 +256,25 @@ export function Sidebar({ sessions, loading = false, onCreate }: Props) {
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setSettingsOpen(true)}
-          className="mt-auto rounded-full border border-white/15 bg-black/30 hover:bg-white/10 py-2 text-xs text-white/80"
-        >
-          ⚙ {t(locale, "settings")}
-        </button>
+        <div className="mt-auto space-y-2">
+          <button
+            type="button"
+            onClick={() => {
+              useUi.getState().setWarRoomOpen(true);
+              setSidebarOpen(false);
+            }}
+            className="w-full rounded-full border border-accent/40 bg-accent/10 hover:bg-accent/20 py-2 text-xs text-accent font-medium"
+          >
+            ⚡ War Room & Arena
+          </button>
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="w-full rounded-full border border-white/15 bg-black/30 hover:bg-white/10 py-2 text-xs text-white/80"
+          >
+            ⚙ {t(locale, "settings")}
+          </button>
+        </div>
       </aside>
     </>
   );

@@ -198,6 +198,10 @@ export function SettingsModal({ onSignedOut }: Props) {
         </section>
 
         <section className="space-y-2 border-t border-white/10 pt-4">
+          <ShieldCheckPanel />
+        </section>
+
+        <section className="space-y-2 border-t border-white/10 pt-4">
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
@@ -254,6 +258,79 @@ export function SettingsModal({ onSignedOut }: Props) {
           )}
         </section>
       </div>
+    </div>
+  );
+}
+
+type ChaosProbe = {
+  id: string;
+  vector: string;
+  attack: string;
+  blocked: boolean;
+  detail: string;
+};
+
+type ChaosResult = {
+  immunity_score: number;
+  grade: string;
+  passed: number;
+  total: number;
+  duration_ms: number;
+  probes: ChaosProbe[];
+};
+
+function ShieldCheckPanel() {
+  const [busy, setBusy] = useState(false);
+  const [report, setReport] = useState<ChaosResult | null>(null);
+  const [err, setErr] = useState("");
+
+  async function runCheck() {
+    setBusy(true);
+    setErr("");
+    try {
+      const res = await api<ChaosResult>("/v1/security/chaos", { method: "POST" });
+      setReport(res);
+    } catch (e) {
+      setErr(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2 text-xs">
+      <div className="flex items-center justify-between">
+        <span className="text-white/75 font-medium">🛡 Adversarial Chaos Autopilot</span>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void runCheck()}
+          className="rounded-full bg-brand/80 hover:bg-brand disabled:opacity-50 px-3 py-1 text-xs"
+        >
+          {busy ? "Attacking…" : "Run Shield Check"}
+        </button>
+      </div>
+      {err && <p className="text-red-300">{err}</p>}
+      {report && (
+        <div className="rounded-xl bg-black/45 border border-emerald-400/30 p-2.5 space-y-1.5">
+          <p className="font-medium text-emerald-300">
+            Immunity Score: {report.immunity_score}/100 ({report.grade}) · {report.passed}/
+            {report.total} blocked · {report.duration_ms}ms
+          </p>
+          <div className="max-h-36 overflow-y-auto space-y-1">
+            {report.probes.map((p) => (
+              <div key={p.id} className="flex justify-between text-[11px] text-white/70">
+                <span className="truncate pr-2">
+                  [{p.vector}] {p.attack}
+                </span>
+                <span className={p.blocked ? "text-emerald-300" : "text-red-400"}>
+                  {p.blocked ? "✓" : "✗"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

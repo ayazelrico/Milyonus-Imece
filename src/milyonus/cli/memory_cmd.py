@@ -385,3 +385,101 @@ def memory_stats() -> None:
             f"  [{PALETTE['warn']}]↑ high recovery rate — decay may be too aggressive; "
             "consider raising review windows.[/]"
         )
+
+
+@memory_app.command("timeline")
+def memory_timeline(
+    limit: int = typer.Option(30, "--limit", help="Max checkpoints to show"),
+) -> None:
+    """List hash-verified memory ledger checkpoints for time-travel (M1)."""
+    from milyonus.memory.timetravel import checkpoint_timeline
+
+    store = MemoryStore()
+    try:
+        pts = checkpoint_timeline(store, limit=limit)
+    finally:
+        store.close()
+    if not pts:
+        console.print(f"[dim]{GLYPH} ledger is empty.[/]")
+        return
+    table = Table(title=f"{GLYPH} Memory Time-Travel Timeline")
+    table.add_column("seq")
+    table.add_column("action", style=f"bold {PALETTE['cyan_400']}")
+    table.add_column("item", style="dim")
+    table.add_column("preview")
+    table.add_column("chain")
+    for p in pts:
+        mark = f"[{PALETTE['ok']}]✓[/]" if p.valid_link else f"[{PALETTE['risk']}]✗[/]"
+        table.add_row(str(p.seq), p.action, p.item_id or "-", p.preview[:50], mark)
+    console.print(table)
+
+
+@memory_app.command("timetravel")
+def memory_timetravel(
+    seq: int | None = typer.Option(None, "--seq", help="Reconstruct state up to ledger sequence N"),
+    at: float | None = typer.Option(None, "--at", help="Reconstruct state at Unix timestamp"),
+) -> None:
+    """Reconstruct exact memory state and `<milyonus:memory>` snapshot at any historical point (M1)."""
+    from milyonus.memory.timetravel import reconstruct_at
+
+    store = MemoryStore()
+    try:
+        snap = reconstruct_at(store, seq=seq, at_timestamp=at)
+    finally:
+        store.close()
+    status = (
+        f"[{PALETTE['ok']}]intact[/]" if snap.chain_intact else f"[{PALETTE['risk']}]TAMPERED[/]"
+    )
+    console.print(
+        f"[bold {PALETTE['cyan_400']}]{GLYPH} Snapshot @ seq #{snap.seq}[/] "
+        f"· active={snap.active_count} · pending={snap.pending_count} "
+        f"· revoked={snap.revoked_count} · chain={status}"
+    )
+    if snap.rendered_snapshot:
+        console.print(snap.rendered_snapshot, markup=False)
+    else:
+        console.print("[dim](no active memory at this checkpoint)[/]")
+
+
+@memory_app.command("epoch-diff")
+def memory_epoch_diff(from_seq: int, to_seq: int) -> None:
+    """Compare reconstructed memory between two ledger sequence numbers (M1)."""
+    from milyonus.memory.timetravel import diff_snapshots
+
+    store = MemoryStore()
+    try:
+        diff = diff_snapshots(store, from_seq, to_seq)
+    finally:
+        store.close()
+    console.print(
+        f"[bold {PALETTE['cyan_400']}]{GLYPH} Diff seq #{diff.from_seq} → #{diff.to_seq}[/] "
+        f"· +{len(diff.added)} added · -{len(diff.removed)} removed · "
+        f"~{len(diff.state_changed)} changed · {diff.unchanged_count} unchanged"
+    )
+    for item in diff.added:
+        console.print(
+            f"  [{PALETTE['ok']}]+[/] [{item['trust_tier']}/{item['state']}] {item['content']}"
+        )
+    for ch in diff.state_changed:
+        console.print(
+            f"  [{PALETTE['warn']}]~[/] {ch['id']}: {ch['from_state']} → {ch['to_state']} "
+            f"({ch['content'][:60]})"
+        )
+
+
+@memory_app.command("counterfactual")
+def memory_counterfactual(source_uri: str) -> None:
+    """Simulate revoking `source_uri` without mutating live memory (M1)."""
+    from milyonus.memory.timetravel import counterfactual_revoke
+
+    store = MemoryStore()
+    try:
+        rep = counterfactual_revoke(store, source_uri)
+    finally:
+        store.close()
+    console.print(
+        f"[bold {PALETTE['cyan_400']}]{GLYPH} Counterfactual revoke[/] {rep.source_uri}\n"
+        f"  affected : {len(rep.affected_ids)} ({rep.direct_count} direct, {rep.derived_count} derived)\n"
+        f"  active   : {rep.before_active_count} → {rep.after_active_count} "
+        f"(~{rep.tokens_freed_estimate} tokens freed)"
+    )

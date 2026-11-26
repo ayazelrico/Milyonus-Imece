@@ -240,6 +240,8 @@ def run(
 
 
 from milyonus.cli.admin_cmd import admin_app  # noqa: E402
+from milyonus.cli.arena_cmd import arena_app  # noqa: E402
+from milyonus.cli.chaos_cmd import chaos_app  # noqa: E402
 from milyonus.cli.cron_cmd import cron_app  # noqa: E402
 from milyonus.cli.eval_cmd import eval_app  # noqa: E402
 from milyonus.cli.gateway_cmd import gateway_app  # noqa: E402
@@ -247,6 +249,7 @@ from milyonus.cli.imece_cmd import imece_app  # noqa: E402
 from milyonus.cli.mcp_cmd import mcp_app  # noqa: E402
 from milyonus.cli.memory_cmd import audit_app, memory_app  # noqa: E402
 from milyonus.cli.proactive_cmd import proactive_app  # noqa: E402
+from milyonus.cli.proof_cmd import proof_app  # noqa: E402
 from milyonus.cli.selfmod_cmd import selfmod_app  # noqa: E402
 from milyonus.cli.skills_cmd import skills_app  # noqa: E402
 from milyonus.cli.user_cmd import user_app  # noqa: E402
@@ -265,6 +268,9 @@ app.add_typer(mcp_app, name="mcp")
 app.add_typer(user_app, name="user")
 app.add_typer(imece_app, name="imece")
 app.add_typer(web_app, name="web")
+app.add_typer(proof_app, name="proof")
+app.add_typer(chaos_app, name="chaos")
+app.add_typer(arena_app, name="arena")
 
 
 def main() -> None:

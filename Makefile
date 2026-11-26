@@ -1,5 +1,5 @@
 # Milyonus Agent — developer convenience targets.
-.PHONY: sync test docker-test lint fmt typecheck check hooks build web-build docker-build docker-run poison safety
+.PHONY: sync test docker-test lint fmt typecheck check hooks build web-build docker-build docker-run poison safety chaos
 
 sync:        ## install deps (matches CI: dev + admin + discord)
 	uv sync --extra dev --extra admin --extra discord
@@ -23,7 +23,7 @@ fmt:         ## format
 typecheck:   ## run mypy across src/milyonus
 	uv run mypy src/milyonus
 
-check: lint typecheck safety  ## lint + format-check + typecheck + safety + test
+check: lint typecheck safety chaos  ## lint + format-check + typecheck + safety + chaos + test
 	uv run ruff format --check src tests evals
 	uv run pytest -q
 
@@ -38,6 +38,9 @@ poison:      ## run PoisonBench (rule-based)
 
 safety:      ## run SafetyRegression
 	uv run python -m evals.safety.run
+
+chaos:       ## run Adversarial Chaos Autopilot (must score 100/100)
+	uv run milyonus chaos run --min-score 100
 
 docker-build:   ## build the hardened image
 	docker build -f deploy/Dockerfile -t milyonus/agent:5.5.0 -t milyonus/agent:latest .

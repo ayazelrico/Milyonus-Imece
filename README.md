@@ -13,7 +13,8 @@ One command sends a task through **tens to thousands of real subagents**, a
 [![License](https://img.shields.io/badge/license-Apache--2.0-1E4FD8.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-35C6F4.svg)](pyproject.toml)
 [![Version](https://img.shields.io/badge/version-5.5.0-071233.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-644%20passing-22C55E.svg)](tests)
+[![Tests](https://img.shields.io/badge/tests-657%20passing-22C55E.svg)](tests)
+[![Chaos](https://img.shields.io/badge/Chaos%20Immunity-100%2F100%20A%2B-22C55E.svg)](PLAN-MOONSHOT.md)
 [![Imece](https://img.shields.io/badge/imece-experimental-F59E0B.svg)](#status--honest-trial-results)
 [![PoisonBench](https://img.shields.io/badge/PoisonBench%20ASR-0%25-22C55E.svg)](docs/benchmarks.md)
 
@@ -22,10 +23,12 @@ One command sends a task through **tens to thousands of real subagents**, a
 > **Status: experimental.** On 2026-11-02 a real-model run produced an accepted
 > Python deliverable, passed 12 independently designed tests in macOS isolation,
 > and passed a separate reference oracle withheld from the agents. Sandboxed
-> Python execution, hierarchical command/councils and a benchmark runner now ship.
+> Python execution, hierarchical command/councils, a benchmark runner, and
+> five Moonshot capabilities (Time-Travel Memory, Signed Proof Capsules, Live
+> Web War Room, Adversarial Chaos Autopilot, Skill Forge & Elo Arena) now ship.
 > This is a small proof, not production validation. See the
 > [completion assessment](docs/completion.md), [raw trial](docs/trials/2026-11-02-final-clamp.json),
-> and [next 5X plan](PLAN-5X.md).
+> [next 5X plan](PLAN-5X.md), and [Moonshot plan](PLAN-MOONSHOT.md).
 
 ---
 
@@ -814,14 +817,20 @@ src/milyonus/imece/
 ├── benchmark.py     withheld reference oracle benchmark runner · calibration metrics
 ├── codex.py         Codex CLI JSONL adapter · OS-enforced oracle guard (macOS Seatbelt / Linux bwrap)
 ├── antigravity.py   Antigravity CLI adapter · bounded stream & strict JSON parsing
+├── arena.py         Multi-Strategy Arena · deterministic oracle + blind tie-break · SQLite Elo leaderboard
 ├── observer.py      deterministic monitors + LLM retrospective
 └── orchestrator.py  Imece.run(): the full pipeline, rounds, stop checkpoints, RunResult
-src/milyonus/web/               Surface #7 FastAPI API · RunnerHub · MemoryWriter · W6 context · auth · quotas
-web/                            React 19 + TypeScript + Vite 7 SPA (Chat, Trust Rail, Skills, Rules, Settings, i18n)
-src/milyonus/cli/imece_cmd.py   `milyonus imece plan | seats | run | stop | benchmark`
-src/milyonus/config/schema.py   ImeceConfig · per-seat ProviderConfig · reasoning_effort
-docs/imece.md                   short reference
-tests/test_imece*.py            collective, sandbox, evidence, journal, reduction & audit suites
+src/milyonus/memory/timetravel.py  hash-verified ledger replay · epoch diff · zero-mutation counterfactual revoke
+src/milyonus/security/proof.py     offline `.milyonus-proof.json` Merkle capsules + Ed25519 operator signatures
+src/milyonus/security/chaos.py     Adversarial Chaos Autopilot (12 isolated probes · 6 vectors · Immunity Scorecard)
+src/milyonus/skills/forge.py       Skill Forge: session/spec → scanner + AST assertion check → verified SKILL.md
+src/milyonus/web/                  Surface #7 FastAPI API · RunnerHub · ImeceRunHub (War Room) · MemoryWriter · W6
+web/                               React 19 + TypeScript + Vite 7 SPA (Chat, Trust Rail, War Room, Arena, Shield Check)
+src/milyonus/cli/imece_cmd.py      `milyonus imece plan | seats | run | stop | benchmark`
+src/milyonus/config/schema.py      ImeceConfig · per-seat ProviderConfig · reasoning_effort
+docs/imece.md                      short reference
+tests/test_imece*.py               collective, sandbox, evidence, journal, reduction & audit suites
+tests/test_moonshot_*.py           M1–M5 core, CLI, War Room SSE & web API suites
 ```
 
 ---
@@ -1319,11 +1328,14 @@ milyonus run "<task>"        one-shot non-interactive task
 milyonus setup               first-run wizard
 milyonus doctor              environment & publication diagnostics
 milyonus imece    plan | seats | run | stop | benchmark   # the İmece-İRADE collective
-milyonus web      start      # Surface #7 FastAPI + SSE server
-milyonus memory   list | pending | why | diff | revoke | search | reaffirm | review | stats | reindex | consolidate
+milyonus arena    run | leaderboard                       # head-to-head Strategy Arena + SQLite Elo
+milyonus proof    create-from-imece | verify              # offline Merkle + Ed25519 proof capsules
+milyonus chaos    run [--min-score 100] [--json-out FILE] # 6-vector Adversarial Chaos Autopilot
+milyonus web      start      # Surface #7 FastAPI + SSE + War Room server
+milyonus memory   list | pending | why | diff | timeline | timetravel | epoch-diff | counterfactual | revoke | search | reaffirm | review | stats | reindex | consolidate
 milyonus mcp      list | tools | example   # external MCP servers
 milyonus user     show | ask | observe      # cross-session user model
-milyonus skills   list | view | why | install | check | promote-repair | revoke-oracle | recover-publications
+milyonus skills   list | view | why | forge | install | check | promote-repair | revoke-oracle | recover-publications
 milyonus audit    verify | log
 milyonus gateway  start | pair
 milyonus selfmod  log | rollback | accept
@@ -1356,12 +1368,12 @@ Guides: [docs/docker.md](docs/docker.md) · [docs/production.md](docs/production
 ```bash
 make sync                  # deps (matches CI: dev + admin + discord)
 make hooks                 # enable pre-push gate (runs the CI checks locally)
-uv run pytest -q           # full suite; 644 passed with real Docker (MILYONUS_TEST_DOCKER=1)
-make check                 # lint + format-check + mypy + safety + test — matches CI
+uv run pytest -q           # full suite; 657 passed with real Docker (MILYONUS_TEST_DOCKER=1)
+make check                 # lint + format-check + mypy + safety + chaos + test — matches CI
 ```
 
 `make check` mirrors CI (`ruff check` · `ruff format --check` · `mypy` ·
-`evals.safety.run` · `pytest`); `make hooks` wires it into a pre-push hook so a push can't go out red
+`evals.safety.run` · `milyonus chaos run --min-score 100` · `pytest`); `make hooks` wires it into a pre-push hook so a push can't go out red
 (bypass with `git push --no-verify`).
 
 Extend Milyonus through the **skill**, **tool**, or **channel adapter** interfaces
@@ -1390,6 +1402,14 @@ Extend Milyonus through the **skill**, **tool**, or **channel adapter** interfac
 
 Next: [5X verified results per dollar](PLAN-5X.md). Production validation,
 large repeated real-model evaluation and third-party audit remain open.
+
+**Moonshot Capabilities (M1–M5)** — see [PLAN-MOONSHOT.md](PLAN-MOONSHOT.md) · [PLAN-MOONSHOT-ACTIONS.md](PLAN-MOONSHOT-ACTIONS.md)
+
+- [x] **M1** — Memory Time-Travel & Counterfactual Replay (`timetravel.py`, CLI, `/v1/memory/*`, Trust Rail scrubber)
+- [x] **M2** — Signed Evidence Bundles (`.milyonus-proof.json` Merkle root + Ed25519 offline verification)
+- [x] **M3** — Live İmece War Room on Web Surface #7 (`ImeceRunHub`, SSE telemetry, Emergency Stop, Proof download)
+- [x] **M4** — Adversarial Chaos & Red-Team Autopilot (12 isolated probes, 6 vectors, 100/100 A+ CI gate, Web Shield Check)
+- [x] **M5** — Skill Forge & Multi-Strategy Arena (scanner + AST-verified `SKILL.md` synthesis + SQLite Elo leaderboard)
 
 **Platform**
 

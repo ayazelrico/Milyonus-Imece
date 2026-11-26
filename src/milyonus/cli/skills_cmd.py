@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -184,3 +186,58 @@ def skills_check() -> None:
     console.print(table)
     if has_drift:
         raise typer.Exit(2)
+
+
+@skills_app.command("forge")
+def skills_forge(
+    name: str = typer.Argument(..., help="Target skill name"),
+    description: str = typer.Option(..., "--description", "-d", help="One-line skill description"),
+    body_file: str | None = typer.Option(
+        None, "--body-file", "-f", help="Markdown file containing the skill procedure"
+    ),
+    body: str = typer.Option("", "--body", "-b", help="Inline Markdown procedure body"),
+    from_session: str | None = typer.Option(
+        None, "--from-session", help="Distill procedure from a saved core session id"
+    ),
+    test_file: str | None = typer.Option(
+        None, "--test", help="Optional Python assertion script to validate via AST before publish"
+    ),
+    preview_only: bool = typer.Option(False, "--preview", help="Validate without publishing"),
+) -> None:
+    """Forge, scan, validate, and atomically publish a verified SKILL.md package (M5)."""
+    import asyncio
+
+    from milyonus.core.store import SessionStore
+    from milyonus.skills.forge import (
+        SkillForgeSpec,
+        extract_skill_draft_from_messages,
+        forge_skill,
+    )
+
+    if from_session is not None:
+        ss = SessionStore()
+        try:
+            msgs = [dict(r) for r in ss.history(from_session)]
+        finally:
+            ss.close()
+        if not msgs:
+            console.print(f"[{PALETTE['risk']}]session not found or empty: {from_session}[/]")
+            raise typer.Exit(1)
+        spec = extract_skill_draft_from_messages(
+            msgs, name=name, description=description, session_id=from_session
+        )
+    else:
+        content = Path(body_file).read_text(encoding="utf-8") if body_file is not None else body
+        spec = SkillForgeSpec(name=name, description=description, body=content)
+
+    if test_file is not None:
+        tf = Path(test_file)
+        spec.verification_tests[tf.name] = tf.read_text(encoding="utf-8")
+
+    res = asyncio.run(forge_skill(spec, publish=not preview_only))
+    color = PALETTE["ok"] if res.ok else PALETTE["risk"]
+    console.print(f"[{color}]{GLYPH} {res.message}[/]")
+    if res.sha256:
+        console.print(f"  [dim]sha256={res.sha256[:16]}… · tests={res.verified_tests}[/]")
+    if not res.ok:
+        raise typer.Exit(1)

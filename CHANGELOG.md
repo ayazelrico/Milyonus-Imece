@@ -5,6 +5,28 @@ The format follows Keep a Changelog; versions follow the Milyonus model line.
 
 ## [Unreleased] — Milyonus-Imece (experimental)
 
+### Moonshot capabilities (M1–M5) — 2026-11-26
+- **M1 — Memory Time-Travel & Counterfactual Replay** (`memory/timetravel.py`): hash-verified
+  ledger replay to any sequence or timestamp (`milyonus memory timeline | timetravel | epoch-diff
+  | counterfactual`), Web API (`/v1/memory/timeline | snapshot | diff | counterfactual`), and
+  interactive Time-Travel Scrubber + Counterfactual simulator in `TrustRail`.
+- **M2 — Signed Evidence Bundles** (`security/proof.py`): offline-verifiable
+  `.milyonus-proof.json` capsules with canonical SHA-256 leaf digests, deterministic Merkle root,
+  memory ledger anchor, and optional Ed25519 operator signatures (`milyonus proof create-from-imece
+  | verify`, `GET /v1/sessions/{id}/proof`, `POST /v1/proofs/verify`).
+- **M3 — Live İmece War Room on Web Surface #7** (`web/imece_hub.py`, `WarRoomModal.tsx`):
+  launch multi-agent collectives (17–10,000 scale, live or zero-spend dry-run) with durable
+  monotonic SSE phase streaming, interactive Emergency Stop, and Proof Capsule download.
+- **M4 — Adversarial Chaos & Red-Team Autopilot** (`security/chaos.py`, `milyonus chaos run`):
+  12 isolated adversarial probes across 6 vectors (injection, risk, memory, T0, skills, isolation)
+  emitting a 0–100 Immunity Scorecard (`100/100 · A+`), wired into CI, `POST /v1/security/chaos`,
+  and Web Settings Shield Check.
+- **M5 — Skill Forge & Multi-Strategy Arena** (`skills/forge.py`, `imece/arena.py`): synthesize,
+  scan, AST-assertion-check, and publish `SKILL.md` artifacts from solved tasks/sessions
+  (`milyonus skills forge`, `POST /v1/sessions/{id}/forge-skill`), plus head-to-head Strategy Arena
+  with objective oracle scoring, blind judge tie-breaks, and persistent SQLite Elo leaderboard
+  (`milyonus arena run | leaderboard`, `/v1/arena/*`).
+
 ### Plan engineering gaps closed — 2026-11-26
 - **Core (`PLAN.md`)**: budgeted `clarify` tool (`tools/clarify.py`, denied to subagents);
   4-stage `prompt/compressor.py` ladder + 8k tool-result truncation + `on_tool_result` loop sink;

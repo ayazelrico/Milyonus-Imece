@@ -7,6 +7,7 @@ import { Composer } from "./components/Composer";
 import { SettingsModal } from "./components/SettingsModal";
 import { Sidebar } from "./components/Sidebar";
 import { TrustRail } from "./components/TrustRail";
+import { WarRoomModal } from "./components/WarRoomModal";
 import { Locale, t } from "./i18n";
 import { useUi } from "./store";
 
@@ -528,6 +529,7 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
 
       <TrustRail />
       <SettingsModal onSignedOut={onSignedOut} />
+      <WarRoomModal />
     </div>
   );
 }
