@@ -241,3 +241,67 @@ def skills_forge(
         console.print(f"  [dim]sha256={res.sha256[:16]}… · tests={res.verified_tests}[/]")
     if not res.ok:
         raise typer.Exit(1)
+
+
+@skills_app.command("immune-scan")
+def skills_immune_scan() -> None:
+    """Run Autonomous Skill Immune System health & tamper scan (H7)."""
+    from milyonus.skills.immune import scan_skills_health
+
+    rep = scan_skills_health()
+    color = PALETTE["ok"] if rep.health_score >= 90 else PALETTE["risk"]
+    console.print(
+        f"[bold {color}]{GLYPH} Skill Immune Health: {rep.health_score}/100[/] "
+        f"(healthy={rep.healthy_count}, warn={rep.warn_count}, tampered={rep.tampered_count}, "
+        f"compromised={rep.compromised_count}, quarantined={rep.quarantined_count})"
+    )
+    for e in rep.entries:
+        ec = PALETTE["ok"] if e.status == "healthy" else PALETTE["risk"]
+        issues = f" — {'; '.join(e.issues)}" if e.issues else ""
+        console.print(f"  [{ec}]{e.status:11s}[/] {e.name}{issues}")
+    if rep.compromised_count > 0:
+        raise typer.Exit(1)
+
+
+@skills_app.command("immune-seal")
+def skills_immune_seal() -> None:
+    """Seal SHA-256 baseline digests for all clean installed skills (H7)."""
+    from milyonus.skills.immune import seal_manifest
+
+    res = seal_manifest()
+    console.print(
+        f"[{PALETTE['ok']}]{GLYPH} Sealed {res['sealed_count']} clean skill(s)[/] "
+        f"→ {res['manifest_path']}"
+    )
+    if res["skipped_compromised"]:
+        console.print(
+            f"[{PALETTE['risk']}]Skipped compromised:[/] {', '.join(res['skipped_compromised'])}"
+        )
+
+
+@skills_app.command("immune-quarantine")
+def skills_immune_quarantine(
+    name: str = typer.Argument(..., help="Skill name to quarantine"),
+    reason: str = typer.Option("manual_quarantine", "--reason"),
+) -> None:
+    """Atomically isolate a compromised or tampered skill into `.quarantine/` (H7)."""
+    from milyonus.skills.immune import quarantine_skill
+
+    try:
+        inc = quarantine_skill(name, reason=reason)
+    except (FileNotFoundError, ValueError) as exc:
+        console.print(f"[{PALETTE['risk']}]{exc}[/]")
+        raise typer.Exit(1) from exc
+    console.print(f"[{PALETTE['warn']}]{GLYPH} Quarantined '{name}'[/] → {inc['quarantine_path']}")
+
+
+@skills_app.command("immune-heal")
+def skills_immune_heal(name: str = typer.Argument(..., help="Skill name to auto-heal")) -> None:
+    """Auto-heal broken frontmatter & secret leaks (fails closed on RCE) (H7)."""
+    from milyonus.skills.immune import heal_skill
+
+    res = heal_skill(name)
+    color = PALETTE["ok"] if res.ok else PALETTE["risk"]
+    console.print(f"[{color}]{GLYPH} {res.message}[/]")
+    if not res.ok:
+        raise typer.Exit(1)

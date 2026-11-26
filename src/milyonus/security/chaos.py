@@ -1,15 +1,17 @@
-"""Adversarial Chaos & Red-Team Autopilot (PLAN-MOONSHOT M4).
+"""Adversarial Chaos & Red-Team Autopilot (PLAN-MOONSHOT M4 + PLAN-HYPERNOVA H11).
 
-Runs 12 isolated, deterministic adversarial probes across 6 defense layers without
+Runs 16 isolated, deterministic adversarial probes across 8 defense layers without
 touching live user data, producing a quantified 0–100 Immunity Scorecard:
 
-  1. injection  — hidden prompt override & credential exfiltration detection
-  2. risk       — destructive shell block & irreversible allow_session refusal
-  3. memory     — negative-memory rephrase catch, H2 reaffirm flood rate limit,
-                  H3 weak-reaffirm diminishing ceiling
-  4. t0         — text-origin T0 spoof denial & forged Ed25519 signature rejection
-  5. skills     — dangerous `curl | bash` skill rejection (even --force) & path traversal
-  6. isolation  — fail-closed oracle_guard without OS sandbox & web cross-tenant isolation
+  1. injection   — hidden prompt override & credential exfiltration detection
+  2. risk        — destructive shell block & irreversible allow_session refusal
+  3. memory      — negative-memory rephrase catch, H2 reaffirm flood rate limit,
+                   H3 weak-reaffirm diminishing ceiling
+  4. t0          — text-origin T0 spoof denial & forged Ed25519 signature rejection
+  5. skills      — dangerous `curl | bash` skill rejection (even --force) & path traversal
+  6. isolation   — fail-closed oracle_guard without OS sandbox & web cross-tenant isolation
+  7. leases      — forged Capability Lease HMAC rejection & Honeytoken Canary kill-switch
+  8. federation  — tampered Selective Disclosure Merkle path & Byzantine forged Mesh packet
 """
 
 from __future__ import annotations
@@ -390,6 +392,124 @@ async def _run_probes(work_dir: Path, *, include_web: bool) -> list[ChaosProbeRe
             "Cross-tenant web session read + CSP verification",
             probe_web_tenant_isolation,
         )
+
+    # --- 7. Capability leases & Canary kill-switch vector (H3) ---
+    def probe_forged_capability_lease() -> tuple[bool, str]:
+        from milyonus.security.leases import LeaseVault
+
+        vault = LeaseVault(work_dir / "leases_chaos.db")
+        try:
+            lease = vault.mint(
+                subject="chaos-agent",
+                tools=["read_file"],
+                path_globs=["src/*"],
+                ttl_seconds=300,
+                max_calls=5,
+            )
+            dec_forged = vault.verify_and_consume(
+                lease.lease_id,
+                tool_name="read_file",
+                path="src/main.py",
+                signature_override="0" * 64,
+            )
+            dec_escape = vault.verify_and_consume(
+                lease.lease_id,
+                tool_name="read_file",
+                path="../../etc/passwd",
+            )
+            ok = (not dec_forged.allowed) and (not dec_escape.allowed)
+            return ok, f"forged={dec_forged.reason}; escape={dec_escape.reason}"
+        finally:
+            vault.close()
+
+    def probe_canary_kill_switch() -> tuple[bool, str]:
+        from milyonus.security.leases import LeaseVault
+
+        vault = LeaseVault(work_dir / "canary_chaos.db")
+        try:
+            lease = vault.mint(subject="agent", tools=["read_file"], ttl_seconds=300)
+            canary = vault.mint_canary("chaos-trap")
+            trip = vault.scan_for_canary_leak(
+                f"Exfiltrated secret: {canary['token']}", context="chaos-probe"
+            )
+            after = vault.verify_and_consume(lease.lease_id, tool_name="read_file")
+            ok = trip.tripped and lease.lease_id in trip.revoked_lease_ids and not after.allowed
+            return (
+                ok,
+                f"tripped={trip.tripped} revoked={len(trip.revoked_lease_ids)} post_check={after.reason}",
+            )
+        finally:
+            vault.close()
+
+    record(
+        "lease-forged-sig",
+        "leases",
+        "Forged Capability Lease HMAC & path escape",
+        probe_forged_capability_lease,
+    )
+    record(
+        "lease-canary-kill",
+        "leases",
+        "Honeytoken Canary exfil triggers global lease kill-switch",
+        probe_canary_kill_switch,
+    )
+
+    # --- 8. Selective Disclosure & Federated Mesh Byzantine vector (H6 + H10) ---
+    def probe_tampered_disclosure_merkle() -> tuple[bool, str]:
+        from milyonus.security.disclosure import create_disclosure_proof, verify_disclosure_proof
+        from milyonus.security.proof import build_imece_proof
+
+        bundle = build_imece_proof(
+            {
+                "deliverable": "TOP_SECRET_ALGORITHM",
+                "accepted": True,
+                "rounds": 1,
+                "approval": {"verdict": "accept"},
+                "gate_reports": [{"gate": "kap2", "pass": True}],
+            },
+            subject_id="chaos_disc",
+        )
+        disc = create_disclosure_proof(bundle, reveal_kinds=["gate3_approval"])
+        valid_clean = verify_disclosure_proof(disc).valid
+        # Tamper sibling hash in Merkle path -> must fail closed!
+        disc["disclosed"][0]["merkle_path"][0]["sibling"] = "f" * 64
+        res_tampered = verify_disclosure_proof(disc)
+        ok = valid_clean and (not res_tampered.valid)
+        return ok, f"clean={valid_clean} tampered_valid={res_tampered.valid}"
+
+    async def probe_byzantine_mesh_forged_packet() -> tuple[bool, str]:
+        from milyonus.imece.mesh import MeshCoordinator, MeshStore
+
+        ms_mesh = MeshStore(work_dir / "mesh_chaos.db")
+        try:
+            coord = MeshCoordinator(ms_mesh)
+            coord.ensure_default_cluster()
+            rep = await coord.dispatch(
+                "Verify distributed security invariant",
+                byzantine_nodes={"node-beta"},
+            )
+            ok = (
+                rep.quorum_reached
+                and "node-beta" in rep.slashed_nodes
+                and rep.verified_peers == 2
+                and rep.rejected_peers == 1
+            )
+            return ok, f"quorum={rep.quorum_reached} slashed={rep.slashed_nodes}"
+        finally:
+            ms_mesh.close()
+
+    record(
+        "fed-disclosure-tamper",
+        "federation",
+        "Tampered Selective Disclosure Merkle path rejected",
+        probe_tampered_disclosure_merkle,
+    )
+    await record_async(
+        "fed-byzantine-mesh",
+        "federation",
+        "Byzantine forged Mesh packet rejected & peer slashed",
+        probe_byzantine_mesh_forged_packet,
+    )
 
     return results
 

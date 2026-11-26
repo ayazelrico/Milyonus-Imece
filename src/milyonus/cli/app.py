@@ -241,21 +241,29 @@ def run(
 
 from milyonus.cli.admin_cmd import admin_app  # noqa: E402
 from milyonus.cli.arena_cmd import arena_app  # noqa: E402
+from milyonus.cli.branch_cmd import branch_app  # noqa: E402
 from milyonus.cli.chaos_cmd import chaos_app  # noqa: E402
+from milyonus.cli.constitution_cmd import constitution_app  # noqa: E402
 from milyonus.cli.cron_cmd import cron_app  # noqa: E402
 from milyonus.cli.eval_cmd import eval_app  # noqa: E402
+from milyonus.cli.evolve_cmd import evolve_app  # noqa: E402
+from milyonus.cli.flight_cmd import flight_app  # noqa: E402
 from milyonus.cli.gateway_cmd import gateway_app  # noqa: E402
 from milyonus.cli.imece_cmd import imece_app  # noqa: E402
+from milyonus.cli.lease_cmd import lease_app  # noqa: E402
 from milyonus.cli.mcp_cmd import mcp_app  # noqa: E402
 from milyonus.cli.memory_cmd import audit_app, memory_app  # noqa: E402
+from milyonus.cli.mesh_cmd import mesh_app  # noqa: E402
 from milyonus.cli.proactive_cmd import proactive_app  # noqa: E402
 from milyonus.cli.proof_cmd import proof_app  # noqa: E402
+from milyonus.cli.router_cmd import router_app  # noqa: E402
 from milyonus.cli.selfmod_cmd import selfmod_app  # noqa: E402
 from milyonus.cli.skills_cmd import skills_app  # noqa: E402
 from milyonus.cli.user_cmd import user_app  # noqa: E402
 from milyonus.cli.web_cmd import web_app  # noqa: E402
 
 app.add_typer(memory_app, name="memory")
+app.add_typer(branch_app, name="branch")
 app.add_typer(admin_app, name="admin")
 app.add_typer(audit_app, name="audit")
 app.add_typer(skills_app, name="skills")
@@ -271,6 +279,12 @@ app.add_typer(web_app, name="web")
 app.add_typer(proof_app, name="proof")
 app.add_typer(chaos_app, name="chaos")
 app.add_typer(arena_app, name="arena")
+app.add_typer(lease_app, name="lease")
+app.add_typer(constitution_app, name="constitution")
+app.add_typer(evolve_app, name="evolve")
+app.add_typer(flight_app, name="flight")
+app.add_typer(router_app, name="router")
+app.add_typer(mesh_app, name="mesh")
 
 
 def main() -> None:

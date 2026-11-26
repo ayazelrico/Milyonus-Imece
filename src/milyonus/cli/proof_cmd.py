@@ -95,3 +95,74 @@ def proof_verify(
         for err in result.errors:
             console.print(f"  - {err}")
         raise typer.Exit(code=1)
+
+
+@proof_app.command("disclose")
+def proof_disclose(
+    bundle_path: str = typer.Argument(..., help="Path to full `.milyonus-proof.json` capsule"),
+    reveal: str = typer.Option(
+        "gate2_reality,gate3_approval",
+        "--reveal",
+        "-r",
+        help="Comma-separated claim kinds to disclose (all other claims are blinded)",
+    ),
+    out: str = typer.Option(
+        "redacted.milyonus-disclosure.json", "--out", "-o", help="Output selective disclosure file"
+    ),
+) -> None:
+    """Create a cryptographic Selective Disclosure Merkle Proof hiding sensitive claims (H6)."""
+    from milyonus.security.disclosure import create_disclosure_proof
+
+    bf = Path(bundle_path)
+    if not bf.is_file():
+        console.print(f"[{PALETTE['risk']}]bundle not found: {bf}[/]")
+        raise typer.Exit(code=1)
+    bundle = json.loads(bf.read_text(encoding="utf-8"))
+    kinds = [k.strip() for k in reveal.split(",") if k.strip()]
+    try:
+        disc = create_disclosure_proof(bundle, reveal_kinds=kinds)
+    except ValueError as exc:
+        console.print(f"[{PALETTE['risk']}]{exc}[/]")
+        raise typer.Exit(code=1) from exc
+    out_file = Path(out)
+    out_file.parent.mkdir(parents=True, exist_ok=True)
+    out_file.write_text(json.dumps(disc, indent=2, ensure_ascii=False), encoding="utf-8")
+    console.print(
+        f"[{PALETTE['ok']}]{GLYPH} Selective disclosure proof written[/] → {out_file} "
+        f"[dim](revealed {disc['disclosed_count']}, blinded {disc['blinded_count']} · "
+        f"merkle {disc['merkle_root'][:12]}…)[/]"
+    )
+
+
+@proof_app.command("verify-disclosure")
+def proof_verify_disclosure(
+    disclosure_path: str = typer.Argument(..., help="Path to `.milyonus-disclosure.json` file"),
+    pubkey: str | None = typer.Option(
+        None, "--pubkey", help="Optional Ed25519 operator public key"
+    ),
+    require_signature: bool = typer.Option(False, "--require-signature"),
+) -> None:
+    """Verify a Selective Disclosure Merkle Proof offline without seeing blinded claims (H6)."""
+    from milyonus.security.disclosure import verify_disclosure_proof
+
+    df = Path(disclosure_path)
+    if not df.is_file():
+        console.print(f"[{PALETTE['risk']}]disclosure file not found: {df}[/]")
+        raise typer.Exit(code=1)
+    disc = json.loads(df.read_text(encoding="utf-8"))
+    res = verify_disclosure_proof(
+        disc,
+        pubkey_path=Path(pubkey) if pubkey is not None else None,
+        require_signature=require_signature,
+    )
+    if res.valid:
+        console.print(
+            f"[{PALETTE['ok']}]{GLYPH} DISCLOSURE VALID[/] "
+            f"({res.disclosed_count} disclosed, {res.blinded_count} blinded · "
+            f"merkle {res.merkle_root[:12]}…)"
+        )
+    else:
+        console.print(f"[{PALETTE['risk']}]{GLYPH} DISCLOSURE INVALID[/]")
+        for err in res.errors:
+            console.print(f"  - {err}")
+        raise typer.Exit(code=1)
