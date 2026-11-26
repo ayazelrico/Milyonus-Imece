@@ -107,15 +107,19 @@ def reconcile_completed_calls(path: Path, *, identity: dict, calls: list[dict]) 
                 continue
             if "error" in entry:
                 raise ValueError("completed CLI call contains an error")
-            reply = validated_reply(entry.get("reply"), entry.get("output_hash"))
+            raw_reply = entry.get("reply")
+            raw_hash = entry.get("output_hash")
+            if not isinstance(raw_reply, dict) or not isinstance(raw_hash, str):
+                raise ValueError("completed CLI call missing reply or output_hash")
+            reply = validated_reply(raw_reply, raw_hash)
             if row[1] == "completed":
                 validated_reply(json.loads(row[2]), row[3])
-                if row[3] != entry["output_hash"] or json.loads(row[2]) != asdict(reply):
+                if row[3] != raw_hash or json.loads(row[2]) != asdict(reply):
                     raise ValueError("CLI reply contradicts completed journal node")
             elif row[1] in ("running", "unknown") and row[2:] == (None, None):
                 db.execute(
                     "UPDATE nodes SET state='completed',reply=?,output_hash=? WHERE id=?",
-                    (json.dumps(asdict(reply)), entry["output_hash"], node),
+                    (json.dumps(asdict(reply)), raw_hash, node),
                 )
             else:
                 raise ValueError("CLI reply contradicts unfinished journal node")
@@ -148,12 +152,12 @@ class AgentJournal:
         self.fn = agent_fn
         self.identity = identity
         self.identity_hash = fingerprint(identity)
-        self.counts = Counter()
-        self.phase_counts = Counter()
+        self.counts: Counter[tuple[str, str]] = Counter()
+        self.phase_counts: Counter[str] = Counter()
         self.current_phase = "start:0"
-        self.parents = []
+        self.parents: list[str | tuple[str, str]] = []
         self.parent_hash = fingerprint([])
-        self.frontier = []
+        self.frontier: list[str | tuple[str, str]] = []
         self.replayed = 0
 
     def _initialize(self, identity: dict, *, created: bool) -> None:

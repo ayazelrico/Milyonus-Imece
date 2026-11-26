@@ -65,7 +65,8 @@ def parse_skill_md(text: str, path: Path) -> Skill:
     raw, body = _split_frontmatter(text)
     if "name" not in raw or "description" not in raw:
         raise SkillParseError("frontmatter must include 'name' and 'description'")
-    meta_block = raw.get("metadata") if isinstance(raw.get("metadata"), dict) else {}
+    raw_meta = raw.get("metadata")
+    meta_block: dict = raw_meta if isinstance(raw_meta, dict) else {}
     # Branded namespace is "milyonusagentskill"; "milyonus" is read as a fallback.
     ns = meta_block.get("milyonusagentskill") or meta_block.get("milyonus") or {}
     meta = SkillMeta(
@@ -85,14 +86,14 @@ def parse_skill_md(text: str, path: Path) -> Skill:
 
 def render_skill_md(meta: SkillMeta, body: str) -> str:
     """Serialize a skill back to SKILL.md text."""
-    fm = {
+    fm: dict[str, object] = {
         "name": meta.name,
         "description": meta.description,
         "version": meta.version,
     }
     if meta.platforms:
         fm["platforms"] = meta.platforms
-    ns: dict = {
+    ns: dict[str, object] = {
         "tags": meta.tags,
         "category": meta.category,
         "provenance": meta.provenance,

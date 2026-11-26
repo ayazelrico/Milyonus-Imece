@@ -130,7 +130,9 @@ async def frame(swarm: Swarm, request: str, n_agents: int) -> Frame:
             )
         ]
     )
-    data = parse_json(synth_text) or (frames[0] if frames else {})
+    parsed_synth = parse_json(synth_text)
+    fallback_frame = frames[0] if frames and frames[0] is not None else {}
+    data: dict[str, Any] = parsed_synth if parsed_synth is not None else fallback_frame
     criteria = tuple(_str_list(data.get("success_criteria"))) or (
         "The deliverable directly and completely answers the original request.",
     )
@@ -377,7 +379,7 @@ async def reality(
             and isinstance(f.get("needs_human", False), bool)
             for f in findings
         )
-        if not valid:
+        if not valid or findings is None:
             for cid in expected_ids:
                 reports[cid].findings.append(
                     Finding(
@@ -427,9 +429,9 @@ async def reality(
                     }
                 )
 
-        async with asyncio.TaskGroup() as group:
+        async with asyncio.TaskGroup() as tg:
             for candidate in candidates:
-                group.create_task(execute(candidate))
+                tg.create_task(execute(candidate))
     for cid, rep in reports.items():
         votes = tallies[cid]
         rep.pass_rate = sum(votes) / len(votes) if votes else 0.0

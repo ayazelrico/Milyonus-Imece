@@ -150,7 +150,11 @@ TASKS = (
 
 
 def _distribution(values: list[int | float | None]) -> dict[str, Any]:
-    known = sorted(v for v in values if type(v) in (int, float) and math.isfinite(v) and v >= 0)
+    known: list[int | float] = sorted(
+        v
+        for v in values
+        if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) and v >= 0
+    )
     complete = bool(values) and len(known) == len(values)
 
     def percentile(fraction):

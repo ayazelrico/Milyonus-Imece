@@ -151,7 +151,7 @@ def _sandbox_check() -> Check:
             )
         if not shutil.which("modal"):
             return Check("Sandbox", False, "modal CLI is unavailable on PATH")
-        return Check("Sandbox", True, "modal · CLI present (command-only sandbox)")
+        return Check("Sandbox", True, "modal · CLI present (workspace-synced sandbox)")
     if backend == "daytona":
         url = (os.environ.get("DAYTONA_API_URL") or "").strip()
         key = (os.environ.get("DAYTONA_API_KEY") or "").strip()
@@ -161,8 +161,30 @@ def _sandbox_check() -> Check:
                 False,
                 "daytona · set DAYTONA_API_URL and DAYTONA_API_KEY (no local fallback)",
             )
-        return Check("Sandbox", True, f"daytona · {url}")
+        return Check("Sandbox", True, f"daytona · {url} (workspace-synced)")
     return Check("Sandbox", False, f"unknown sandbox backend: {backend}")
+
+
+def _skills_publications_check() -> Check:
+    from milyonus.config.paths import skills_dir
+    from milyonus.skills.publication import recover_publications
+
+    root = skills_dir()
+    if not root.exists():
+        return Check("Skills", True, "clean (no user skill transactions)")
+    rows = recover_publications(root, apply=False)
+    issues = [
+        r
+        for r in rows
+        if r["status"] in {"recoverable", "unrecognized", "ambiguous", "recovery_failed"}
+    ]
+    if not issues:
+        return Check("Skills", True, "catalog clean")
+    return Check(
+        "Skills",
+        False,
+        f"{len(issues)} interrupted publication(s) — run `milyonus skills recover-publications --apply`",
+    )
 
 
 def run_doctor() -> int:
@@ -181,6 +203,7 @@ def run_doctor() -> int:
         _env_check(),
         _provider_check(),
         _sandbox_check(),
+        _skills_publications_check(),
     ]
 
     table = Table(show_header=True, header_style=f"bold {PALETTE['chrome_200']}")

@@ -208,17 +208,21 @@ def recover_publications(root: Path, *, apply: bool = False) -> list[dict]:
             finally:
                 if directory is not None:
                     os.close(directory)
-        counts = Counter(row["name"] for row in rows if row["name"] is not None)
+        counts = Counter(row["name"] for row in rows if isinstance(row["name"], str))
         for row in rows:
             if row["status"] != "recoverable":
                 continue
-            if counts[row["name"]] > 1:
+            name_val = row["name"]
+            tx_val = row["transaction"]
+            if not isinstance(name_val, str) or not isinstance(tx_val, str):
+                continue
+            if counts[name_val] > 1:
                 row["status"] = "ambiguous"
                 continue
             if apply:
-                directory = os.open(row["transaction"], _DIR, dir_fd=catalog)
+                directory = os.open(tx_val, _DIR, dir_fd=catalog)
                 try:
-                    os.rename("previous", row["name"], src_dir_fd=directory, dst_dir_fd=catalog)
+                    os.rename("previous", name_val, src_dir_fd=directory, dst_dir_fd=catalog)
                     row.update(status="restored", restored=True)
                     os.fsync(directory)
                     os.fsync(catalog)

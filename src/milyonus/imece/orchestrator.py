@@ -18,7 +18,7 @@ import json
 import random
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
-from typing import Literal
+from typing import Any, Literal
 
 from milyonus.config.paths import data_root
 from milyonus.imece import gates
@@ -258,7 +258,7 @@ class Imece:
             else None
         )
         self._should_stop = should_stop or (lambda: False)
-        self._reproductions = [] if capture_reproductions else None
+        self._reproductions: list[dict[str, Any]] | None = [] if capture_reproductions else None
         self._on_phase = on_phase or (lambda _p: None)
 
     # ── helpers ────────────────────────────────────────────────────────────
@@ -289,22 +289,22 @@ class Imece:
             if not changed:
                 parts.append(f"Same named Python files as {candidates[0].id}.")
                 if files and c is candidates[0]:
-                    name = min(files)
-                    parts.append(f"Reference excerpt ({name}):\n" + clip(files[name], 440))
+                    ref_name = min(files)
+                    parts.append(f"Reference excerpt ({ref_name}):\n" + clip(files[ref_name], 440))
             else:
                 parts.append(
                     f"Files differing from {candidates[0].id}: " + clip(", ".join(changed), 220)
                 )
-                name = next((n for n in changed if n in files), None)
-                if name is not None:
-                    old = anchor.get(name, "").splitlines()
-                    new = files[name].splitlines()
+                diff_name = next((n for n in changed if n in files), None)
+                if diff_name is not None:
+                    old = anchor.get(diff_name, "").splitlines()
+                    new = files[diff_name].splitlines()
                     offset = next(
                         (i for i, (x, y) in enumerate(zip(old, new, strict=False)) if x != y),
                         min(len(old), len(new)),
                     )
                     parts.append(
-                        f"First change in {name}, line {offset + 1}:\n"
+                        f"First change in {diff_name}, line {offset + 1}:\n"
                         + clip("\n".join(new[offset : offset + 4]), 440)
                     )
             results = report.test_results
@@ -818,7 +818,8 @@ class Imece:
             and texts[0].strip()
             and not texts[0].startswith("(agent failed")
         ):
-            result.applied_repair_skills.append({**repair_briefing, "response_received": True})
+            applied_entry: dict[str, Any] = {**repair_briefing, "response_received": True}
+            result.applied_repair_skills.append(applied_entry)
         return [
             Candidate(f"R{rnd}-C{i + 1}", name, author, text)
             for i, ((name, author), text) in enumerate(zip(jobs, texts, strict=True))
@@ -877,8 +878,10 @@ class Imece:
         """Role rotation: every candidate is critiqued by a builder from another
         approach (never its author), then its author revises — borrowing from
         the best other survivor (crossover)."""
-        no_change_eligible = fr is not None and self._revision_no_change_eligible(
-            survivors, reports
+        no_change_eligible = (
+            fr is not None
+            and reports is not None
+            and self._revision_no_change_eligible(survivors, reports)
         )
         critics = []
         eligible_ids = set()
@@ -892,7 +895,14 @@ class Imece:
             context = self._ctx(fr, ("Candidate", c.solution)) if fr is not None else c.solution
             goal = "Critique this candidate against the frozen contract. Identify concrete within-scope failures; do not invent requirements or demand handling of inputs explicitly excluded by assumptions. Say no issues if none are demonstrable."
             criteria = ["Bullet list of concrete flaws, most serious first."]
-            if no_change_eligible and other is not None and not reports[c.id].findings:
+            if (
+                no_change_eligible
+                and fr is not None
+                and reports is not None
+                and other is not None
+                and donor is not None
+                and not reports[c.id].findings
+            ):
                 eligible_ids.add(c.id)
                 context = self._ctx(
                     fr,
@@ -945,7 +955,7 @@ class Imece:
             revising.append(c)
             donor = next((o for o in survivors if o.id != c.id), None)
             gate_findings = ""
-            if no_change_eligible and reports[c.id].findings:
+            if no_change_eligible and reports is not None and reports[c.id].findings:
                 gate_findings = "\n\n# Gate findings\n" + clip(reports[c.id].evidence(), 2000)
             revisers.append(
                 AgentSpec(
