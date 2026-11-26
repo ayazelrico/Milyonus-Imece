@@ -258,6 +258,17 @@ from milyonus.cli.proactive_cmd import proactive_app  # noqa: E402
 from milyonus.cli.proof_cmd import proof_app  # noqa: E402
 from milyonus.cli.router_cmd import router_app  # noqa: E402
 from milyonus.cli.selfmod_cmd import selfmod_app  # noqa: E402
+from milyonus.cli.singularity_cmd import (  # noqa: E402
+    certify_app,
+    dag_app,
+    economy_app,
+    fuzz_app,
+    passport_app,
+    privacy_app,
+    shadow_app,
+    shield_app,
+    surgeon_app,
+)
 from milyonus.cli.skills_cmd import skills_app  # noqa: E402
 from milyonus.cli.user_cmd import user_app  # noqa: E402
 from milyonus.cli.web_cmd import web_app  # noqa: E402
@@ -285,6 +296,15 @@ app.add_typer(evolve_app, name="evolve")
 app.add_typer(flight_app, name="flight")
 app.add_typer(router_app, name="router")
 app.add_typer(mesh_app, name="mesh")
+app.add_typer(shield_app, name="shield")
+app.add_typer(passport_app, name="passport")
+app.add_typer(shadow_app, name="shadow")
+app.add_typer(surgeon_app, name="surgeon")
+app.add_typer(dag_app, name="dag")
+app.add_typer(privacy_app, name="privacy")
+app.add_typer(certify_app, name="certify")
+app.add_typer(fuzz_app, name="fuzz")
+app.add_typer(economy_app, name="economy")
 
 
 def main() -> None:
