@@ -52,6 +52,23 @@ POST   /v1/attachments · POST /v1/files               → text / PDF / PNG / JP
 GET    /v1/attachments · DELETE /v1/attachments/{id}
 GET    /v1/export                                     → full JSON export (sessions + messages + memory + feedback + provenance + audit)
 DELETE /v1/account                                    → ADR-0011 erasure (tombstones memory, preserves ledger chain)
+
+# Moonshot M1–M5 endpoints (PLAN-MOONSHOT.md)
+GET    /v1/memory/timeline                            → hash-verified ledger checkpoints
+GET    /v1/memory/snapshot?seq=&at=                   → reconstructed historical memory snapshot
+GET    /v1/memory/diff?from_seq=&to_seq=              → epoch-to-epoch memory diff
+POST   /v1/memory/counterfactual   {source_uri}       → zero-mutation counterfactual revocation report
+
+GET    /v1/sessions/{id}/proof                        → verifiable `.milyonus-proof.json` capsule
+POST   /v1/proofs/verify           {bundle}           → offline Merkle + Ed25519 capsule verifier
+
+GET    /v1/imece/runs · POST /v1/imece/runs           → launch/list Live İmece War Room runs
+GET    /v1/imece/runs/{id} · /stream · /proof         → run detail, SSE phase stream, proof capsule
+POST   /v1/imece/runs/{id}/stop                       → emergency stop between collective phases
+
+POST   /v1/security/chaos                             → isolated 6-vector Adversarial Chaos Immunity Scorecard
+POST   /v1/sessions/{id}/forge-skill {name, ...}      → distill, scan, and publish a verified SKILL.md
+GET    /v1/arena/leaderboard · POST /v1/arena/match   → head-to-head Strategy Arena + Elo leaderboard
 ```
 
 ## SSE events
