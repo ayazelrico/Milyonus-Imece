@@ -64,29 +64,31 @@ class SemanticMemory:
     def index_item(self, item: MemoryItem) -> bool:
         """Embed and store one item's vector. Safe to call repeatedly; returns
         False if embeddings are disabled or the embed call failed."""
-        if not self.enabled:
+        embedder = self.embedder
+        if embedder is None:
             return False
         try:
-            vec = self.embedder.embed([item.content])[0]
+            vec = embedder.embed([item.content])[0]
         except Exception:  # noqa: BLE001 - network/model failure must not break writes
             return False
-        self.index.upsert(item.id, vec, model=self.embedder.signature)
+        self.index.upsert(item.id, vec, model=embedder.signature)
         return True
 
     def reindex(self) -> int:
         """(Re)embed every active memory for the current embedder. Returns the
         number indexed. Used after switching embedders or on first enable."""
-        if not self.enabled:
+        embedder = self.embedder
+        if embedder is None:
             return 0
         items = self.store.active()
         if not items:
             return 0
         try:
-            vectors = self.embedder.embed([m.content for m in items])
+            vectors = embedder.embed([m.content for m in items])
         except Exception:  # noqa: BLE001 - degrade cleanly
             return 0
         for item, vec in zip(items, vectors, strict=False):
-            self.index.upsert(item.id, vec, model=self.embedder.signature)
+            self.index.upsert(item.id, vec, model=embedder.signature)
         return len(items)
 
     # --- recall ---------------------------------------------------------
@@ -96,11 +98,12 @@ class SemanticMemory:
         embeddings are disabled (caller falls back to lexical search). When
         `actor` is given, recall is scoped to that user's memory (cross-session
         user model) so one user's profile never leaks into another's answer."""
-        if not self.enabled:
+        embedder = self.embedder
+        if embedder is None:
             return []
         k = k or self.config.vector_recall_k
         try:
-            qvec = self.embedder.embed([query])[0]
+            qvec = embedder.embed([query])[0]
         except Exception:  # noqa: BLE001 - degrade to lexical
             return []
         items = self.store.active_by_actor(actor) if actor is not None else self.store.active()
@@ -108,7 +111,7 @@ class SemanticMemory:
         # Over-fetch by cosine, then re-rank by cosine*trust and take top-k.
         hits = self.index.search(
             qvec,
-            model=self.embedder.signature,
+            model=embedder.signature,
             k=max(k * 3, k),
             allowed_ids=set(active),
         )

@@ -116,6 +116,129 @@ def chat() -> None:
     raise typer.Exit(code=run_tui())
 
 
+@app.command()
+def run(
+    task: str = typer.Argument(..., help="One-shot task prompt for the agent"),
+    yes: bool = typer.Option(
+        False,
+        "--yes",
+        "-y",
+        help="Approve caution/danger tools automatically (hard-blocked patterns stay blocked).",
+    ),
+    max_iterations: int = typer.Option(25, "--max-iterations", min=1, max=100),
+) -> None:
+    """Run a single non-interactive task and print the final answer (PLAN §10)."""
+    import asyncio
+    from pathlib import Path
+
+    from milyonus.config.env import load_env
+    from milyonus.config.loader import load_config
+    from milyonus.core.budget import Budget
+    from milyonus.core.loop import AgentLoop
+    from milyonus.core.store import SessionStore
+    from milyonus.memory.factory import verified_pipeline
+    from milyonus.memory.render import build_snapshot
+    from milyonus.memory.store import MemoryStore
+    from milyonus.memory.tool import make_memory_tools
+    from milyonus.prompt.builder import build_system_prompt, skill_index_section
+    from milyonus.prompt.compressor import compact_history
+    from milyonus.providers.base import Message, ProviderError, ToolCall
+    from milyonus.providers.router import build_provider
+    from milyonus.research.tool import make_research_tools
+    from milyonus.security.context_files import safe_context_sections
+    from milyonus.security.risk import RiskEngine
+    from milyonus.skills.engine import SkillEngine
+    from milyonus.skills.manage import SkillManager
+    from milyonus.skills.tool import make_skill_tools
+    from milyonus.tools.clarify import ClarifyBudget, make_clarify_tool
+    from milyonus.tools.fs.tools import make_fs_tools
+    from milyonus.tools.registry import ToolRegistry
+    from milyonus.tools.terminal.tools import make_shell_tool
+    from milyonus.tools.web.tools import make_web_tools
+
+    load_env()
+    try:
+        cfg = load_config()
+    except Exception as exc:  # noqa: BLE001
+        console.print(f"[{PALETTE['risk']}]Config error:[/] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    async def _exec() -> int:
+        root = Path.cwd()
+        provider = build_provider(cfg.provider)
+        mem_store = MemoryStore()
+        store = SessionStore()
+        try:
+            pipeline = verified_pipeline(mem_store, cfg)
+            sid = store.create_session("cli", user_ref="local", title=task[:60])
+            reg = ToolRegistry()
+            for t in make_fs_tools(root):
+                reg.register(t)
+            reg.register(
+                make_shell_tool(
+                    root,
+                    backend=cfg.security.sandbox_backend,
+                    image=cfg.security.sandbox_image,
+                )
+            )
+            for t in make_web_tools():
+                reg.register(t)
+            for t in make_memory_tools(pipeline, session_id=sid, user_ref="local"):
+                reg.register(t)
+            skill_eng = SkillEngine()
+            for t in make_skill_tools(skill_eng, SkillManager()):
+                reg.register(t)
+            for t in make_research_tools(provider):
+                reg.register(t)
+            clarify_budget = ClarifyBudget(max_per_turn=1)
+            reg.register(make_clarify_tool(None, budget=clarify_budget))
+
+            snapshot = build_snapshot(mem_store, config=cfg.memory, user_ref="local")
+            extras = [skill_index_section(skill_eng.list_level0())]
+            ctx_sections, _ = safe_context_sections(root)
+            extras.extend(ctx_sections)
+            system = build_system_prompt(memory=snapshot, extra_sections=extras)
+            risk_engine = RiskEngine()
+
+            async def approve(call: ToolCall, risk: str) -> bool:
+                decision, _reason, _ = risk_engine.classify(call, risk)
+                if decision == "block":
+                    return False
+                return decision == "auto" or yes
+
+            async def _compress(msgs, pressure):
+                res = await compact_history(msgs, pressure=pressure)
+                return res.messages, (res.banner if res.compacted else None)
+
+            loop = AgentLoop(
+                provider=provider,
+                tools=reg,
+                system_prompt=system,
+                budget=Budget(max_iterations=max_iterations),
+                approve=approve,
+                risk_engine=risk_engine,
+                clarify_budget=clarify_budget,
+                compressor=_compress,
+                max_output_tokens=cfg.provider.max_output_tokens,
+                max_tool_result_chars=8_000,
+            )
+            store.append_message(sid, turn=1, role="user", content=task)
+            history = [Message(role="user", content=task)]
+            try:
+                answer = await loop.run_turn(history)
+            except ProviderError as exc:
+                console.print(f"[{PALETTE['risk']}]Provider error:[/] {exc}")
+                return 1
+            store.append_message(sid, turn=1, role="assistant", content=answer)
+            console.print(answer, markup=False)
+            return 0
+        finally:
+            store.close()
+            mem_store.close()
+
+    raise typer.Exit(code=asyncio.run(_exec()))
+
+
 from milyonus.cli.admin_cmd import admin_app  # noqa: E402
 from milyonus.cli.cron_cmd import cron_app  # noqa: E402
 from milyonus.cli.eval_cmd import eval_app  # noqa: E402

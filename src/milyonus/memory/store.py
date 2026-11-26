@@ -20,6 +20,7 @@ import sqlite3
 import time
 import uuid
 from pathlib import Path
+from typing import Any
 from urllib.parse import urlsplit
 
 from milyonus.config.paths import state_db
@@ -189,10 +190,34 @@ class MemoryStore:
             prev = row["entry_hash"]
         return True
 
+    def ledger_head(self) -> str:
+        """Current tip hash of the audit ledger (genesis hash if empty)."""
+        return self._ledger_head()
+
     def ledger_entries(self, *, limit: int = 100) -> list[sqlite3.Row]:
         return self._conn.execute(
             "SELECT * FROM memory_ledger ORDER BY seq DESC LIMIT ?", (limit,)
         ).fetchall()
+
+    def erase_all(self) -> int:
+        """Tombstone every memory row and wipe personal text while preserving
+        the hash-chained audit ledger (ADR-0011 / KVKK-GDPR erasure)."""
+        cur = self._conn.execute(
+            "UPDATE memory SET content='', state='erased', source_uri=NULL, "
+            "session_id=NULL, turn_id=NULL, actor=NULL, verdict=NULL, "
+            "signature=NULL, key_fingerprint=NULL WHERE state != 'erased'"
+        )
+        tombstoned = cur.rowcount or 0
+        self._conn.execute("DELETE FROM negative_memory")
+        self._conn.execute("DELETE FROM memory_confirmations")
+        has_vec = self._conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='memory_vectors'"
+        ).fetchone()
+        if has_vec is not None:
+            self._conn.execute("DELETE FROM memory_vectors")
+        self._ledger_append("erase", None, {"tombstoned": tombstoned})
+        self._conn.commit()
+        return tombstoned
 
     # --- candidate insertion (always pending; never active) -------------
 
@@ -544,11 +569,53 @@ class MemoryStore:
         ).fetchall()
         return [self._row_to_item(r) for r in rows]
 
-    def find_similar_active(self, content: str, source_kind: SourceKind) -> MemoryItem | None:
-        """Exact-content dedup within active memory (embedding-based similarity
-        arrives with the optional vec layer in a later step)."""
+    def find_similar_active(
+        self,
+        content: str,
+        source_kind: SourceKind,
+        *,
+        embedder: Any = None,
+        similarity_threshold: float = 0.88,
+    ) -> MemoryItem | None:
+        """Exact-content dedup within active memory, with optional vector
+        cosine-similarity fallback when an embedder is supplied."""
         row = self._conn.execute(
             "SELECT * FROM memory WHERE state='active' AND content=? LIMIT 1",
             (content,),
         ).fetchone()
-        return self._row_to_item(row) if row else None
+        if row is not None:
+            return self._row_to_item(row)
+        if embedder is None:
+            return None
+        active_items = self.active()
+        if not active_items:
+            return None
+        try:
+            from milyonus.memory.vector import VectorIndex, cosine
+
+            qvec = embedder.embed([content])[0]
+            active_map = {m.id: m for m in active_items}
+            idx = VectorIndex(self.path)
+            try:
+                hits = idx.search(
+                    qvec,
+                    model=embedder.signature,
+                    k=1,
+                    allowed_ids=set(active_map),
+                )
+            finally:
+                idx.close()
+            if hits and hits[0][1] >= similarity_threshold:
+                return active_map[hits[0][0]]
+            # Fall back to direct embedding comparison for items not yet indexed.
+            vecs = embedder.embed([m.content for m in active_items])
+            best_item: MemoryItem | None = None
+            best_sim = 0.0
+            for item, vec in zip(active_items, vecs, strict=False):
+                sim = cosine(qvec, vec)
+                if sim >= similarity_threshold and sim > best_sim:
+                    best_sim = sim
+                    best_item = item
+            return best_item
+        except Exception:  # noqa: BLE001 - semantic dedup degrades cleanly
+            return None

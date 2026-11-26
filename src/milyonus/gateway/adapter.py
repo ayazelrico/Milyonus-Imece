@@ -8,7 +8,7 @@ question in-chat. Everything else — the agent loop, memory, security — is sh
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
@@ -47,8 +47,4 @@ class ChannelAdapter(Protocol):
 
     async def ask_approval(self, user_id: str, prompt: str) -> bool:
         """Ask a yes/no question in-chat and await the answer."""
-        ...
-
-    def incoming(self) -> AsyncIterator[InboundMessage]:  # pragma: no cover
-        """Optional: expose a stream of inbound messages (used by tests)."""
         ...

@@ -108,10 +108,18 @@ class MemoryPipeline:
             self.store.expire_due()
             return "expired"
 
-        # 1. Rephrase-of-rejected check (negative memory).
+        # 1. Rephrase-of-rejected check (negative memory: lexical + semantic).
         prior_neg = [n["content"] for n in self.store.negatives()]
+        embedder = (
+            self.semantic.embedder
+            if self.semantic is not None and getattr(self.semantic, "enabled", False)
+            else None
+        )
         rephrase, matched, score = is_rephrase(
-            item.content, prior_neg, threshold=self.config.rephrase_similarity
+            item.content,
+            prior_neg,
+            threshold=self.config.rephrase_similarity,
+            embedder=embedder,
         )
         if rephrase:
             self.store.mark_rejected(

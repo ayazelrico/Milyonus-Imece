@@ -79,3 +79,56 @@ def cron_remove(task_id: str) -> None:
     else:
         console.print(f"[{PALETTE['risk']}]not found: {task_id}[/]")
         raise typer.Exit(code=1)
+
+
+@cron_app.command("run")
+def cron_run(
+    task_id: str | None = typer.Argument(
+        None, help="Run a specific task id immediately (otherwise runs all due tasks)."
+    ),
+) -> None:
+    """Execute due scheduled tasks (or one specific task) immediately."""
+    import asyncio
+    from pathlib import Path
+
+    from milyonus.config.env import load_env
+    from milyonus.config.loader import load_config
+    from milyonus.proactive.runner import run_scheduled_task
+    from milyonus.providers.router import build_provider
+
+    load_env()
+    cfg = load_config()
+    provider = build_provider(cfg.provider)
+    store = CronStore()
+    if task_id is not None:
+        tasks = [t for t in store.list() if t.id == task_id]
+        if not tasks:
+            console.print(f"[{PALETTE['risk']}]not found: {task_id}[/]")
+            raise typer.Exit(code=1)
+    else:
+        tasks = store.due()
+        if not tasks:
+            console.print(f"[dim]{GLYPH} no due scheduled tasks.[/]")
+            return
+
+    async def _run_all() -> int:
+        failures = 0
+        for t in tasks:
+            answer, trace, denied = await run_scheduled_task(
+                t,
+                provider=provider,
+                workspace=Path.cwd(),
+                max_output_tokens=cfg.provider.max_output_tokens,
+            )
+            store.mark_ran(t.id)
+            color = PALETTE["ok"] if trace.success else PALETTE["risk"]
+            console.print(f"[{color}]{GLYPH} {t.name}[/] ({trace.outcome})")
+            console.print(answer, markup=False)
+            if denied:
+                console.print(f"[{PALETTE['warn']}]denied: {', '.join(denied)}[/]")
+            if not trace.success:
+                failures += 1
+        return failures
+
+    if asyncio.run(_run_all()):
+        raise typer.Exit(code=1)

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
+from typing import Any, Protocol
 
 from milyonus.core.budget import Budget
 from milyonus.providers.base import (
@@ -25,13 +26,33 @@ from milyonus.providers.base import (
 from milyonus.security.risk import RiskEngine
 from milyonus.tools.registry import ToolRegistry
 
+
+class TracerProtocol(Protocol):
+    def start_model_call(self) -> None: ...
+    def end_model_call(
+        self, *, input_tokens: int, output_tokens: int, stop_reason: str | None
+    ) -> None: ...
+    def record_tool_call(
+        self,
+        *,
+        name: str,
+        arguments: dict[str, Any],
+        is_error: bool,
+        duration_s: float,
+        approved: bool | None,
+    ) -> None: ...
+
+
 # Called before a non-safe tool runs. No approval handler means deny.
 ApproveFn = Callable[[ToolCall, str], Awaitable[bool]]
 
 # Streaming sinks. on_text gets assistant text chunks; on_tool announces a call.
 TextSink = Callable[[str], Awaitable[None]]
 ToolSink = Callable[[ToolCall], Awaitable[None]]
+ToolResultSink = Callable[[ToolCall, str, bool, float], Awaitable[None]]
 DeniedSink = Callable[[ToolCall, str], Awaitable[None]]
+CompactFn = Callable[[list[Message], float], Awaitable[tuple[list[Message], str | None]]]
+CompactedSink = Callable[[str], Awaitable[None]]
 
 
 async def _deny_default(_call: ToolCall, _risk: str) -> bool:
@@ -46,7 +67,17 @@ async def _noop_tool(_c: ToolCall) -> None:  # pragma: no cover - trivial
     return None
 
 
+async def _noop_tool_result(
+    _c: ToolCall, _content: str, _is_error: bool, _duration_s: float
+) -> None:  # pragma: no cover - trivial
+    return None
+
+
 async def _noop_denied(_c: ToolCall, _reason: str) -> None:
+    return None
+
+
+async def _noop_compacted(_banner: str) -> None:  # pragma: no cover - trivial
     return None
 
 
@@ -59,23 +90,40 @@ class AgentLoop:
     approve: ApproveFn = _deny_default
     on_text: TextSink = _noop_text
     on_tool: ToolSink = _noop_tool
+    on_tool_result: ToolResultSink = _noop_tool_result
     on_denied: DeniedSink = _noop_denied
+    on_compacted: CompactedSink = _noop_compacted
     max_output_tokens: int = 4096
     # Optional observability. When set, the loop records model/tool events for
     # evaluation. Passive and off by default — existing behavior is unchanged.
-    tracer: object | None = None
+    tracer: TracerProtocol | None = None
     risk_engine: RiskEngine = field(default_factory=RiskEngine)
+    # Optional turn-scoped clarify budget and context compressor.
+    clarify_budget: object | None = None
+    compressor: CompactFn | None = None
+    # When > 0, tool output appended to LLM history is head+tail truncated to
+    # this char cap while `on_tool_result` still receives the full output.
+    max_tool_result_chars: int = 0
 
     async def run_turn(self, history: list[Message]) -> str:
         """Advance the conversation until a final assistant message. `history`
         is mutated in place with the new assistant/tool messages."""
         import time as _time
 
+        if self.clarify_budget is not None and hasattr(self.clarify_budget, "reset"):
+            self.clarify_budget.reset()
+
         while True:
             if self.budget.exhausted():
                 note = "(budget exhausted — task stopped here)"
                 history.append(Message(role="assistant", content=note))
                 return note
+
+            if self.compressor is not None:
+                compacted_msgs, banner = await self.compressor(history, self.budget.pressure())
+                if banner is not None:
+                    history[:] = compacted_msgs
+                    await self.on_compacted(banner)
 
             request = CompletionRequest(
                 system=self.system_prompt,
@@ -132,6 +180,8 @@ class AgentLoop:
                     approved = decision != "block" and await self.approve(call, risk)
                     if not approved:
                         await self.on_denied(call, reason)
+                        denied_msg = f"(tool denied: {reason})"
+                        await self.on_tool_result(call, denied_msg, True, 0.0)
                         if self.tracer is not None:
                             self.tracer.record_tool_call(
                                 name=call.name,
@@ -143,22 +193,33 @@ class AgentLoop:
                         results.append(
                             ToolResult(
                                 call_id=call.id,
-                                content=f"(tool denied: {reason})",
+                                content=denied_msg,
                                 is_error=True,
                             )
                         )
                         continue
                 t0 = _time.perf_counter()
                 content, is_error = await self.tools.run(call.name, call.arguments)
+                dur = _time.perf_counter() - t0
+                await self.on_tool_result(call, content, is_error, dur)
                 if self.tracer is not None:
                     self.tracer.record_tool_call(
                         name=call.name,
                         arguments=call.arguments,
                         is_error=is_error,
-                        duration_s=_time.perf_counter() - t0,
+                        duration_s=dur,
                         approved=approved,
                     )
-                results.append(ToolResult(call_id=call.id, content=content, is_error=is_error))
+                model_content = content
+                if self.max_tool_result_chars > 0:
+                    from milyonus.prompt.compressor import truncate_tool_output
+
+                    model_content, _ = truncate_tool_output(
+                        content, max_chars=self.max_tool_result_chars
+                    )
+                results.append(
+                    ToolResult(call_id=call.id, content=model_content, is_error=is_error)
+                )
             history.append(Message(role="tool", tool_results=results))
             # loop continues: model sees tool results and responds
 

@@ -224,9 +224,40 @@ async def _run_ssh(command: str, *, root: Path, image: str, timeout: float) -> S
     return SandboxResult(proc.returncode or 0, text)
 
 
+_MAX_WORKSPACE_SYNC_BYTES = 10 * 1024 * 1024  # 10 MiB compressed archive cap
+
+
+def _pack_workspace_b64(root: Path, *, max_bytes: int = _MAX_WORKSPACE_SYNC_BYTES) -> str:
+    """Pack regular files under `root` into a bounded base64 tar.gz (no symlinks)."""
+    import base64
+    import io
+    import tarfile
+
+    buf = io.BytesIO()
+    total = 0
+    with tarfile.open(fileobj=buf, mode="w:gz") as tf:
+        for path in sorted(root.rglob("*")):
+            if path.is_symlink() or not path.is_file():
+                continue
+            rel = path.relative_to(root)
+            if any(part in (".git", ".venv", "node_modules", "__pycache__") for part in rel.parts):
+                continue
+            if rel.name == ".env" or rel.name.startswith(".env."):
+                continue
+            size = path.stat().st_size
+            total += size
+            if total > max_bytes * 4:
+                raise SandboxUnavailable("workspace exceeds remote sandbox sync limit")
+            tf.add(path, arcname=rel.as_posix(), recursive=False)
+    raw = buf.getvalue()
+    if len(raw) > max_bytes:
+        raise SandboxUnavailable("compressed workspace archive exceeds remote sandbox sync limit")
+    return base64.b64encode(raw).decode("ascii")
+
+
 async def _run_modal(command: str, *, root: Path, image: str, timeout: float) -> SandboxResult:
-    """Execute via the Modal CLI when configured; never fall back to local."""
-    del root, image  # command-only in v1; use docker/ssh when files are required
+    """Execute via the Modal CLI with workspace sync; never fall back to local."""
+    del image
     has_token = bool(os.environ.get("MODAL_TOKEN_ID") or os.environ.get("MODAL_TOKEN_SECRET"))
     opted_in = os.environ.get("MILYONUS_SANDBOX_MODAL", "").strip().lower() in (
         "1",
@@ -238,17 +269,22 @@ async def _run_modal(command: str, *, root: Path, image: str, timeout: float) ->
             "modal sandbox requires MILYONUS_SANDBOX_MODAL=1 and a logged-in "
             "Modal CLI (or MODAL_TOKEN_ID/SECRET); refusing local fallback"
         )
+    archive_b64 = _pack_workspace_b64(root)
     body = (
-        "import modal, subprocess, sys\n"
+        "import base64, io, modal, subprocess, sys, tarfile, tempfile\n"
         "app = modal.App('milyonus-shell')\n"
         "image = modal.Image.debian_slim().pip_install()\n"
         f"@app.function(image=image, timeout=int({int(timeout)}))\n"
-        "def run(cmd: str) -> tuple[int, str]:\n"
-        "    p = subprocess.run(['/bin/sh','-c',cmd], capture_output=True, text=True)\n"
-        "    return p.returncode, (p.stdout or '') + (p.stderr or '')\n"
+        "def run(cmd: str, ws_b64: str) -> tuple[int, str]:\n"
+        "    with tempfile.TemporaryDirectory(prefix='milyonus-ws-') as td:\n"
+        "        if ws_b64:\n"
+        "            with tarfile.open(fileobj=io.BytesIO(base64.b64decode(ws_b64)), mode='r:gz') as tf:\n"
+        "                tf.extractall(td, filter='data')\n"
+        "        p = subprocess.run(['/bin/sh','-c',cmd], cwd=td, capture_output=True, text=True)\n"
+        "        return p.returncode, (p.stdout or '') + (p.stderr or '')\n"
         "@app.local_entrypoint()\n"
-        "def main(cmd: str):\n"
-        "    code, out = run.remote(cmd)\n"
+        "def main(cmd: str, ws_b64: str = ''):\n"
+        "    code, out = run.remote(cmd, ws_b64)\n"
         "    sys.stdout.write(out)\n"
         "    raise SystemExit(code)\n"
     )
@@ -262,6 +298,8 @@ async def _run_modal(command: str, *, root: Path, image: str, timeout: float) ->
             script_path,
             "--cmd",
             command,
+            "--ws-b64",
+            archive_b64,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT,
             env=safe_env(dict(os.environ)),
@@ -284,8 +322,7 @@ async def _run_modal(command: str, *, root: Path, image: str, timeout: float) ->
 
 
 async def _run_daytona(command: str, *, root: Path, image: str, timeout: float) -> SandboxResult:
-    """Daytona sandbox via REST API (DAYTONA_API_KEY + DAYTONA_API_URL)."""
-    del root  # workspace sync lands in a follow-up; command-only for v1
+    """Daytona sandbox via REST API (DAYTONA_API_KEY + DAYTONA_API_URL) with workspace sync."""
     api_url = (os.environ.get("DAYTONA_API_URL") or "").rstrip("/")
     api_key = os.environ.get("DAYTONA_API_KEY", "").strip()
     if not api_url or not api_key:
@@ -295,12 +332,14 @@ async def _run_daytona(command: str, *, root: Path, image: str, timeout: float) 
         )
     import httpx
 
+    archive_b64 = _pack_workspace_b64(root)
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     payload = {
         "command": ["/bin/sh", "-c", command],
         "image": image,
         "timeout": int(timeout),
         "network": False,
+        "workspace_tar_gz_b64": archive_b64,
     }
     async with httpx.AsyncClient(timeout=timeout + 15) as client:
         try:

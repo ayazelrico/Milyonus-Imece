@@ -22,6 +22,9 @@ _DENIED_TOOLS = {
     "memory_propose",
     "skill_manage",
     "run_shell",
+    "clarify",
+    "send_email",
+    "send_message",
 }
 
 

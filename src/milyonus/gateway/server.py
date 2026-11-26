@@ -48,8 +48,10 @@ _log = logging.getLogger("milyonus.gateway")
 
 @dataclass
 class _UserSession:
+    session_id: str | None = None
     history: list[Message] = field(default_factory=list)
     budget: Budget = field(default_factory=Budget)
+    turn: int = 0
 
 
 class GatewayServer:
@@ -61,12 +63,17 @@ class GatewayServer:
         workspace,
         pairing: PairingManager | None = None,
         mem_store: MemoryStore | None = None,
+        session_store=None,
     ) -> None:
+        from milyonus.core.store import SessionStore
+
         self.config = config
         self.adapters = {a.name: a for a in adapters}
         self.workspace = workspace
         self.pairing = pairing or PairingManager()
         self.mem_store = mem_store or MemoryStore()
+        self.session_store = session_store or SessionStore(self.mem_store.path)
+        self.semantic: object | None
         try:
             from milyonus.memory.semantic import SemanticMemory
 
@@ -89,9 +96,32 @@ class GatewayServer:
         return f"{msg.channel}:{msg.user_id}"
 
     def _get_session(self, msg: InboundMessage) -> _UserSession:
-        return self._sessions.setdefault(self._session_key(msg), _UserSession())
+        key = self._session_key(msg)
+        if key in self._sessions:
+            return self._sessions[key]
+        title = f"gw:{key}"
+        row = self.session_store.find_session(
+            channel=msg.channel, user_ref=msg.user_id, title=title
+        )
+        if row is not None:
+            sid = row.id
+            history: list[Message] = []
+            max_turn = 0
+            for m in self.session_store.history(sid):
+                max_turn = max(max_turn, int(m["turn"]))
+                if m["role"] in ("user", "assistant"):
+                    history.append(Message(role=m["role"], content=m["content"] or ""))
+            sess = _UserSession(session_id=sid, history=history, turn=max_turn)
+        else:
+            sid = self.session_store.create_session(msg.channel, user_ref=msg.user_id, title=title)
+            sess = _UserSession(session_id=sid)
+        self._sessions[key] = sess
+        return sess
 
     def _build_loop(self, adapter: ChannelAdapter, msg: InboundMessage) -> AgentLoop:
+        from milyonus.prompt.compressor import compact_history
+        from milyonus.tools.clarify import ClarifyBudget, make_clarify_tool
+
         pipeline = verified_pipeline(self.mem_store, self.config, semantic=self.semantic)
         # Group content is lower trust; memory proposals from groups are T3.
         default_source = "third-party" if msg.is_group else "agent-observed"
@@ -123,6 +153,8 @@ class GatewayServer:
             reg.register(t)
         for t in mem_tools:
             reg.register(t)
+        clarify_budget = ClarifyBudget(max_per_turn=1)
+        reg.register(make_clarify_tool(None, budget=clarify_budget))
         self.mcp.register_into(reg)
 
         snapshot = build_snapshot(self.mem_store, config=self.config.memory, user_ref=msg.user_id)
@@ -139,6 +171,10 @@ class GatewayServer:
                 msg.user_id, f"⚠ approve: {call.name} {call.arguments} ({reason})"
             )
 
+        async def _compress(msgs: list[Message], pressure: float):
+            res = await compact_history(msgs, pressure=pressure)
+            return res.messages, (res.banner if res.compacted else None)
+
         session = self._get_session(msg)
         return AgentLoop(
             provider=self.provider,
@@ -146,7 +182,11 @@ class GatewayServer:
             system_prompt=system,
             budget=session.budget,
             approve=approve,
+            risk_engine=self.risk,
+            clarify_budget=clarify_budget,
+            compressor=_compress,
             max_output_tokens=self.config.provider.max_output_tokens,
+            max_tool_result_chars=8_000,
         )
 
     async def handle(self, adapter: ChannelAdapter, msg: InboundMessage) -> None:
@@ -172,12 +212,21 @@ class GatewayServer:
             return
 
         session = self._get_session(msg)
+        session.turn += 1
         session.history.append(Message(role="user", content=msg.text))
+        if session.session_id is not None:
+            self.session_store.append_message(
+                session.session_id, turn=session.turn, role="user", content=msg.text
+            )
         try:
             loop = self._build_loop(adapter, msg)
             answer = await loop.run_turn(session.history)
         except ProviderError as exc:
             answer = f"Provider error: {exc}"
+        if session.session_id is not None and answer:
+            self.session_store.append_message(
+                session.session_id, turn=session.turn, role="assistant", content=answer
+            )
         _log.info("reply -> %s: %s", msg.user_id, (answer or "")[:80])
         await adapter.send(OutboundMessage(msg.user_id, answer or "(empty response)"))
 

@@ -114,7 +114,11 @@ class ACPServer:
                     continue
                 task = asyncio.create_task(self._respond(msg))
                 self._turns[sid] = task
-                task.add_done_callback(lambda _t, key=sid: self._turns.pop(key, None))
+
+                def _cleanup(_t: asyncio.Task[None], key: str = sid) -> None:
+                    self._turns.pop(key, None)
+
+                task.add_done_callback(_cleanup)
                 # Let the prompt start while the reader continues accepting
                 # permission responses and session/cancel notifications.
                 await asyncio.sleep(0)

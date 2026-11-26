@@ -44,8 +44,16 @@ class ConsolidationReport:
         )
 
 
+def _has_negation(text: str) -> bool:
+    low = text.lower()
+    return any(w in low for w in (" değil", " yok", " not ", " no ", "n't"))
+
+
 async def consolidate(
-    pipeline: MemoryPipeline, *, contradiction_threshold: float = 0.9
+    pipeline: MemoryPipeline,
+    *,
+    contradiction_threshold: float = 0.9,
+    semantic_dedup_threshold: float = 0.92,
 ) -> ConsolidationReport:
     store = pipeline.store
     report = ConsolidationReport()
@@ -89,6 +97,37 @@ async def consolidate(
             store.mark_rejected(dup.id, reason="duplicate memory merged")
             report.deduped += 1
 
+    # 3b. Dedupe semantic near-duplicates when the embedding layer is enabled
+    #     (same polarity, keeping the highest-trust tier).
+    sem = getattr(pipeline, "semantic", None)
+    embedder = getattr(sem, "embedder", None) if sem is not None else None
+    if embedder is not None:
+        from milyonus.memory.vector import cosine
+
+        candidates = sorted(
+            store.active(),
+            key=lambda m: (_TIER_RANK.get(m.trust_tier, 9), m.created_at),
+        )
+        if len(candidates) >= 2:
+            try:
+                vecs = embedder.embed([m.content for m in candidates])
+            except Exception:  # noqa: BLE001 - degrade cleanly
+                vecs = []
+            dropped: set[str] = set()
+            for i, a in enumerate(candidates):
+                if a.id in dropped or i >= len(vecs):
+                    continue
+                for j in range(i + 1, len(candidates)):
+                    b = candidates[j]
+                    if b.id in dropped or j >= len(vecs):
+                        continue
+                    if _has_negation(a.content) != _has_negation(b.content):
+                        continue
+                    if cosine(vecs[i], vecs[j]) >= semantic_dedup_threshold:
+                        store.mark_rejected(b.id, reason=f"semantic duplicate of {a.id} merged")
+                        dropped.add(b.id)
+                        report.deduped += 1
+
     # 4. Flag likely contradictions (very similar content, opposite polarity is
     #    hard to detect lexically, so we surface high-similarity distinct pairs
     #    for human review rather than auto-acting).
@@ -97,9 +136,10 @@ async def consolidate(
         for b in remaining[i + 1 :]:
             if a.content == b.content:
                 continue
-            neg_a = any(w in a.content.lower() for w in (" değil", " yok", " not ", " no ", "n't"))
-            neg_b = any(w in b.content.lower() for w in (" değil", " yok", " not ", " no ", "n't"))
-            if neg_a != neg_b and jaccard(a.content, b.content) >= contradiction_threshold:
+            if (
+                _has_negation(a.content) != _has_negation(b.content)
+                and jaccard(a.content, b.content) >= contradiction_threshold
+            ):
                 report.contradictions.append((a.id, b.id))
 
     return report

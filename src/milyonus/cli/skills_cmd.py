@@ -124,3 +124,63 @@ def skills_recover_publications(apply: bool = typer.Option(False, "--apply")) ->
     console.print(json.dumps(rows, indent=2), markup=False, soft_wrap=True)
     if any(row["status"] in {"unrecognized", "ambiguous", "recovery_failed"} for row in rows):
         raise typer.Exit(2)
+
+
+@skills_app.command("install")
+def skills_install(
+    source: str = typer.Argument(
+        ...,
+        help="Skill locator: github:owner/repo[@ref][:path], well-known:host/name, or https://...",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Allow caution-level findings (danger findings can NEVER be overridden).",
+    ),
+) -> None:
+    """Install a skill from GitHub, /.well-known/skills/, or an HTTPS hub URL."""
+    import asyncio
+
+    from milyonus.skills.hub import install_from_hub
+
+    res = asyncio.run(install_from_hub(source, force=force))
+    color = PALETTE["ok"] if res.ok else PALETTE["risk"]
+    console.print(f"[{color}]{res.message}[/]")
+    if not res.ok:
+        raise typer.Exit(1)
+
+
+@skills_app.command("check")
+def skills_check() -> None:
+    """Check installed hub skills for upstream content-hash drift (PLAN §5.3)."""
+    import asyncio
+
+    from milyonus.skills.hub import check_drift
+
+    reports = asyncio.run(check_drift())
+    if not reports:
+        console.print(f"[dim]{GLYPH} no hub-tracked skills installed.[/]")
+        return
+    table = Table(title=f"{GLYPH} Skill Upstream Drift")
+    table.add_column("Name", style=f"bold {PALETTE['cyan_400']}")
+    table.add_column("Status")
+    table.add_column("Source", style="dim")
+    table.add_column("Local → Remote", style="dim")
+    has_drift = False
+    for r in reports:
+        color = (
+            PALETTE["ok"]
+            if r.status == "up_to_date"
+            else (PALETTE["warn"] if r.status == "drifted" else PALETTE["risk"])
+        )
+        if r.status != "up_to_date":
+            has_drift = True
+        hashes = (
+            f"{r.local_sha256[:10]} → {(r.remote_sha256 or '')[:10]}"
+            if r.remote_sha256
+            else r.detail
+        )
+        table.add_row(r.name, f"[{color}]{r.status}[/]", r.source_id, hashes)
+    console.print(table)
+    if has_drift:
+        raise typer.Exit(2)

@@ -46,7 +46,8 @@ def make_memory_tools(
             return f"added to memory (verified): {content[:60]}"
         if state == "rejected":
             item = pipeline.store.get(mid)
-            return f"rejected: {item.verdict or 'verification failed'}"
+            verdict = item.verdict if item is not None else None
+            return f"rejected: {verdict or 'verification failed'}"
         return "quarantined — awaiting verification/approval"
 
     async def search(args: dict[str, Any]) -> str:

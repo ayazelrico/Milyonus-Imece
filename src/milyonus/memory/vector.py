@@ -45,6 +45,15 @@ def _dot(a: list[float], b: list[float]) -> float:
     return sum(x * y for x, y in zip(a, b, strict=False))
 
 
+def cosine(a: list[float], b: list[float]) -> float:
+    """Cosine similarity in [-1.0, 1.0]; returns 0.0 for zero-norm vectors."""
+    na = sum(x * x for x in a) ** 0.5
+    nb = sum(x * x for x in b) ** 0.5
+    if na == 0.0 or nb == 0.0:
+        return 0.0
+    return _dot(a, b) / (na * nb)
+
+
 class VectorIndex:
     def __init__(self, path: Path | None = None) -> None:
         self.path = path or state_db()

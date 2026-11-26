@@ -7,6 +7,8 @@ line — secrets go in the .env file the user controls (PLAN §6 layer 4).
 
 from __future__ import annotations
 
+from typing import TypedDict
+
 from rich.console import Console
 from rich.prompt import Prompt
 
@@ -15,9 +17,17 @@ from milyonus.config.paths import config_file, ensure_layout, env_file
 
 console = Console()
 
+
+class _ProviderSpec(TypedDict):
+    key: str | None
+    model: str
+    verifier: str
+    suggest: list[str]
+
+
 # Per-provider: the key env var, a default main model, a cheap verifier model,
 # and a few suggestions to show the user.
-_PROVIDERS = {
+_PROVIDERS: dict[str, _ProviderSpec] = {
     "anthropic": {
         "key": "ANTHROPIC_API_KEY",
         "model": "claude-opus-4-8",

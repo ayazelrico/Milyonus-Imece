@@ -151,7 +151,7 @@ def memory_search(query: str) -> None:
     cfg = load_config()
     store = MemoryStore()
     sem = SemanticMemory(store, config=cfg.memory)
-    if sem.enabled:
+    if sem.enabled and sem.embedder is not None:
         recalls = sem.recall(query)
         if recalls:
             console.print(f"[dim]{GLYPH} semantic recall ({sem.embedder.signature})[/]")
@@ -182,7 +182,7 @@ def memory_reindex() -> None:
     cfg = load_config()
     store = MemoryStore()
     sem = SemanticMemory(store, config=cfg.memory)
-    if not sem.enabled:
+    if not sem.enabled or sem.embedder is None:
         console.print(f"[{PALETTE['warn']}]{GLYPH} embedder is 'none' — nothing to index.[/]")
         raise typer.Exit()
     n = sem.reindex()
@@ -257,6 +257,7 @@ def memory_reaffirm(
     reaffirm restores 1.00. Reaffirming is a security boundary, not an undo:
     it is rate-limited and never available to the agent itself."""
     import time
+    from pathlib import Path
 
     from milyonus.config.loader import load_config
     from milyonus.memory.store import ReaffirmError
@@ -280,8 +281,9 @@ def memory_reaffirm(
             )
             raise typer.Exit(code=1)
         try:
-            sig = op_sign(sign, m.content)
-            if not verify(m.content, sig):
+            payload = m.content.encode("utf-8")
+            sig = op_sign(Path(sign), payload)
+            if not verify(payload, sig):
                 raise ValueError("signature did not verify against operator public key")
             signal = "strong"
         except Exception as exc:  # noqa: BLE001 - surface to operator
