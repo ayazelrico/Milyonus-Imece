@@ -26,6 +26,7 @@ import httpx
 
 from milyonus.memory.model import SourceKind, TrustTier
 from milyonus.security.injection import is_safe_for_autopromote, scan
+from milyonus.security.intent_shield import analyze_intent
 
 
 @dataclass(slots=True)
@@ -76,6 +77,15 @@ class RuleBasedVerifier:
                 is_instruction=any(
                     f.signal in ("imperative", "instruction_override") for f in findings
                 ),
+            )
+        # Deep behavioral intent shield (S1): polite/persona/covert-exfil/gaslight
+        # speech acts the keyword scanner cannot see. Any signal fails closed.
+        intent = analyze_intent(content)
+        if intent.verdict != "allow":
+            return Verdict(
+                approved=False,
+                reason=f"intent shield: {', '.join(intent.axes_triggered)} ({intent.verdict})",
+                is_instruction=True,
             )
         if not _source_competent(content, source_kind):
             return Verdict(
