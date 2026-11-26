@@ -260,6 +260,16 @@ export function Sidebar({ sessions, loading = false, onCreate }: Props) {
           <button
             type="button"
             onClick={() => {
+              useUi.getState().setSingularityOpen(true);
+              setSidebarOpen(false);
+            }}
+            className="w-full rounded-full border border-emerald-400/40 bg-emerald-500/15 hover:bg-emerald-500/25 py-2 text-xs text-emerald-200 font-medium"
+          >
+            ❖ Singularity Studio
+          </button>
+          <button
+            type="button"
+            onClick={() => {
               useUi.getState().setHypernovaOpen(true);
               setSidebarOpen(false);
             }}

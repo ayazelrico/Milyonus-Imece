@@ -40,6 +40,7 @@ type UiState = {
   settingsOpen: boolean;
   warRoomOpen: boolean;
   hypernovaOpen: boolean;
+  singularityOpen: boolean;
   locale: Locale;
   quietMemory: boolean;
   toolsEnabled: boolean;
@@ -60,6 +61,7 @@ type UiState = {
   setSettingsOpen: (v: boolean) => void;
   setWarRoomOpen: (v: boolean) => void;
   setHypernovaOpen: (v: boolean) => void;
+  setSingularityOpen: (v: boolean) => void;
   setLocale: (l: Locale) => void;
   setQuietMemory: (v: boolean) => void;
   setToolsEnabled: (v: boolean) => void;
@@ -80,6 +82,7 @@ export const useUi = create<UiState>((set) => ({
   settingsOpen: false,
   warRoomOpen: false,
   hypernovaOpen: false,
+  singularityOpen: false,
   locale: "en",
   quietMemory: false,
   toolsEnabled: true,
@@ -115,6 +118,7 @@ export const useUi = create<UiState>((set) => ({
   setSettingsOpen: (v) => set({ settingsOpen: v }),
   setWarRoomOpen: (v) => set({ warRoomOpen: v }),
   setHypernovaOpen: (v) => set({ hypernovaOpen: v }),
+  setSingularityOpen: (v) => set({ singularityOpen: v }),
   setLocale: (l) => set({ locale: l }),
   setQuietMemory: (v) => set({ quietMemory: v }),
   setToolsEnabled: (v) => set({ toolsEnabled: v }),

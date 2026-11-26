@@ -1347,10 +1347,12 @@ def create_app(*, data_root: Path | None = None, static_dir: Path | None = None)
         finally:
             store_a.close()
 
-    # --- Hypernova H1–H10 Capabilities ----------------------------------
+    # --- Hypernova H1–H10 & Singularity S1–S10 Capabilities -------------
     from milyonus.web.hypernova_routes import mount_hypernova_routes
+    from milyonus.web.singularity_routes import mount_singularity_routes
 
     mount_hypernova_routes(app, root=root, store=store, hub=hub, current=current)
+    mount_singularity_routes(app, root=root, store=store, current=current)
 
     if static_dir is not None:
         resolved_root = static_dir.resolve()
