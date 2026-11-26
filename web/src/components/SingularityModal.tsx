@@ -33,6 +33,7 @@ export default function SingularityModal() {
   const qc = useQueryClient();
   const { singularityOpen, setSingularityOpen } = useUi();
   const [tab, setTab] = useState<SingTab>("s1_shield");
+  const [singError, setSingError] = useState("");
 
   // S1 Intent Shield
   const [shieldText, setShieldText] = useState(
@@ -158,6 +159,15 @@ export default function SingularityModal() {
     enabled: singularityOpen && tab === "s10_economy",
   });
 
+  async function runSafe(fn: () => Promise<void>) {
+    setSingError("");
+    try {
+      await fn();
+    } catch (e) {
+      setSingError(String(e));
+    }
+  }
+
   if (!singularityOpen) return null;
 
   return (
@@ -192,7 +202,10 @@ export default function SingularityModal() {
             <button
               key={item.id}
               type="button"
-              onClick={() => setTab(item.id)}
+              onClick={() => {
+                setSingError("");
+                setTab(item.id);
+              }}
               className={`rounded-full px-3 py-1 text-xs transition-colors ${
                 tab === item.id
                   ? "bg-brand text-white font-medium"
@@ -205,6 +218,15 @@ export default function SingularityModal() {
           ))}
         </div>
 
+        {singError && (
+          <div
+            role="alert"
+            className="rounded-lg border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-200"
+          >
+            {singError}
+          </div>
+        )}
+
         {/* S1: Intent Shield */}
         {tab === "s1_shield" && (
           <div className="space-y-3 text-xs">
@@ -216,13 +238,13 @@ export default function SingularityModal() {
             />
             <button
               type="button"
-              onClick={async () => {
+              onClick={() => void runSafe(async () => {
                 const res = await api<Record<string, unknown>>("/v1/security/intent-scan", {
                   method: "POST",
                   body: JSON.stringify({ text: shieldText }),
                 });
                 setShieldRes(res);
-              }}
+              })}
               className="rounded-full bg-brand px-4 py-2 font-medium"
             >
               Analyze Behavioral Intent (EN/TR)
@@ -246,7 +268,7 @@ export default function SingularityModal() {
               />
               <button
                 type="button"
-                onClick={async () => {
+                onClick={() => void runSafe(async () => {
                   const p = await api<Record<string, unknown>>("/v1/passport/issue", {
                     method: "POST",
                     body: JSON.stringify({ agent_name: agentName, constitution_name: "fortress-security" }),
@@ -257,7 +279,7 @@ export default function SingularityModal() {
                     body: JSON.stringify({ passport: p, min_chaos_score: 90, require_signature: true }),
                   });
                   setPassportVer(v);
-                }}
+                })}
                 className="rounded-full bg-brand px-4 py-2 font-medium"
               >
                 Issue & Verify Passport
@@ -297,7 +319,7 @@ export default function SingularityModal() {
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={async () => {
+                onClick={() => void runSafe(async () => {
                   setShadowNotice("");
                   const res = await api<typeof shadowRes>("/v1/shadow/simulate", {
                     method: "POST",
@@ -306,7 +328,7 @@ export default function SingularityModal() {
                     }),
                   });
                   setShadowRes(res);
-                }}
+                })}
                 className="rounded-full bg-brand px-4 py-2 font-medium"
               >
                 Simulate in Shadow Fork
@@ -314,7 +336,7 @@ export default function SingularityModal() {
               {shadowRes?.safe_to_commit && (
                 <button
                   type="button"
-                  onClick={async () => {
+                  onClick={() => void runSafe(async () => {
                     await api("/v1/shadow/apply", {
                       method: "POST",
                       body: JSON.stringify({
@@ -323,7 +345,7 @@ export default function SingularityModal() {
                       }),
                     });
                     setShadowNotice(`Atomically committed ${shadowPath} with rollback bundle ✓`);
-                  }}
+                  })}
                   className="rounded-full bg-emerald-600 px-4 py-2 font-medium"
                 >
                   Commit to Live Workspace
@@ -386,13 +408,13 @@ export default function SingularityModal() {
             />
             <button
               type="button"
-              onClick={async () => {
+              onClick={() => void runSafe(async () => {
                 const res = await api<typeof surgeonRes>("/v1/surgeon/analyze", {
                   method: "POST",
                   body: JSON.stringify({ source: codeSrc, filename: "module.py" }),
                 });
                 setSurgeonRes(res);
-              }}
+              })}
               className="rounded-full bg-brand px-4 py-2 font-medium"
             >
               AST Scan & Synthesize Micro-Patch
@@ -424,7 +446,7 @@ export default function SingularityModal() {
           <div className="space-y-3 text-xs">
             <button
               type="button"
-              onClick={async () => {
+              onClick={() => void runSafe(async () => {
                 const res = await api<typeof dagRes>("/v1/dag/run", {
                   method: "POST",
                   body: JSON.stringify({
@@ -439,7 +461,7 @@ export default function SingularityModal() {
                   }),
                 });
                 setDagRes(res);
-              }}
+              })}
               className="rounded-full bg-brand px-4 py-2 font-medium"
             >
               Compile & Execute Parallel İmece DAG
@@ -486,7 +508,7 @@ export default function SingularityModal() {
               />
               <button
                 type="button"
-                onClick={async () => {
+                onClick={() => void runSafe(async () => {
                   const vals = dpValues
                     .split(",")
                     .map((s) => Number(s.trim()))
@@ -497,7 +519,7 @@ export default function SingularityModal() {
                   });
                   setDpReceipt(rec);
                   qc.invalidateQueries({ queryKey: ["singularity-privacy"] });
-                }}
+                })}
                 className="rounded-full bg-brand px-4 py-2 font-medium"
               >
                 Release Laplace DP Mean
@@ -517,7 +539,7 @@ export default function SingularityModal() {
             <button
               type="button"
               disabled={certBusy}
-              onClick={async () => {
+              onClick={() => void runSafe(async () => {
                 setCertBusy(true);
                 try {
                   const res = await api<typeof certRes>("/v1/certify/run", { method: "POST" });
@@ -525,7 +547,7 @@ export default function SingularityModal() {
                 } finally {
                   setCertBusy(false);
                 }
-              }}
+              })}
               className="rounded-full bg-brand disabled:opacity-50 px-4 py-2 font-medium"
             >
               {certBusy ? "Certifying 6 Pillars…" : "Run 6-Pillar Enterprise Certification"}
@@ -555,7 +577,7 @@ export default function SingularityModal() {
             <button
               type="button"
               disabled={fuzzBusy}
-              onClick={async () => {
+              onClick={() => void runSafe(async () => {
                 setFuzzBusy(true);
                 try {
                   const res = await api<typeof fuzzRes>("/v1/security/fuzz", {
@@ -566,7 +588,7 @@ export default function SingularityModal() {
                 } finally {
                   setFuzzBusy(false);
                 }
-              }}
+              })}
               className="rounded-full bg-brand disabled:opacity-50 px-4 py-2 font-medium"
             >
               {fuzzBusy ? "Fuzzing Guards…" : "Launch 50-Case Mutation Fuzz"}
@@ -620,13 +642,13 @@ export default function SingularityModal() {
               </label>
               <button
                 type="button"
-                onClick={async () => {
+                onClick={() => void runSafe(async () => {
                   const res = await api<typeof econRes>("/v1/economy/simulate", {
                     method: "POST",
                     body: JSON.stringify({ agents: econAgents, max_parallel: econParallel }),
                   });
                   setEconRes(res);
-                }}
+                })}
                 className="rounded-full bg-brand px-4 py-1.5 font-medium"
               >
                 Simulate Economy

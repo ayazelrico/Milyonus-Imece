@@ -6,7 +6,8 @@ rate-limited, and tenant-isolated via `tenant_home(root, principal.tenant_id)`.
 
 from __future__ import annotations
 
-import hashlib
+import os
+import secrets
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -81,7 +82,20 @@ class EconomySimIn(BaseModel):
 
 
 def _tenant_passport_key(home: Path) -> bytes:
-    return hashlib.sha256(f"milyonus-passport:{home.resolve()}".encode()).digest()
+    """Per-tenant random 32-byte HMAC key persisted with 0600 perms."""
+    key_path = home / ".passport_hmac.key"
+    if key_path.is_symlink():
+        raise HTTPException(status_code=500, detail="passport key path is a symlink")
+    if key_path.is_file():
+        data = key_path.read_bytes()
+        if len(data) >= 32:
+            return data[:32]
+    home.mkdir(parents=True, exist_ok=True)
+    secret = secrets.token_bytes(32)
+    fd = os.open(key_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "wb") as fh:
+        fh.write(secret)
+    return secret
 
 
 def mount_singularity_routes(
@@ -110,6 +124,8 @@ def mount_singularity_routes(
     def passport_issue(
         body: PassportIssueIn, principal: SessionPrincipal = Depends(current)
     ) -> dict[str, Any]:
+        if not store.rate_limit("passport:" + principal.user_id, limit=30, window=300):
+            raise HTTPException(status_code=429, detail="rate limit exceeded")
         home = tenant_home(root, principal.tenant_id)
         from milyonus.memory.store import MemoryStore
         from milyonus.security.passport import issue_passport
@@ -147,6 +163,8 @@ def mount_singularity_routes(
     def shadow_simulate(
         body: ShadowPlanIn, principal: SessionPrincipal = Depends(current)
     ) -> dict[str, Any]:
+        if not store.rate_limit("shadow-sim:" + principal.user_id, limit=30, window=300):
+            raise HTTPException(status_code=429, detail="rate limit exceeded")
         ws = tenant_home(root, principal.tenant_id) / "workspace"
         from milyonus.core.shadow import ShadowEscapeError, ShadowOperation, simulate_shadow
 
@@ -160,6 +178,8 @@ def mount_singularity_routes(
     def shadow_apply(
         body: ShadowPlanIn, principal: SessionPrincipal = Depends(current)
     ) -> dict[str, Any]:
+        if not store.rate_limit("shadow-apply:" + principal.user_id, limit=15, window=300):
+            raise HTTPException(status_code=429, detail="rate limit exceeded")
         ws = tenant_home(root, principal.tenant_id) / "workspace"
         from milyonus.core.shadow import ShadowEscapeError, ShadowOperation, commit_shadow
 
