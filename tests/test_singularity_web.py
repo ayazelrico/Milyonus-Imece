@@ -134,3 +134,28 @@ def test_singularity_web_s1_through_s10_and_isolation(
     ec = ca.post("/v1/economy/simulate", json={"agents": 500, "max_parallel": 16}).json()
     assert ec["savings_pct"] > 50.0
     assert len(ca.get("/v1/economy/scales").json()["scales"]) == 5
+
+
+def test_passport_key_is_random_per_tenant_and_erased_with_account(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ca = _make_client(tmp_path, monkeypatch)
+    cb = TestClient(ca.app)
+    _login(ca, "alice-pk@example.com")
+    _login(cb, "bob-pk@example.com")
+
+    p = ca.post("/v1/passport/issue", json={"agent_name": "agent-a"})
+    assert p.status_code == 200
+    assert ca.post("/v1/passport/verify", json={"passport": p.json()}).json()["valid"] is True
+    # Another tenant's key must reject it.
+    assert cb.post("/v1/passport/verify", json={"passport": p.json()}).json()["valid"] is False
+
+    keys = list((tmp_path / "webdata").rglob(".passport_hmac.key"))
+    assert len(keys) == 2  # one per tenant (verify lazily creates bob's)
+    assert len({k.read_bytes() for k in keys}) == 2
+    for k in keys:
+        assert k.stat().st_mode & 0o777 == 0o600
+        assert len(k.read_bytes()) == 32
+
+    assert ca.delete("/v1/account").status_code == 200
+    assert len(list((tmp_path / "webdata").rglob(".passport_hmac.key"))) == 1

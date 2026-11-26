@@ -1085,6 +1085,9 @@ def create_app(*, data_root: Path | None = None, static_dir: Path | None = None)
         lease_key = home / ".lease_hmac.key"
         if lease_key.is_file() and not lease_key.is_symlink():
             lease_key.unlink(missing_ok=True)
+        passport_key = home / ".passport_hmac.key"
+        if passport_key.is_file() and not passport_key.is_symlink():
+            passport_key.unlink(missing_ok=True)
         store.erase_user(principal.user_id)
         clear_session_cookie(response)
         return {
