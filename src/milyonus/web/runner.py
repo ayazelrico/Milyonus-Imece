@@ -362,7 +362,7 @@ class RunnerHub:
 
         # Hosted tool defaults (PLAN-WEB §8.4), toggleable per-message from Composer (§2.2).
         reg = ToolRegistry()
-        skill_engine = SkillEngine()
+        skill_engine = SkillEngine.for_tenant(home / "skills")
         if tools_enabled:
             for tool in make_fs_tools(workspace):
                 reg.register(tool)

@@ -223,3 +223,122 @@ def test_hypernova_web_h1_through_h10_and_tenant_isolation(
     assert disp["quorum_reached"] is True
     assert "node-beta" in disp["slashed_nodes"]
     assert ca.delete("/v1/mesh/peers/node-delta").json()["deleted"] is True
+
+
+def test_web_tenant_forged_skills_visible_and_isolated(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from milyonus.core.store import SessionStore
+
+    ca, root = _make_client(tmp_path, monkeypatch)
+    cb = TestClient(ca.app)
+    uid_a = _login(ca, "forge-a@example.com")
+    _login(cb, "forge-b@example.com")
+
+    sid = ca.post("/v1/sessions", json={"title": "forge-sess"}).json()["id"]
+    ss = SessionStore(tenant_home(root, uid_a) / "state.db")
+    try:
+        cid = ss.create_session("web", user_ref=uid_a, title=f"web:{sid}")
+        ss.append_message(cid, turn=1, role="user", content="How to verify checksums safely?")
+        ss.append_message(cid, turn=1, role="assistant", content="1. Compare SHA-256 digests.")
+    finally:
+        ss.close()
+
+    fr = ca.post(
+        f"/v1/sessions/{sid}/forge-skill",
+        json={"name": "tenant-a-only-skill", "publish": True},
+    )
+    assert fr.status_code == 200, fr.text
+
+    # Visible to Tenant A in both index and detail views.
+    names_a = [s["name"] for s in ca.get("/v1/skills").json()]
+    assert "tenant-a-only-skill" in names_a
+    view_a = ca.get("/v1/skills/tenant-a-only-skill")
+    assert view_a.status_code == 200
+    assert "Compare SHA-256 digests" in view_a.json()["body"]
+
+    # Strictly invisible to Tenant B (cross-tenant isolation).
+    names_b = [s["name"] for s in cb.get("/v1/skills").json()]
+    assert "tenant-a-only-skill" not in names_b
+    assert cb.get("/v1/skills/tenant-a-only-skill").status_code == 404
+
+
+def test_web_account_erasure_purges_moonshot_and_hypernova_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import sqlite3
+
+    ca, root = _make_client(tmp_path, monkeypatch)
+    uid = _login(ca, "gdpr-full@example.com")
+    home = tenant_home(root, uid)
+
+    # Seed verified memory + all Moonshot/Hypernova tenant surfaces.
+    ms = MemoryStore(home / "state.db")
+    try:
+        mid = ms.insert_candidate(
+            "User prefers EU data residency",
+            trust_tier="T1",
+            provenance=Provenance(source_kind="user-direct"),
+        )
+        ms.mark_active(mid, verdict="ok", confirmations=1)
+    finally:
+        ms.close()
+
+    ca.post("/v1/memory/branches", json={"name": "exp/gdpr", "description": "private"})
+    ca.post("/v1/memory/branches/exp/gdpr/items", json={"op": "add", "content": "Private belief"})
+    ca.post("/v1/leases", json={"subject": "agent", "tools": ["read_file"]})
+    ca.post("/v1/leases/canary", json={"label": "trap"})
+    ca.post(
+        "/v1/arena/match",
+        json={"task": "private", "contender_a": "a", "contender_b": "b", "dry_run": True},
+    )
+    ca.post(
+        "/v1/evolution/run", json={"task": "private evo", "generations": 2, "population_size": 4}
+    )
+    ca.post(
+        "/v1/router/outcome",
+        json={"model_id": "claude-sonnet-4-6", "success": True, "latency_ms": 300},
+    )
+    ca.post("/v1/mesh/dispatch", json={"task": "private mesh"})
+    ca.post("/v1/skills/immune/seal")
+
+    assert (home / ".lease_hmac.key").is_file()
+    assert (home / "skills").is_dir()
+
+    er = ca.delete("/v1/account")
+    assert er.status_code == 200, er.text
+    body = er.json()
+    assert body["erased"] is True
+    assert body["purged_auxiliary_records"] >= 10
+
+    # Zero leftover rows in any Moonshot/Hypernova table; skills & lease HMAC key removed.
+    conn = sqlite3.connect(str(home / "state.db"))
+    try:
+        for tbl in (
+            "arena_ratings",
+            "arena_matches",
+            "mesh_peers",
+            "mesh_dispatches",
+            "pareto_stats",
+            "evolution_runs",
+            "evolution_genomes",
+            "memory_branches",
+            "memory_branch_items",
+            "capability_leases",
+            "lease_canaries",
+        ):
+            cnt = conn.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()[0]
+            assert cnt == 0, f"{tbl} still has {cnt} rows after account erasure"
+    finally:
+        conn.close()
+
+    assert not (home / "skills").exists()
+    assert not (home / ".lease_hmac.key").exists()
+
+    # ADR-0011 invariant: memory ledger hash chain remains intact after tombstoning.
+    ms_after = MemoryStore(home / "state.db")
+    try:
+        assert ms_after.verify_ledger() is True
+        assert ms_after.active() == []
+    finally:
+        ms_after.close()

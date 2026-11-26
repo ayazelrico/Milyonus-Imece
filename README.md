@@ -13,7 +13,7 @@ One command sends a task through **tens to thousands of real subagents**, a
 [![License](https://img.shields.io/badge/license-Apache--2.0-1E4FD8.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-35C6F4.svg)](pyproject.toml)
 [![Version](https://img.shields.io/badge/version-5.5.0-071233.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-683%20passing-22C55E.svg)](tests)
+[![Tests](https://img.shields.io/badge/tests-685%20passing-22C55E.svg)](tests)
 [![Chaos](https://img.shields.io/badge/Chaos%20Immunity-100%2F100%20A%2B%20(20%2F20)-22C55E.svg)](PLAN-SINGULARITY.md)
 [![Imece](https://img.shields.io/badge/imece-experimental-F59E0B.svg)](#status--honest-trial-results)
 [![PoisonBench](https://img.shields.io/badge/PoisonBench%20ASR-0%25-22C55E.svg)](docs/benchmarks.md)
@@ -1374,7 +1374,7 @@ Guides: [docs/docker.md](docs/docker.md) · [docs/production.md](docs/production
 ```bash
 make sync                  # deps (matches CI: dev + admin + discord)
 make hooks                 # enable pre-push gate (runs the CI checks locally)
-uv run pytest -q           # full suite; 683 passed with real Docker (MILYONUS_TEST_DOCKER=1)
+uv run pytest -q           # full suite; 685 passed with real Docker (MILYONUS_TEST_DOCKER=1)
 make check                 # lint + format-check + mypy + safety + chaos + test — matches CI
 ```
 

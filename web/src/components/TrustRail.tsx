@@ -427,6 +427,7 @@ type SnapshotAt = {
 };
 
 function MoonshotRailTools() {
+  const qc = useQueryClient();
   const { sessionId } = useUi();
   const [ttOpen, setTtOpen] = useState(false);
   const [checkpoints, setCheckpoints] = useState<TimelineCheckpoint[]>([]);
@@ -439,21 +440,30 @@ function MoonshotRailTools() {
       setTtOpen(false);
       return;
     }
-    const res = await api<{ checkpoints: TimelineCheckpoint[] }>("/v1/memory/timeline");
-    setCheckpoints(res.checkpoints);
-    const maxSeq = res.checkpoints.length ? res.checkpoints[res.checkpoints.length - 1].seq : 0;
-    setSelectedSeq(maxSeq);
-    if (maxSeq > 0) {
-      const s = await api<SnapshotAt>(`/v1/memory/snapshot?seq=${maxSeq}`);
-      setSnap(s);
+    setStatusMsg("");
+    try {
+      const res = await api<{ checkpoints: TimelineCheckpoint[] }>("/v1/memory/timeline");
+      setCheckpoints(res.checkpoints);
+      const maxSeq = res.checkpoints.length ? res.checkpoints[res.checkpoints.length - 1].seq : 0;
+      setSelectedSeq(maxSeq);
+      if (maxSeq > 0) {
+        const s = await api<SnapshotAt>(`/v1/memory/snapshot?seq=${maxSeq}`);
+        setSnap(s);
+      }
+      setTtOpen(true);
+    } catch (e) {
+      setStatusMsg(String(e));
     }
-    setTtOpen(true);
   }
 
   async function scrubTo(seq: number) {
     setSelectedSeq(seq);
-    const s = await api<SnapshotAt>(`/v1/memory/snapshot?seq=${seq}`);
-    setSnap(s);
+    try {
+      const s = await api<SnapshotAt>(`/v1/memory/snapshot?seq=${seq}`);
+      setSnap(s);
+    } catch (e) {
+      setStatusMsg(String(e));
+    }
   }
 
   async function exportSessionProof() {
@@ -486,6 +496,7 @@ function MoonshotRailTools() {
           body: JSON.stringify({ name: `session-${sessionId.slice(2, 8)}`, publish: true }),
         },
       );
+      qc.invalidateQueries({ queryKey: ["skills"] });
       setStatusMsg(`Forged skill '${res.name}' ✓`);
     } catch (e) {
       setStatusMsg(String(e));
@@ -574,22 +585,29 @@ type CounterfactualResp = {
 
 function CounterfactualButton({ sourceUri }: { sourceUri: string }) {
   const [sim, setSim] = useState<CounterfactualResp | null>(null);
+  const [err, setErr] = useState("");
 
   return (
     <div className="mt-1.5 space-y-1">
       <button
         type="button"
         onClick={async () => {
-          const res = await api<CounterfactualResp>("/v1/memory/counterfactual", {
-            method: "POST",
-            body: JSON.stringify({ source_uri: sourceUri }),
-          });
-          setSim(res);
+          setErr("");
+          try {
+            const res = await api<CounterfactualResp>("/v1/memory/counterfactual", {
+              method: "POST",
+              body: JSON.stringify({ source_uri: sourceUri }),
+            });
+            setSim(res);
+          } catch (e) {
+            setErr(String(e));
+          }
         }}
         className="text-[11px] text-accent underline"
       >
         Simulate counterfactual (no mutation)
       </button>
+      {err && <p className="text-[11px] text-red-300">{err}</p>}
       {sim && (
         <p className="text-[11px] text-white/70">
           Direct {sim.direct_count} + derived {sim.derived_count} · active {sim.before_active_count}{" "}

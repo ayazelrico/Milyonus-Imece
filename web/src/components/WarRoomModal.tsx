@@ -141,23 +141,32 @@ export function WarRoomModal() {
 
   async function emergencyStop() {
     if (!activeRunId) return;
-    await api(`/v1/imece/runs/${activeRunId}/stop`, { method: "POST" });
+    try {
+      await api(`/v1/imece/runs/${activeRunId}/stop`, { method: "POST" });
+    } catch (err) {
+      setWarError(String(err));
+    }
   }
 
   async function downloadProof(runId: string) {
-    const proof = await api<Record<string, unknown>>(`/v1/imece/runs/${runId}/proof`);
-    const blob = new Blob([JSON.stringify(proof, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${runId}.milyonus-proof.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const proof = await api<Record<string, unknown>>(`/v1/imece/runs/${runId}/proof`);
+      const blob = new Blob([JSON.stringify(proof, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${runId}.milyonus-proof.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setWarError(String(err));
+    }
   }
 
   async function runArenaMatch() {
     if (!arenaTask.trim()) return;
     setArenaBusy(true);
+    setWarError("");
     try {
       const res = await api<ArenaMatchResp>("/v1/arena/match", {
         method: "POST",
@@ -170,6 +179,8 @@ export function WarRoomModal() {
       });
       setArenaResult(res);
       qc.invalidateQueries({ queryKey: ["arena-leaderboard"] });
+    } catch (err) {
+      setWarError(String(err));
     } finally {
       setArenaBusy(false);
     }
@@ -377,6 +388,7 @@ export function WarRoomModal() {
                 {arenaBusy ? "Running…" : "Run Match"}
               </button>
             </div>
+            {warError && <p className="text-xs text-red-300">{warError}</p>}
             {arenaResult && (
               <div className="rounded-xl bg-emerald-500/10 border border-emerald-400/30 p-3 text-xs space-y-1">
                 <p className="font-medium text-emerald-300">
