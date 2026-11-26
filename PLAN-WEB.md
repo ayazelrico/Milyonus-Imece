@@ -1,8 +1,15 @@
 # Milyonus Agent 5.5 — Web Plan (Surface #7)
 
-> Status: **W0–W5 landed in-tree (2026-11-03).** API + FastAPI runner + Vite SPA
-> ship under `src/milyonus/web/` and `web/`. W6–W8 (compaction engine polish,
-> red-team load test, external beta) remain open.
+> Status: **W0–W8 code, API, security, context engine & modular SPA landed in-tree (2026-11-26).**
+> Full REST + SSE contract (`tool.result`, `memory.proposed`, reload-resume, regenerate, session
+> forking, message feedback, `tools_enabled` toggle, `--static-dir` SPA serving), ADR-0011
+> KVKK/GDPR erasure + full JSON export, CSP/HSTS, API keys, serialized `MemoryWriter`,
+> `ProviderCircuitBreaker`, W6 4-stage compaction ladder + L2 per-turn semantic recall + prefix-cache
+> tracking + image/PDF uploads + `.milyonusrules` editor, Prometheus `/metrics`, hardened
+> `deploy/compose.yaml` web/worker profiles, and modular Vite SPA (`web/`, zero >500 kB chunks,
+> TR/EN/DE/ES i18n, date grouping, keyboard shortcuts, decay countdowns, PWA manifest). External
+> production SMTP delivery, real traffic load acceptance, and 20-user external beta remain
+> operational gates.
 > Companion to [PLAN.md](PLAN.md) and [docs/web-api.md](docs/web-api.md).
 > Owner: @ayazelrico · License: Apache-2.0
 

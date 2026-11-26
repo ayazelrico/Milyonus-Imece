@@ -146,7 +146,7 @@ milyonus-agent/
 │   ├── evaluation/           # TaskBench (tasks, runner)
 │   ├── cli/                  # app, tui, splash, setup, doctor, *_cmd
 │   ├── acp/                  # editor integration (stdio/JSON-RPC)
-│   ├── _bundled_skills/      # 36 official skills
+│   ├── _bundled_skills/      # 41 official skills
 │   └── config/               # schema, loader, defaults
 ├── evals/                    # PoisonBench + SafetyRegression
 ├── docs/                     # mkdocs-material site
@@ -298,7 +298,7 @@ metadata:
 
 ### 5.3 Skill sources
 
-`official` (bundled — **36 ship in-package**) · `github` · `well-known`
+`official` (bundled — **41 ship in-package**) · `github` · `well-known`
 (`/.well-known/skills/`) · community hubs. Each tracked by `source_id + content
 hash`; `milyonus skills check` reports upstream drift.
 

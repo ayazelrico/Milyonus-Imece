@@ -13,7 +13,7 @@ One command sends a task through **tens to thousands of real subagents**, a
 [![License](https://img.shields.io/badge/license-Apache--2.0-1E4FD8.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-35C6F4.svg)](pyproject.toml)
 [![Version](https://img.shields.io/badge/version-5.5.0-071233.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-371%20passing-22C55E.svg)](tests)
+[![Tests](https://img.shields.io/badge/tests-644%20passing-22C55E.svg)](tests)
 [![Imece](https://img.shields.io/badge/imece-experimental-F59E0B.svg)](#status--honest-trial-results)
 [![PoisonBench](https://img.shields.io/badge/PoisonBench%20ASR-0%25-22C55E.svg)](docs/benchmarks.md)
 
@@ -805,12 +805,23 @@ src/milyonus/imece/
 ├── irade.py         5-member council · 6 dimensions · veto floors · Kademe 0–4 · quorum ·
 │                    JEV precedent · random audit · Calibrator
 ├── gates.py         Kapı 1 frame() · Kapı 2 design_tests() + reality() · Kapı 3 approve()
+├── execution.py     isolated Python test execution (Docker + macOS Seatbelt) · runtime identity
+├── evidence.py      digest-pinned evidence cache · invalidation · failure classification
+├── reproduction.py  bounded failure reproduction bundles · in-sandbox file reduction
+├── journal.py       persistent call/stage journal · replay-on-resume
+├── ledger.py        reservation ledger · strict budget & unknown-usage accounting
+├── schedule.py      bounded dispatch queue · worker scheduling
+├── benchmark.py     withheld reference oracle benchmark runner · calibration metrics
+├── codex.py         Codex CLI JSONL adapter · OS-enforced oracle guard (macOS Seatbelt / Linux bwrap)
+├── antigravity.py   Antigravity CLI adapter · bounded stream & strict JSON parsing
 ├── observer.py      deterministic monitors + LLM retrospective
 └── orchestrator.py  Imece.run(): the full pipeline, rounds, stop checkpoints, RunResult
-src/milyonus/cli/imece_cmd.py   `milyonus imece plan | seats | run | stop`
+src/milyonus/web/               Surface #7 FastAPI API · RunnerHub · MemoryWriter · W6 context · auth · quotas
+web/                            React 19 + TypeScript + Vite 7 SPA (Chat, Trust Rail, Skills, Rules, Settings, i18n)
+src/milyonus/cli/imece_cmd.py   `milyonus imece plan | seats | run | stop | benchmark`
 src/milyonus/config/schema.py   ImeceConfig · per-seat ProviderConfig · reasoning_effort
 docs/imece.md                   short reference
-tests/test_imece.py             the collective under a deterministic fake
+tests/test_imece*.py            collective, sandbox, evidence, journal, reduction & audit suites
 ```
 
 ---
@@ -833,7 +844,7 @@ makes every memory **earn its place**.
 | Memory write | Agent writes directly | **Ingest → Quarantine → Verify → Promote** |
 | Provenance | Not tracked | Every line: who · from where · which turn · what evidence |
 | Poison cleanup | Manual | `memory revoke --source <uri>` cascades in **seconds** |
-| Rejected ideas | Forgotten (rephrase slips through) | **Negative memory** + rephrase detection |
+| Rejected ideas | Forgotten (rephrase slips through) | **Negative memory** + lexical & semantic rephrase detection |
 | Memory in prompt | Injected as text | Rendered in a **data fence** — "not instructions" |
 | Promoted memory | Trusted **forever** | **Trust decays** — must be re-earned or it's demoted (a security boundary, not undo) |
 | Reaffirming a memory | Unlimited / free | **Rate-limited + diminishing returns**; only an operator-signed reaffirm restores full trust |
@@ -853,6 +864,7 @@ Single-agent quick start:
 milyonus setup                        # pick a provider
 milyonus doctor                       # verify the environment
 milyonus                              # start an interactive session
+milyonus run "summarize README.md"    # one-shot task
 ```
 
 Multi-provider: **Anthropic** (default, most poisoning-resistant), **OpenAI**,
@@ -862,18 +874,19 @@ Multi-provider: **Anthropic** (default, most poisoning-resistant), **OpenAI**,
 
 ## Talk to it from anywhere
 
-The same agent core runs behind **six surfaces**, all default-deny with in-chat approval:
+The same agent core runs behind **seven surfaces**, all default-deny with explicit approval:
 
 <div align="center">
 
 | Surface | Transport | Setup |
 |---|---|---|
-| 🖥️ **CLI / TUI** | terminal | `milyonus` |
+| 🖥️ **CLI / TUI** | terminal | `milyonus` / `milyonus run "<task>"` |
 | ✈️ **Telegram** | Bot API (long-poll) | `milyonus gateway start --channel telegram` |
 | 💬 **WhatsApp** | Cloud API (webhook) | `milyonus gateway start --channel whatsapp` |
 | 🟣 **Slack** | Events API (webhook) | `milyonus gateway start --channel slack` |
 | 🎮 **Discord** | Gateway (WebSocket) | `milyonus gateway start --channel discord` |
 | 📝 **Editor (ACP)** | stdio / JSON-RPC | `milyonus acp` (Zed, …) |
+| 🌐 **Web UI (Surface #7)** | FastAPI + SSE + React SPA | `milyonus web start` (`web/` Vite SPA) |
 
 </div>
 
@@ -1302,17 +1315,19 @@ Details and methodology: [docs/benchmarks.md](docs/benchmarks.md) ·
 
 ```
 milyonus                     interactive session
+milyonus run "<task>"        one-shot non-interactive task
 milyonus setup               first-run wizard
-milyonus doctor              environment diagnostics
-milyonus imece    plan | seats | run | stop   # the İmece-İRADE collective
+milyonus doctor              environment & publication diagnostics
+milyonus imece    plan | seats | run | stop | benchmark   # the İmece-İRADE collective
+milyonus web      start      # Surface #7 FastAPI + SSE server
 milyonus memory   list | pending | why | diff | revoke | search | reaffirm | review | stats | reindex | consolidate
 milyonus mcp      list | tools | example   # external MCP servers
 milyonus user     show | ask | observe      # cross-session user model
-milyonus skills   list | view | why
+milyonus skills   list | view | why | install | check | promote-repair | revoke-oracle | recover-publications
 milyonus audit    verify | log
 milyonus gateway  start | pair
-milyonus selfmod  log | rollback
-milyonus cron     add | list | remove   # scheduled tasks (NL/cron/interval)
+milyonus selfmod  log | rollback | accept
+milyonus cron     add | list | remove | run   # scheduled tasks (NL/cron/interval)
 milyonus proactive start | suggest    # run the scheduler; suggest automations
 milyonus research "<question>"          # deep web research → a cited report
 milyonus eval     run | tasks    # task-level evaluation + cost/observability
@@ -1341,12 +1356,12 @@ Guides: [docs/docker.md](docs/docker.md) · [docs/production.md](docs/production
 ```bash
 make sync                  # deps (matches CI: dev + admin + discord)
 make hooks                 # enable pre-push gate (runs the CI checks locally)
-uv run pytest -q           # offline suite; 371 passed locally, 1 Docker integration skipped
-make check                 # lint + format-check + test — exactly what CI runs
+uv run pytest -q           # full suite; 644 passed with real Docker (MILYONUS_TEST_DOCKER=1)
+make check                 # lint + format-check + mypy + safety + test — matches CI
 ```
 
-`make check` mirrors CI one-for-one (`ruff check` · `ruff format --check` ·
-`pytest`); `make hooks` wires it into a pre-push hook so a push can't go out red
+`make check` mirrors CI (`ruff check` · `ruff format --check` · `mypy` ·
+`evals.safety.run` · `pytest`); `make hooks` wires it into a pre-push hook so a push can't go out red
 (bypass with `git push --no-verify`).
 
 Extend Milyonus through the **skill**, **tool**, or **channel adapter** interfaces
@@ -1380,20 +1395,20 @@ large repeated real-model evaluation and third-party audit remain open.
 
 - [x] Verified-memory core · trust tiers · ledger · revocation
 - [x] Agent-authored skills + 41 bundled
-- [x] 6 surfaces (CLI, Telegram, WhatsApp, Slack, Discord, ACP)
-- [x] Self-modification harness · subagent delegation · MCP client **+ server config**
+- [x] 7 surfaces (CLI/TUI, Telegram, WhatsApp, Slack, Discord, ACP, Web SPA)
+- [x] Self-modification harness · subagent delegation · budgeted `clarify` · context compressor · MCP client **+ server config**
 - [x] Hardened Docker · automated PyPI + Docker Hub release
 - [x] Task-level evaluation & observability (success, tools, tokens, cost)
 - [x] Proactivity: scheduler (NL→cron), safety policy, automation suggestions
 - [x] Integrations: email (IMAP/SMTP), browser (Playwright), vision (image input)
 - [x] Deep web research (keyless search → cited synthesis) + outreach skills
 - [x] Memory as a security boundary: trust decay + signed out-of-band T0
-- [x] Vector/embedding layer for memory: trust-weighted semantic recall (hashing default, opt-in OpenAI)
+- [x] Vector/embedding layer for memory: trust-weighted semantic recall + semantic negative-memory rephrase detection
 - [x] Honcho-style cross-session user model — per-user scoped, verified-growth, dialectic recall
 - [x] PoisonBench v3: multi-step scenarios (patient / distributed / T0-spoof / semantic), pinned as a regression gate
 - [x] Like-for-like Hermes harness (`evals/hermes`) — third-party audit still external
-- [x] Shell sandboxes: local · docker · ssh · modal · daytona (fail-closed)
-- [x] Web surface #7 (API + SPA) — see `PLAN-WEB.md` / `web/`
+- [x] Shell sandboxes: local · docker · ssh · modal · daytona (fail-closed, workspace-synced)
+- [x] Web surface #7 (FastAPI + SSE + modular React SPA + ADR-0011 erasure/export + W6 context engine + CSP/HSTS + API keys) — see `PLAN-WEB.md` / `web/`
 
 ---
 

@@ -5,6 +5,39 @@ The format follows Keep a Changelog; versions follow the Milyonus model line.
 
 ## [Unreleased] — Milyonus-Imece (experimental)
 
+### Plan engineering gaps closed — 2026-11-26
+- **Core (`PLAN.md`)**: budgeted `clarify` tool (`tools/clarify.py`, denied to subagents);
+  4-stage `prompt/compressor.py` ladder + 8k tool-result truncation + `on_tool_result` loop sink;
+  semantic embedding rephrase check in `memory/negative.py` + `MemoryPipeline`;
+  semantic near-duplicate merging in `MemoryStore.find_similar_active` and `memory/consolidate.py`;
+  external skill hub (`skills/hub.py`: `github:`, `well-known:`, HTTPS with SSRF + scanner +
+  `.source.json` drift via `milyonus skills install | check`); `milyonus run "<task>"` and
+  `milyonus cron run` (plus `CronStore.list()` `autonomy` persistence fix and Ed25519
+  `memory reaffirm --sign` Path/bytes fix); SQLite-persisted `GatewayServer` sessions surviving
+  restarts; bounded workspace tar.gz sync for `modal` and `daytona` sandboxes;
+  zero `mypy` errors across all 153 source files.
+- **Web Surface #7 (`PLAN-WEB.md` W0–W8 & ADR-0011)**: true KVKK/GDPR erasure
+  (`MemoryStore.erase_all()` tombstoning preserving `verify_ledger()`, session/file cleanup)
+  and full `GET /v1/export`; serialized `MemoryWriter` queue; thread-safe `WebStore` locking;
+  full hosted toolset (toggleable via `tools_enabled`) + `tool.result` and `memory.proposed`
+  SSE events + persisted full tool outputs; persisted per-session `RiskEngine` (`allow_session`);
+  L2 per-turn semantic recall in volatile suffix; W6 compaction ladder + session forking
+  (`parent_id`, `fork_before_message_id`) + `POST /v1/messages/{id}/feedback`;
+  `ProviderCircuitBreaker`, stable system-prompt prefix-cache tracking, Prometheus `/metrics`;
+  image/PDF uploads with per-tenant quota, `.milyonusrules` editor, CSP/HSTS headers,
+  SHA-256 hashed API keys (`Bearer`), `regenerate`, reload-resume, `--static-dir` SPA serving;
+  `SafetyRegression` web checks, hardened `deploy/compose.yaml` web/worker services;
+  modular React SPA (`Sidebar` date grouping + shortcuts, `ChatThread` edit/resend + feedback +
+  windowing + linked sessions, `Composer` tools toggle + model picker, `TrustRail` decay
+  countdown + T0 count + budget pressure bar, `SettingsModal`, TR/EN/DE/ES i18n, PWA manifest,
+  code-split chunks all <=261 kB).
+- **İmece (`PLAN-5X.md`) & CI**: OS-enforced Linux `bwrap` (bubblewrap) `oracle_guard` alongside
+  macOS Seatbelt (verified with real Linux mount-namespace isolation; fail-closed if neither is
+  present); `milyonus doctor` interrupted skill publication diagnostics and opt-in
+  `SkillEngine(auto_recover=True)`; CI upgraded with `mypy`, `evals.safety.run`, and `web-build`.
+  External-world gates (paid 500-run multi-vendor matrix, USD invoice audit, 3rd-party audit,
+  20-user beta) remain open.
+
 ### Plans closed in code — 2026-11-03
 - Shell sandbox backends: `ssh`, `modal`, and `daytona` alongside local/docker;
   missing credentials fail closed with no host-shell fallback.
