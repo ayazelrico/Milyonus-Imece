@@ -294,6 +294,9 @@ export function TrustRail() {
                 {revokePreview.length} memories will be revoked (including derived records).
               </p>
             )}
+            {revokeUri.trim() && (
+              <CounterfactualButton sourceUri={revokeUri.trim()} />
+            )}
           </section>
 
           {why && (
@@ -376,27 +379,223 @@ export function TrustRail() {
         </div>
       )}
 
-      <div className="mt-auto pt-2 border-t border-white/10 space-y-1">
-        <button
-          type="button"
-          className="text-xs text-white/60 hover:text-white underline"
-          onClick={async () => {
-            const v = await api<{ intact: boolean; head: string }>("/v1/audit/verify");
-            setLedgerStatus(v);
-          }}
-        >
-          {t(locale, "verifyLedger")}
-        </button>
-        {ledgerStatus && (
-          <p
-            role="status"
-            className={`text-[11px] ${ledgerStatus.intact ? "text-emerald-300" : "text-red-300"}`}
+      <div className="mt-auto pt-2 border-t border-white/10 space-y-2">
+        <MoonshotRailTools />
+        <div className="space-y-1">
+          <button
+            type="button"
+            className="text-xs text-white/60 hover:text-white underline"
+            onClick={async () => {
+              const v = await api<{ intact: boolean; head: string }>("/v1/audit/verify");
+              setLedgerStatus(v);
+            }}
           >
-            {ledgerStatus.intact ? `✓ ${t(locale, "ledgerIntact")}` : `✗ ${t(locale, "ledgerBroken")}`}{" "}
-            {ledgerStatus.head ? `(${ledgerStatus.head.slice(0, 12)}…)` : ""}
-          </p>
-        )}
+            {t(locale, "verifyLedger")}
+          </button>
+          {ledgerStatus && (
+            <p
+              role="status"
+              className={`text-[11px] ${ledgerStatus.intact ? "text-emerald-300" : "text-red-300"}`}
+            >
+              {ledgerStatus.intact
+                ? `✓ ${t(locale, "ledgerIntact")}`
+                : `✗ ${t(locale, "ledgerBroken")}`}{" "}
+              {ledgerStatus.head ? `(${ledgerStatus.head.slice(0, 12)}…)` : ""}
+            </p>
+          )}
+        </div>
       </div>
     </aside>
+  );
+}
+
+type TimelineCheckpoint = {
+  seq: number;
+  action: string;
+  item_id: string | null;
+  preview: string;
+  valid_link: boolean;
+};
+
+type SnapshotAt = {
+  seq: number;
+  chain_intact: boolean;
+  active_count: number;
+  pending_count: number;
+  revoked_count: number;
+  rendered_snapshot: string;
+};
+
+function MoonshotRailTools() {
+  const { sessionId } = useUi();
+  const [ttOpen, setTtOpen] = useState(false);
+  const [checkpoints, setCheckpoints] = useState<TimelineCheckpoint[]>([]);
+  const [selectedSeq, setSelectedSeq] = useState<number>(0);
+  const [snap, setSnap] = useState<SnapshotAt | null>(null);
+  const [statusMsg, setStatusMsg] = useState("");
+
+  async function openTimeTravel() {
+    if (ttOpen) {
+      setTtOpen(false);
+      return;
+    }
+    const res = await api<{ checkpoints: TimelineCheckpoint[] }>("/v1/memory/timeline");
+    setCheckpoints(res.checkpoints);
+    const maxSeq = res.checkpoints.length ? res.checkpoints[res.checkpoints.length - 1].seq : 0;
+    setSelectedSeq(maxSeq);
+    if (maxSeq > 0) {
+      const s = await api<SnapshotAt>(`/v1/memory/snapshot?seq=${maxSeq}`);
+      setSnap(s);
+    }
+    setTtOpen(true);
+  }
+
+  async function scrubTo(seq: number) {
+    setSelectedSeq(seq);
+    const s = await api<SnapshotAt>(`/v1/memory/snapshot?seq=${seq}`);
+    setSnap(s);
+  }
+
+  async function exportSessionProof() {
+    if (!sessionId) return;
+    setStatusMsg("");
+    try {
+      const bundle = await api<Record<string, unknown>>(`/v1/sessions/${sessionId}/proof`);
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${sessionId}.milyonus-proof.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      const root = String(bundle.merkle_root ?? "").slice(0, 12);
+      setStatusMsg(`Proof exported ✓ (merkle ${root}…)`);
+    } catch (e) {
+      setStatusMsg(String(e));
+    }
+  }
+
+  async function forgeSkillFromChat() {
+    if (!sessionId) return;
+    setStatusMsg("");
+    try {
+      const res = await api<{ name: string; sha256?: string }>(
+        `/v1/sessions/${sessionId}/forge-skill`,
+        {
+          method: "POST",
+          body: JSON.stringify({ name: `session-${sessionId.slice(2, 8)}`, publish: true }),
+        },
+      );
+      setStatusMsg(`Forged skill '${res.name}' ✓`);
+    } catch (e) {
+      setStatusMsg(String(e));
+    }
+  }
+
+  return (
+    <div className="space-y-1.5 text-xs">
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          onClick={() => void openTimeTravel()}
+          className="rounded-full bg-white/10 hover:bg-white/20 px-2.5 py-1 text-[11px]"
+        >
+          ⏳ Time-Travel
+        </button>
+        {sessionId && (
+          <>
+            <button
+              type="button"
+              onClick={() => void exportSessionProof()}
+              className="rounded-full bg-white/10 hover:bg-white/20 px-2.5 py-1 text-[11px]"
+            >
+              🔐 Proof
+            </button>
+            <button
+              type="button"
+              onClick={() => void forgeSkillFromChat()}
+              className="rounded-full bg-white/10 hover:bg-white/20 px-2.5 py-1 text-[11px]"
+            >
+              ⚒ Forge Skill
+            </button>
+          </>
+        )}
+      </div>
+
+      {statusMsg && (
+        <p role="status" className="text-[11px] text-accent">
+          {statusMsg}
+        </p>
+      )}
+
+      {ttOpen && (
+        <div className="rounded-xl bg-black/50 border border-white/15 p-2.5 space-y-1.5">
+          {checkpoints.length === 0 ? (
+            <p className="text-[11px] text-white/50">No ledger checkpoints yet.</p>
+          ) : (
+            <>
+              <div className="flex justify-between text-[11px] text-white/70">
+                <span>Seq #{selectedSeq}</span>
+                <span>
+                  {snap
+                    ? `${snap.active_count} active · ${snap.chain_intact ? "chain ✓" : "BROKEN"}`
+                    : ""}
+                </span>
+              </div>
+              <input
+                type="range"
+                aria-label="Memory ledger sequence"
+                min={checkpoints[0].seq}
+                max={checkpoints[checkpoints.length - 1].seq}
+                value={selectedSeq}
+                onChange={(e) => void scrubTo(Number(e.target.value))}
+                className="w-full accent-brand"
+              />
+              {snap?.rendered_snapshot && (
+                <pre className="whitespace-pre-wrap max-h-28 overflow-y-auto rounded bg-black/60 p-1.5 text-[10px] text-white/75">
+                  {snap.rendered_snapshot}
+                </pre>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+type CounterfactualResp = {
+  direct_count: number;
+  derived_count: number;
+  before_active_count: number;
+  after_active_count: number;
+  tokens_freed_estimate: number;
+};
+
+function CounterfactualButton({ sourceUri }: { sourceUri: string }) {
+  const [sim, setSim] = useState<CounterfactualResp | null>(null);
+
+  return (
+    <div className="mt-1.5 space-y-1">
+      <button
+        type="button"
+        onClick={async () => {
+          const res = await api<CounterfactualResp>("/v1/memory/counterfactual", {
+            method: "POST",
+            body: JSON.stringify({ source_uri: sourceUri }),
+          });
+          setSim(res);
+        }}
+        className="text-[11px] text-accent underline"
+      >
+        Simulate counterfactual (no mutation)
+      </button>
+      {sim && (
+        <p className="text-[11px] text-white/70">
+          Direct {sim.direct_count} + derived {sim.derived_count} · active {sim.before_active_count}{" "}
+          → {sim.after_active_count} (~{sim.tokens_freed_estimate} tok freed)
+        </p>
+      )}
+    </div>
   );
 }

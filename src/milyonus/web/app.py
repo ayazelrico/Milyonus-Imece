@@ -87,7 +87,35 @@ class ProjectInstructionsIn(BaseModel):
     content: str = Field(max_length=32_000)
 
 
+class ProofVerifyIn(BaseModel):
+    bundle: dict
+    require_signature: bool = False
+
+
+class ImeceRunIn(BaseModel):
+    task: str = Field(min_length=3, max_length=20_000)
+    agents: int = Field(default=17, ge=17, le=10_000)
+    verification: str = Field(default="model")
+    dry_run: bool = True
+
+
+class ForgeSkillIn(BaseModel):
+    name: str = Field(min_length=2, max_length=64)
+    description: str = Field(default="", max_length=300)
+    publish: bool = True
+
+
+class ArenaMatchIn(BaseModel):
+    task: str = Field(min_length=2, max_length=4000)
+    contender_a: str = Field(default="direct", min_length=1, max_length=64)
+    contender_b: str = Field(default="structured", min_length=1, max_length=64)
+    expect_substring: str | None = None
+    dry_run: bool = True
+
+
 def create_app(*, data_root: Path | None = None, static_dir: Path | None = None) -> FastAPI:
+    from milyonus.web.imece_hub import ImeceRunHub
+
     root = data_root or Path(
         os.environ.get("MILYONUS_WEB_DATA", str(Path.home() / ".milyonus" / "web"))
     )
@@ -102,6 +130,7 @@ def create_app(*, data_root: Path | None = None, static_dir: Path | None = None)
     store = WebStore(root / "web.db")
     # Per-request runs pass an explicit tenant `home` directory (no process-wide env mutation).
     hub = RunnerHub(store, home=root)
+    imece_hub = ImeceRunHub(store)
 
     app = FastAPI(title="Milyonus Web", version="5.5.0")
     origins = [
@@ -139,6 +168,7 @@ def create_app(*, data_root: Path | None = None, static_dir: Path | None = None)
 
     app.state.store = store
     app.state.hub = hub
+    app.state.imece_hub = imece_hub
     app.state.data_root = root
 
     def current(request: Request) -> SessionPrincipal:
@@ -1021,6 +1051,301 @@ def create_app(*, data_root: Path | None = None, static_dir: Path | None = None)
             "tombstoned_memories": tombstoned,
             "deleted_messages": deleted_msgs,
         }
+
+    # --- M1: Memory Time-Travel & Counterfactual Replay -----------------
+
+    @app.get("/v1/memory/timeline")
+    def memory_timeline(limit: int = 200, principal: SessionPrincipal = Depends(current)) -> dict:
+        from milyonus.memory.store import MemoryStore
+        from milyonus.memory.timetravel import checkpoint_timeline
+
+        ms = MemoryStore(tenant_home(root, principal.tenant_id) / "state.db")
+        try:
+            pts = checkpoint_timeline(ms, limit=max(1, min(limit, 500)))
+            return {"checkpoints": [p.to_dict() for p in pts], "intact": ms.verify_ledger()}
+        finally:
+            ms.close()
+
+    @app.get("/v1/memory/snapshot")
+    def memory_snapshot(
+        seq: int | None = None,
+        at: float | None = None,
+        principal: SessionPrincipal = Depends(current),
+    ) -> dict:
+        from milyonus.memory.store import MemoryStore
+        from milyonus.memory.timetravel import reconstruct_at
+
+        ms = MemoryStore(tenant_home(root, principal.tenant_id) / "state.db")
+        try:
+            return reconstruct_at(ms, seq=seq, at_timestamp=at).to_dict()
+        finally:
+            ms.close()
+
+    @app.get("/v1/memory/diff")
+    def memory_diff(
+        from_seq: int,
+        to_seq: int,
+        principal: SessionPrincipal = Depends(current),
+    ) -> dict:
+        from milyonus.memory.store import MemoryStore
+        from milyonus.memory.timetravel import diff_snapshots
+
+        ms = MemoryStore(tenant_home(root, principal.tenant_id) / "state.db")
+        try:
+            return diff_snapshots(ms, from_seq, to_seq).to_dict()
+        finally:
+            ms.close()
+
+    @app.post("/v1/memory/counterfactual")
+    def memory_counterfactual(
+        body: RevokeIn, principal: SessionPrincipal = Depends(current)
+    ) -> dict:
+        from milyonus.memory.store import MemoryStore
+        from milyonus.memory.timetravel import counterfactual_revoke
+
+        ms = MemoryStore(tenant_home(root, principal.tenant_id) / "state.db")
+        try:
+            return counterfactual_revoke(ms, body.source_uri).to_dict()
+        finally:
+            ms.close()
+
+    # --- M2: Signed Evidence Bundles (`.milyonus-proof.json`) -----------
+
+    @app.get("/v1/sessions/{session_id}/proof")
+    def session_proof(session_id: str, principal: SessionPrincipal = Depends(current)) -> dict:
+        if store.get_session(principal.user_id, session_id) is None:
+            raise HTTPException(404, "session not found")
+        home = tenant_home(root, principal.tenant_id)
+        from milyonus.core.store import SessionStore
+        from milyonus.memory.store import MemoryStore
+        from milyonus.security.proof import build_session_proof
+
+        ss = SessionStore(home / "state.db")
+        ms = MemoryStore(home / "state.db")
+        try:
+            row = ss.find_session(
+                channel="web", user_ref=principal.user_id, title=f"web:{session_id}"
+            )
+            messages = [dict(m) for m in ss.history(row.id)] if row is not None else []
+            tools = store.tool_results_for_session(session_id)
+            return build_session_proof(
+                session_id,
+                messages,
+                tool_results=tools,
+                memory_store=ms,
+            )
+        finally:
+            ss.close()
+            ms.close()
+
+    @app.post("/v1/proofs/verify")
+    def verify_proof_endpoint(
+        body: ProofVerifyIn, principal: SessionPrincipal = Depends(current)
+    ) -> dict:
+        del principal
+        from milyonus.security.proof import verify_proof
+
+        return verify_proof(body.bundle, require_signature=body.require_signature).to_dict()
+
+    # --- M3: Live İmece War Room ----------------------------------------
+
+    @app.get("/v1/imece/runs")
+    def list_imece_runs(principal: SessionPrincipal = Depends(current)) -> list:
+        return store.list_imece_runs(principal.user_id)
+
+    @app.post("/v1/imece/runs")
+    async def create_imece_run(
+        body: ImeceRunIn, principal: SessionPrincipal = Depends(current)
+    ) -> dict:
+        if not store.rate_limit("imece:" + principal.user_id, limit=15, window=300):
+            raise HTTPException(429, "imece rate limit exceeded")
+        from typing import Literal
+
+        verif: Literal["model", "python"] = "python" if body.verification == "python" else "model"
+        home = tenant_home(root, principal.tenant_id)
+        return await imece_hub.start_run(
+            user_id=principal.user_id,
+            task=body.task,
+            agents=body.agents,
+            verification=verif,
+            dry_run=body.dry_run,
+            home=home,
+        )
+
+    @app.get("/v1/imece/runs/{run_id}")
+    def get_imece_run(run_id: str, principal: SessionPrincipal = Depends(current)) -> dict:
+        run = store.get_imece_run(principal.user_id, run_id)
+        if run is None:
+            raise HTTPException(404, "imece run not found")
+        return run
+
+    @app.get("/v1/imece/runs/{run_id}/stream")
+    async def stream_imece_run(
+        run_id: str,
+        request: Request,
+        from_seq: int = 0,
+        principal: SessionPrincipal = Depends(current),
+    ) -> StreamingResponse:
+        if store.get_imece_run(principal.user_id, run_id) is None:
+            raise HTTPException(404, "imece run not found")
+        last = request.headers.get("last-event-id")
+        start = int(last) + 1 if last and last.isdigit() else max(0, from_seq)
+
+        async def gen() -> AsyncIterator[str]:
+            cursor = start
+            while True:
+                if await request.is_disconnected():
+                    break
+                events = store.imece_events_from(run_id, cursor)
+                for ev in events:
+                    cursor = ev["seq"] + 1
+                    data = json.dumps(ev, ensure_ascii=False)
+                    yield f"id: {ev['seq']}\nevent: {ev['type']}\ndata: {data}\n\n"
+                    if ev["type"] in ("imece.completed", "imece.stopped", "imece.error"):
+                        return
+                run_now = store.get_imece_run(principal.user_id, run_id)
+                if (
+                    run_now is None or run_now["state"] in ("completed", "stopped", "error")
+                ) and not store.imece_events_from(run_id, cursor):
+                    return
+                await asyncio.sleep(0.1)
+
+        return StreamingResponse(gen(), media_type="text/event-stream")
+
+    @app.post("/v1/imece/runs/{run_id}/stop")
+    def stop_imece_run(run_id: str, principal: SessionPrincipal = Depends(current)) -> dict:
+        if store.get_imece_run(principal.user_id, run_id) is None:
+            raise HTTPException(404, "imece run not found")
+        stopped = imece_hub.request_stop(run_id)
+        return {"stop_requested": stopped}
+
+    @app.get("/v1/imece/runs/{run_id}/proof")
+    def get_imece_run_proof(run_id: str, principal: SessionPrincipal = Depends(current)) -> dict:
+        run = store.get_imece_run(principal.user_id, run_id)
+        if run is None or not run.get("report") or not run["report"].get("proof"):
+            raise HTTPException(404, "proof not available yet")
+        return run["report"]["proof"]
+
+    # --- M4: Adversarial Chaos & Red-Team Autopilot ---------------------
+
+    @app.post("/v1/security/chaos")
+    async def run_security_chaos(principal: SessionPrincipal = Depends(current)) -> dict:
+        if not store.rate_limit("chaos:" + principal.user_id, limit=10, window=300):
+            raise HTTPException(429, "chaos audit rate limit exceeded")
+        from milyonus.security.chaos import run_chaos_suite
+
+        report = await run_chaos_suite(include_web=False)
+        return report.to_dict()
+
+    # --- M5: Skill Forge & Multi-Strategy Arena -------------------------
+
+    @app.post("/v1/sessions/{session_id}/forge-skill")
+    async def forge_session_skill(
+        session_id: str,
+        body: ForgeSkillIn,
+        principal: SessionPrincipal = Depends(current),
+    ) -> dict:
+        if store.get_session(principal.user_id, session_id) is None:
+            raise HTTPException(404, "session not found")
+        home = tenant_home(root, principal.tenant_id)
+        from milyonus.core.store import SessionStore
+        from milyonus.skills.forge import extract_skill_draft_from_messages, forge_skill
+
+        ss = SessionStore(home / "state.db")
+        try:
+            row = ss.find_session(
+                channel="web", user_ref=principal.user_id, title=f"web:{session_id}"
+            )
+            messages = [dict(m) for m in ss.history(row.id)] if row is not None else []
+        finally:
+            ss.close()
+        if not messages:
+            raise HTTPException(400, "session has no messages to forge into a skill")
+        spec = extract_skill_draft_from_messages(
+            messages,
+            name=body.name,
+            description=body.description,
+            session_id=session_id,
+        )
+        res = await forge_skill(spec, live_dir=home / "skills", publish=body.publish)
+        if not res.ok:
+            raise HTTPException(422, res.message)
+        return res.to_dict()
+
+    @app.get("/v1/arena/leaderboard")
+    def arena_leaderboard(principal: SessionPrincipal = Depends(current)) -> dict:
+        from milyonus.imece.arena import ArenaStore
+
+        store_a = ArenaStore(tenant_home(root, principal.tenant_id) / "state.db")
+        try:
+            return {
+                "leaderboard": store_a.leaderboard(),
+                "recent_matches": store_a.recent_matches(limit=10),
+            }
+        finally:
+            store_a.close()
+
+    @app.post("/v1/arena/match")
+    async def arena_match(
+        body: ArenaMatchIn, principal: SessionPrincipal = Depends(current)
+    ) -> dict:
+        if not store.rate_limit("arena:" + principal.user_id, limit=20, window=300):
+            raise HTTPException(429, "arena rate limit exceeded")
+        from milyonus.imece.arena import ArenaContender, ArenaStore, run_arena_match
+
+        home = tenant_home(root, principal.tenant_id)
+        if body.dry_run:
+
+            async def _sim_a(t: str) -> str:
+                return f"[{body.contender_a}] direct response for: {t}"
+
+            async def _sim_b(t: str) -> str:
+                return f"[{body.contender_b}] structured step-by-step verified solution for: {t}"
+
+            ca = ArenaContender(body.contender_a, body.contender_a, _sim_a)
+            cb = ArenaContender(body.contender_b, body.contender_b, _sim_b)
+        else:
+            from milyonus.config.loader import load_config
+            from milyonus.providers.base import CompletionRequest, Message
+            from milyonus.providers.router import build_provider
+
+            cfg = load_config(home / "config.toml")
+            prov = build_provider(cfg.provider)
+
+            def _make_fn(style: str):
+                async def _fn(t: str) -> str:
+                    out: list[str] = []
+                    req = CompletionRequest(
+                        system=f"Follow strategy '{style}'. Be concise, accurate, and verifiable.",
+                        messages=[Message(role="user", content=t)],
+                        max_output_tokens=cfg.provider.max_output_tokens,
+                    )
+                    async for ev in prov.stream(req):
+                        if ev.kind == "text":
+                            out.append(ev.delta)
+                    return "".join(out)
+
+                return _fn
+
+            ca = ArenaContender(body.contender_a, body.contender_a, _make_fn(body.contender_a))
+            cb = ArenaContender(body.contender_b, body.contender_b, _make_fn(body.contender_b))
+
+        oracle = None
+        if body.expect_substring is not None:
+            needle = body.expect_substring
+
+            def _oracle(_t: str, out: str) -> tuple[bool, float]:
+                ok = needle in out
+                return ok, 1.0 if ok else 0.0
+
+            oracle = _oracle
+
+        store_a = ArenaStore(home / "state.db")
+        try:
+            res = await run_arena_match(store_a, body.task, ca, cb, oracle_fn=oracle)
+            return res.to_dict()
+        finally:
+            store_a.close()
 
     if static_dir is not None:
         resolved_root = static_dir.resolve()
