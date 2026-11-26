@@ -66,7 +66,7 @@ GET    /v1/imece/runs · POST /v1/imece/runs           → launch/list Live İme
 GET    /v1/imece/runs/{id} · /stream · /proof         → run detail, SSE phase stream, proof capsule
 POST   /v1/imece/runs/{id}/stop                       → emergency stop between collective phases
 
-POST   /v1/security/chaos                             → isolated 8-vector (16-probe) Adversarial Chaos Scorecard
+POST   /v1/security/chaos                             → isolated 10-vector (20-probe) Adversarial Chaos Scorecard
 POST   /v1/sessions/{id}/forge-skill {name, ...}      → distill, scan, and publish a verified SKILL.md
 GET    /v1/arena/leaderboard · POST /v1/arena/match   → head-to-head Strategy Arena + Elo leaderboard
 
@@ -82,6 +82,18 @@ GET    /v1/skills/immune/scan · POST /seal|/heal      → H7 Autonomous Self-He
 GET    /v1/sessions/{id}/flight · POST /v1/flights/analyze|diff → H8 Black-Box Flight Recorder DVR & anomaly detector
 GET    /v1/router/frontier · POST /route|/outcome     → H9 Cost-Latency-Trust Pareto Frontier Router & Beta/UCB bandit
 GET/POST /v1/mesh/peers · DELETE /{id} · POST /dispatch → H10 Federated İmece Mesh Byzantine signed quorum
+
+# Singularity S1–S10 endpoints (PLAN-SINGULARITY.md)
+POST   /v1/security/intent-scan    {text}             → S1 4-axis EN/TR subtle behavioral poisoning shield
+POST   /v1/passport/issue · /verify                   → S2 Signed Agent Passports (`milyonus.passport.v1`)
+POST   /v1/shadow/simulate · /apply                   → S3 Jailed speculative shadow-fork dry-run & drift-checked commit
+GET    /v1/memory/forecast?days=                      → S4 Temporal trust decay forecast & amnesia risk score
+POST   /v1/surgeon/analyze         {source, filename} → S5 AST self-patching Code Surgeon
+POST   /v1/dag/compile · /run · GET /v1/dag/runs      → S6 Parallel DAG workflow compiler (Kahn + CPM)
+GET    /v1/privacy/budget · POST /v1/privacy/release  → S7 Laplace (ε)-Differential Privacy vault & accountant
+POST   /v1/certify/run · GET /v1/certify/history      → S8 Enterprise 6-pillar Compliance Certifier
+POST   /v1/security/fuzz           {iterations, seed} → S9 Seeded adversarial mutation security fuzzer
+POST   /v1/economy/simulate · GET /v1/economy/scales  → S10 Multi-agent collective economy & Pareto savings simulator
 ```
 
 ## SSE events
