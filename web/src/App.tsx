@@ -12,6 +12,7 @@ import { Locale, t } from "./i18n";
 import { useUi } from "./store";
 
 const HypernovaModal = lazy(() => import("./components/HypernovaModal"));
+const SingularityModal = lazy(() => import("./components/SingularityModal"));
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -534,6 +535,7 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
       <WarRoomModal />
       <Suspense fallback={null}>
         <HypernovaModal />
+        <SingularityModal />
       </Suspense>
     </div>
   );

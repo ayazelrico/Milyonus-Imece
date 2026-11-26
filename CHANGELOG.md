@@ -5,6 +5,49 @@ The format follows Keep a Changelog; versions follow the Milyonus model line.
 
 ## [Unreleased] — Milyonus-Imece (experimental)
 
+### Singularity capabilities (S1–S10) — 2026-11-26
+- **S1 — Deep Behavioral Intent & Subtle Poisoning Shield** (`security/intent_shield.py`):
+  4-axis bilingual (EN/TR) discourse analyzer catching indirect polite behavioral overrides,
+  persona hijacks, covert soft-exfiltration, and false-history gaslighting (`milyonus shield scan`,
+  `POST /v1/security/intent-scan`).
+- **S2 — Cryptographic Agent Passports** (`security/passport.py`): tamper-evident
+  `milyonus.passport.v1` credentials (`did:milyonus:*`) binding Chaos Immunity score, Constitution
+  hash, memory ledger integrity, and Skill Immune digests with Ed25519 or HMAC-SHA256 attestation
+  (`milyonus passport issue | verify`, `/v1/passport/issue | verify`).
+- **S3 — Speculative Execution & Shadow-Fork Dry-Run Engine** (`core/shadow.py`): jailed ephemeral
+  workspace fork simulating file mutations with unified diffs, security/secret line scanning,
+  live-drift checks, and atomic reversible rollback bundles (`milyonus shadow preview`,
+  `/v1/shadow/simulate | apply`).
+- **S4 — Temporal Causal Memory Decay Forecast** (`memory/forecast.py`): projects `memory/trust.py`
+  half-life decay curves 7–365 days ahead with quarantine cliff dates, centrality-weighted Amnesia
+  Risk Score, and prioritized reaffirmation schedules (`milyonus memory forecast`,
+  `GET /v1/memory/forecast`).
+- **S5 — Autonomous AST Self-Patching Code Surgeon** (`selfmod/surgeon.py`): AST-scans Python
+  source for `eval`/`exec`, `shell=True`, unsafe `yaml.load`/`pickle`, hardcoded secrets, bare
+  `except:`, and mutable defaults, synthesizing AST-verified unified patches (`milyonus surgeon scan`,
+  `POST /v1/surgeon/analyze`).
+- **S6 — Cognitive Swarm DAG Workflow Compiler** (`imece/dag.py`): cycle-checked DAG compiler with
+  Kahn topological waves, Critical-Path Method (CPM), concurrent `asyncio.gather` wave execution,
+  dependency skip gating, SQLite run store, and Mermaid export (`milyonus dag run`, `/v1/dag/*`).
+- **S7 — Differential Privacy Telemetry Vault & Budget Accountant** (`observability/privacy.py`):
+  CSPRNG Laplace `(ε)`-differentially private count/sum/mean/histogram releases guarded by an
+  irrevocable fail-closed SQLite `ε_max` accountant (`milyonus privacy status | release`,
+  `/v1/privacy/*`).
+- **S8 — Enterprise 6-Pillar Live Compliance Certifier** (`evaluation/certifier.py`): deterministic
+  6-pillar audit (Chaos, Memory, Leases, Constitution, Skill Immune, Byzantine Mesh) issuing hashed
+  / Ed25519-signed `.milyonus-cert.json` certificates (`milyonus certify run`, `/v1/certify/*`).
+- **S9 — Adversarial Mutation Security Fuzzer & Guard Hardening** (`security/fuzzer.py`,
+  `security/preexec.py`, `security/ssrf.py`): seeded mutation fuzzer across SSRF, preexec, path
+  jail, zero-width injection, and intent shield — discovered & hardened case/zero-width `preexec`
+  bypasses and IPv4-mapped IPv6 / trailing-dot SSRF checks (`milyonus fuzz run`,
+  `POST /v1/security/fuzz`).
+- **S10 — Multi-Agent Collective Economy & Scale Simulator** (`observability/economy.py`): real
+  16-block İmece scale allocation (17–100,000 agents) + Pareto hybrid savings vs frontier baseline
+  + parallel ETA + reliability ROI (`milyonus economy scales`, `/v1/economy/*`).
+- **Chaos Autopilot (20/20 A+) & Singularity Studio UI**: upgraded `security/chaos.py` to 20
+  isolated probes across 10 vectors (`+intent`, `+governance`) and added lazy-loaded React SPA
+  `SingularityModal.tsx` + `SingularityVisuals.tsx` (16.9 kB chunk).
+
 ### Hypernova capabilities (H1–H10) — 2026-11-26
 - **H1 — Sovereign Epistemic Knowledge Graph & Contradiction Engine** (`memory/graph.py`):
   deterministic semantic triple & polarity extraction, automatic contradiction detection with

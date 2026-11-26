@@ -557,3 +557,29 @@ def memory_blast_radius(origin: str) -> None:
     )
     for depth, ids in rep.layers.items():
         console.print(f"  depth {depth}: {', '.join(ids)}")
+
+
+@memory_app.command("forecast")
+def memory_forecast(
+    days: int = typer.Option(90, "--days", "-d", min=1, max=365, help="Forecast horizon in days"),
+) -> None:
+    """Project verified memory trust decay & quarantine cliffs into the future (S4)."""
+    from milyonus.memory.forecast import forecast_memory_decay
+
+    store = MemoryStore()
+    try:
+        rep = forecast_memory_decay(store, horizon_days=days)
+    finally:
+        store.close()
+    color = PALETTE["ok"] if rep.amnesia_risk_score < 40 else PALETTE["warn"]
+    console.print(
+        f"[bold {color}]{GLYPH} Memory Decay Forecast (+{rep.horizon_days}d)[/] · "
+        f"active={rep.active_now} → surviving={rep.surviving_at_horizon} · "
+        f"at_risk={rep.at_risk_count} · amnesia_risk={rep.amnesia_risk_score}/100"
+    )
+    for item in rep.reaffirm_schedule[:8]:
+        eta = "immortal" if item.days_until_demotion is None else f"{item.days_until_demotion}d"
+        console.print(
+            f"  [{item.trust_tier}] {item.current_trust:.2f}→{item.projected_trust:.2f} "
+            f"(cliff {eta}) · {item.content[:64]}"
+        )

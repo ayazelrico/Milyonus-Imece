@@ -29,6 +29,12 @@ class SSRFBlocked(Exception):
 
 def _ip_is_blocked(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     if (
+        isinstance(ip, ipaddress.IPv6Address)
+        and ip.ipv4_mapped is not None
+        and _ip_is_blocked(ip.ipv4_mapped)
+    ):
+        return True
+    if (
         ip.is_private
         or ip.is_loopback
         or ip.is_link_local
@@ -52,8 +58,9 @@ def check_url(url: str) -> str:
     host = parsed.hostname
     if not host:
         raise SSRFBlocked("no host")
-    if host.lower() in _METADATA_HOSTS:
-        raise SSRFBlocked(f"cloud metadata host blocked: {host}")
+    norm_host = host.lower().rstrip(".")
+    if norm_host in _METADATA_HOSTS or norm_host == "localhost":
+        raise SSRFBlocked(f"cloud metadata / local host blocked: {host}")
 
     # Resolve and check every returned address. DNS failure => blocked.
     try:

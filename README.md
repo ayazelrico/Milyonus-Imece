@@ -13,8 +13,8 @@ One command sends a task through **tens to thousands of real subagents**, a
 [![License](https://img.shields.io/badge/license-Apache--2.0-1E4FD8.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-35C6F4.svg)](pyproject.toml)
 [![Version](https://img.shields.io/badge/version-5.5.0-071233.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-670%20passing-22C55E.svg)](tests)
-[![Chaos](https://img.shields.io/badge/Chaos%20Immunity-100%2F100%20A%2B%20(16%2F16)-22C55E.svg)](PLAN-HYPERNOVA.md)
+[![Tests](https://img.shields.io/badge/tests-683%20passing-22C55E.svg)](tests)
+[![Chaos](https://img.shields.io/badge/Chaos%20Immunity-100%2F100%20A%2B%20(20%2F20)-22C55E.svg)](PLAN-SINGULARITY.md)
 [![Imece](https://img.shields.io/badge/imece-experimental-F59E0B.svg)](#status--honest-trial-results)
 [![PoisonBench](https://img.shields.io/badge/PoisonBench%20ASR-0%25-22C55E.svg)](docs/benchmarks.md)
 
@@ -24,14 +24,17 @@ One command sends a task through **tens to thousands of real subagents**, a
 > Python deliverable, passed 12 independently designed tests in macOS isolation,
 > and passed a separate reference oracle withheld from the agents. Sandboxed
 > Python execution, hierarchical command/councils, a benchmark runner,
-> five Moonshot capabilities (M1–M5), and **ten Hypernova capabilities (H1–H10)**
-> — Epistemic Knowledge Graph & Contradiction Engine, Git-Style Memory Branching,
-> Zero-Trust Capability Leases & Canary Kill-Switch, IRADE Constitutional Policy
-> Engine, Swarm DNA Evolution, Selective Disclosure Merkle Proofs, Skill Immune
-> System, Black-Box Flight Recorder DVR, Pareto Frontier Router, and Federated
-> İmece Mesh — now ship. This is a small proof, not production validation. See the
-> [completion assessment](docs/completion.md), [raw trial](docs/trials/2026-11-02-final-clamp.json),
-> [next 5X plan](PLAN-5X.md), [Moonshot plan](PLAN-MOONSHOT.md), and [Hypernova plan](PLAN-HYPERNOVA.md).
+> five **Moonshot (M1–M5)**, ten **Hypernova (H1–H10)**, and ten **Singularity
+> (S1–S10)** capabilities — spanning Epistemic Knowledge Graphs, Memory Git
+> Branching, Capability Leases & Canaries, IRADE Constitutions, Swarm DNA
+> Evolution, Selective Disclosure Merkle Proofs, Skill Immune System, Flight
+> Recorder DVR, Pareto Frontier Routing, Federated Byzantine Mesh, Deep Intent
+> Shield, Agent Passports, Speculative Shadow-Forks, Decay Forecasting, AST Code
+> Surgeon, DAG Workflow Compiler, Differential Privacy Vault, 6-Pillar Compliance
+> Certifier, Mutation Fuzzer, and Collective Economy Simulator — now ship. See
+> [completion assessment](docs/completion.md), [PLAN-5X](PLAN-5X.md),
+> [PLAN-MOONSHOT](PLAN-MOONSHOT.md), [PLAN-HYPERNOVA](PLAN-HYPERNOVA.md), and
+> [PLAN-SINGULARITY](PLAN-SINGULARITY.md).
 
 ---
 
@@ -1371,7 +1374,7 @@ Guides: [docs/docker.md](docs/docker.md) · [docs/production.md](docs/production
 ```bash
 make sync                  # deps (matches CI: dev + admin + discord)
 make hooks                 # enable pre-push gate (runs the CI checks locally)
-uv run pytest -q           # full suite; 670 passed with real Docker (MILYONUS_TEST_DOCKER=1)
+uv run pytest -q           # full suite; 683 passed with real Docker (MILYONUS_TEST_DOCKER=1)
 make check                 # lint + format-check + mypy + safety + chaos + test — matches CI
 ```
 
@@ -1411,7 +1414,7 @@ large repeated real-model evaluation and third-party audit remain open.
 - [x] **M1** — Memory Time-Travel & Counterfactual Replay (`timetravel.py`, CLI, `/v1/memory/*`, Trust Rail scrubber)
 - [x] **M2** — Signed Evidence Bundles (`.milyonus-proof.json` Merkle root + Ed25519 offline verification)
 - [x] **M3** — Live İmece War Room on Web Surface #7 (`ImeceRunHub`, SSE telemetry, Emergency Stop, Proof download)
-- [x] **M4** — Adversarial Chaos & Red-Team Autopilot (16 isolated probes, 8 vectors, 100/100 A+ CI gate, Web Shield Check)
+- [x] **M4** — Adversarial Chaos & Red-Team Autopilot (20 isolated probes, 10 vectors, 100/100 A+ CI gate, Web Shield Check)
 - [x] **M5** — Skill Forge & Multi-Strategy Arena (scanner + AST-verified `SKILL.md` synthesis + SQLite Elo leaderboard)
 
 **Hypernova Capabilities (H1–H10)** — see [PLAN-HYPERNOVA.md](PLAN-HYPERNOVA.md) · [PLAN-HYPERNOVA-ACTIONS.md](PLAN-HYPERNOVA-ACTIONS.md)
@@ -1426,6 +1429,19 @@ large repeated real-model evaluation and third-party audit remain open.
 - [x] **H8** — Flight Recorder: Black-Box Session DVR & Anomaly Detector (`core/flight_recorder.py`, hash-chained DVR & diff)
 - [x] **H9** — Multi-Model Cost-Latency-Trust Pareto Frontier Router (`providers/pareto.py`, exact 3D Pareto + Beta/UCB + safety floors)
 - [x] **H10** — Federated İmece Mesh Protocol (`imece/mesh.py`, signed peer envelopes, Proof attestation, Byzantine slashing & quorum)
+
+**Singularity Capabilities (S1–S10)** — see [PLAN-SINGULARITY.md](PLAN-SINGULARITY.md) · [PLAN-SINGULARITY-ACTIONS.md](PLAN-SINGULARITY-ACTIONS.md)
+
+- [x] **S1** — Deep Behavioral Intent & Subtle Poisoning Shield (`security/intent_shield.py`, 4-axis EN/TR discourse defense)
+- [x] **S2** — Cryptographic Agent Passports (`security/passport.py`, `did:milyonus:*`, Ed25519/HMAC offline verification)
+- [x] **S3** — Speculative Execution & Shadow-Fork Dry-Run Engine (`core/shadow.py`, jailed dry-run, drift guard, rollback bundle)
+- [x] **S4** — Temporal Causal Memory Decay Forecast (`memory/forecast.py`, quarantine cliffs, amnesia risk, SVG curve)
+- [x] **S5** — Autonomous AST Self-Patching Code Surgeon (`selfmod/surgeon.py`, AST defect scanner + verified micro-patches)
+- [x] **S6** — Cognitive Swarm DAG Workflow Compiler (`imece/dag.py`, Kahn waves, CPM critical path, parallel execution)
+- [x] **S7** — Differential Privacy Telemetry Vault (`observability/privacy.py`, CSPRNG Laplace + irrevocable SQLite `ε_max` accountant)
+- [x] **S8** — Enterprise 6-Pillar Compliance Certifier (`evaluation/certifier.py`, live `.milyonus-cert.json` PLATINUM–FAILED)
+- [x] **S9** — Adversarial Mutation Security Fuzzer (`security/fuzzer.py`, 0-bypass fuzzing + hardened `preexec`/`ssrf`)
+- [x] **S10** — Multi-Agent Collective Economy Simulator (`observability/economy.py`, 17–100k scale Pareto savings & ETA)
 
 **Platform**
 

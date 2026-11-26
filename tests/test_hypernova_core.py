@@ -578,8 +578,8 @@ async def test_h10_federated_mesh_signed_quorum_and_byzantine_slashing(tmp_path:
 @pytest.mark.asyncio
 async def test_h11_chaos_suite_16_probes_scores_100() -> None:
     report = await run_chaos_suite(include_web=True)
-    assert report.total == 16
-    assert report.passed == 16
+    assert report.total >= 16
+    assert report.passed == report.total
     assert report.immunity_score == 100
     assert report.grade == "A+"
     assert {"leases", "federation"} <= set(report.vectors)
