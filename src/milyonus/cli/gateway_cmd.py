@@ -38,6 +38,9 @@ def gateway_start(
             f"[{PALETTE['risk']}]UYARI: gateway_allow_all_users=true — "
             f"anyone can reach the bot. Disable in production![/]"
         )
+    from milyonus.gateway.adapter import ChannelAdapter
+
+    adapter: ChannelAdapter
     if channel == "telegram":
         from milyonus.gateway.adapters.telegram import TelegramAdapter
 

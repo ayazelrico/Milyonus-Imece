@@ -141,11 +141,22 @@ async def _run_session(root: Path) -> int:
     skill_manager = SkillManager()
     skill_tools = make_skill_tools(skill_engine, skill_manager)
 
+    from milyonus.prompt.compressor import compact_history
+    from milyonus.tools.clarify import ClarifyBudget, make_clarify_tool
+
+    clarify_budget = ClarifyBudget(max_per_turn=1)
+
+    async def ask_clarify(question: str, options: list[str]) -> str:
+        console.print(f"\n[{PALETTE['cyan_400']}]? clarify:[/] {question}")
+        for idx, opt in enumerate(options, 1):
+            console.print(f"  [dim]{idx}.[/] {opt}")
+        return await asyncio.to_thread(input, "  answer: ")
+
     registry = _make_registry(
         root,
         memory_tools,
         skill_tools,
-        [make_schedule_tool()],
+        [make_schedule_tool(), make_clarify_tool(ask_clarify, budget=clarify_budget)],
         make_email_tools(),
         make_browser_tools(),
         make_vision_tools(provider, root),
@@ -207,6 +218,13 @@ async def _run_session(root: Path) -> int:
             f"\n[{PALETTE['blue_500']}]→ tool[/] [bold]{call.name}[/] [dim]{call.arguments}[/]"
         )
 
+    async def on_compacted(banner: str) -> None:
+        console.print(f"\n[{PALETTE['chrome_500']}]✦ {banner}[/]")
+
+    async def _compress(msgs: list[Message], pressure: float) -> tuple[list[Message], str | None]:
+        res = await compact_history(msgs, pressure=pressure)
+        return res.messages, (res.banner if res.compacted else None)
+
     async def approve(call: ToolCall, risk: str) -> bool:
         # RiskEngine decides: auto-run reversible work, confirm the rest, block
         # hard-dangerous patterns outright (PLAN §6.1).
@@ -241,7 +259,12 @@ async def _run_session(root: Path) -> int:
         approve=approve,
         on_text=on_text,
         on_tool=on_tool,
+        on_compacted=on_compacted,
+        risk_engine=risk_engine,
+        clarify_budget=clarify_budget,
+        compressor=_compress,
         max_output_tokens=cfg.provider.max_output_tokens,
+        max_tool_result_chars=8_000,
     )
 
     history: list[Message] = []

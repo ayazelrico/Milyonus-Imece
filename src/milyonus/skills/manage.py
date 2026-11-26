@@ -20,6 +20,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import mkdtemp
+from typing import Literal
 
 from milyonus.config.paths import skills_dir
 from milyonus.imece.execution import PythonExecutor, python_files
@@ -252,7 +253,10 @@ class SkillManager:
         if not files:
             return ManageResult(False, "repair skill requires named Python files", name)
         control_files = dict.fromkeys(files, f"raise RuntimeError({_REPLAY_CONTROL_ERROR!r})\n")
-        executor = PythonExecutor(backend=backend)
+        if backend not in ("docker", "macos"):
+            return ManageResult(False, f"unsupported replay backend: {backend}", name)
+        typed_backend: Literal["docker", "macos"] = "docker" if backend == "docker" else "macos"
+        executor = PythonExecutor(backend=typed_backend)
         for label, script in tasks.items():
             result = await executor.run(files, script)
             if not result.passed:

@@ -20,7 +20,7 @@ SourceKind = Literal[
 
 # Lifecycle state of a memory row.
 MemoryState = Literal[
-    "pending", "active", "rejected", "revoked", "expired", "superseded", "t0_staged"
+    "pending", "active", "rejected", "revoked", "expired", "superseded", "t0_staged", "erased"
 ]
 
 

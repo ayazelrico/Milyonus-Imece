@@ -133,8 +133,8 @@ tamamlandığı veya performans hedeflerinin sağlandığı anlamına gelmez.
 Deney yürütücüsü [`evals/imece/run.py`](evals/imece/run.py) **yalnızca Codex veya
 Antigravity CLI** kullanır (`--engine codex|antigravity`, açık `--model`);
 ham sağlayıcı API'si üzerinden çalışmaz. `--prepare` model çağrısı yapmadan
-hazırlık kaydı üretir. Oracle erişim koruması şu anda macOS `sandbox-exec`
-gerektirir. CLI raporlarında dolar maliyeti `null`/bilinmiyor olarak kalır;
+hazırlık kaydı üretir. Oracle erişim koruması macOS `sandbox-exec` veya Linux `bwrap` (bubblewrap)
+gerektirir; her ikisi de yoksa güvensiz geri düşüş olmadan fail-closed durur. CLI raporlarında dolar maliyeti `null`/bilinmiyor olarak kalır;
 abonelikten token fiyatı türetilmez. Token sınırı tamamlanan çağrılar üzerinden
 izlenir; çağrı başına kesin çıktı token sınırı uygulanmaz. Varsayılan olarak üretim havuzu, konsey ve onay aynı modeli kullanır.
 Koltuklara ayrı model atanabilir; bağımsızlık için denetçinin model kökeni kanıtı gerekir. Sağlayıcı rezervasyon defterinin kodda bulunması, bu CLI

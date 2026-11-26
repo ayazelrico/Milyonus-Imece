@@ -1,17 +1,20 @@
-"""FastAPI application for the Milyonus web surface."""
+"""FastAPI application for the Milyonus web surface (PLAN-WEB §5–§11)."""
 
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
+import shutil
+import time
 import uuid
 from collections.abc import AsyncIterator
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from milyonus.web.auth import (
@@ -26,6 +29,7 @@ from milyonus.web.runner import RunnerHub, tenant_home
 from milyonus.web.store import WebStore
 
 COOKIE = "milyonus_session"
+DEFAULT_ATTACHMENT_QUOTA = 25 * 1024 * 1024  # 25 MiB per tenant
 
 
 class MagicLinkIn(BaseModel):
@@ -38,6 +42,8 @@ class VerifyIn(BaseModel):
 
 class SessionIn(BaseModel):
     title: str | None = None
+    parent_id: str | None = None
+    fork_before_message_id: str | None = None
 
 
 class SessionPatch(BaseModel):
@@ -48,6 +54,13 @@ class SessionPatch(BaseModel):
 class MessageIn(BaseModel):
     text: str = Field(min_length=1, max_length=100_000)
     attachments: list[str] = Field(default_factory=list)
+    tools_enabled: bool = True
+
+
+class FeedbackIn(BaseModel):
+    session_id: str
+    rating: str
+    note: str = Field(default="", max_length=500)
 
 
 class CancelIn(BaseModel):
@@ -66,7 +79,15 @@ class SettingsIn(BaseModel):
     values: dict[str, str | bool | int | float]
 
 
-def create_app(*, data_root: Path | None = None) -> FastAPI:
+class ApiKeyIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+
+
+class ProjectInstructionsIn(BaseModel):
+    content: str = Field(max_length=32_000)
+
+
+def create_app(*, data_root: Path | None = None, static_dir: Path | None = None) -> FastAPI:
     root = data_root or Path(
         os.environ.get("MILYONUS_WEB_DATA", str(Path.home() / ".milyonus" / "web"))
     )
@@ -79,7 +100,7 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
         if os.environ.get("MILYONUS_WEB_SECURE") != "1":
             raise RuntimeError("Production requires MILYONUS_WEB_SECURE=1")
     store = WebStore(root / "web.db")
-    # Shared hub uses a placeholder home; per-request runs switch MILYONUS_HOME.
+    # Per-request runs pass an explicit tenant `home` directory (no process-wide env mutation).
     hub = RunnerHub(store, home=root)
 
     app = FastAPI(title="Milyonus Web", version="5.5.0")
@@ -97,11 +118,39 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault(
+            "Content-Security-Policy",
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'",
+        )
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        if os.environ.get("MILYONUS_WEB_SECURE") == "1":
+            response.headers.setdefault(
+                "Strict-Transport-Security",
+                "max-age=63072000; includeSubDomains",
+            )
+        return response
+
     app.state.store = store
     app.state.hub = hub
     app.state.data_root = root
 
     def current(request: Request) -> SessionPrincipal:
+        # Support scoped API key authentication alongside cookie sessions (PLAN-WEB §8.1).
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.lower().startswith("bearer "):
+            raw_key = auth_header[7:].strip()
+            user = store.verify_api_key(raw_key)
+            if user is None:
+                raise HTTPException(401, "invalid or revoked api key")
+            return SessionPrincipal(user_id=user.id, email=user.email, tenant_id=user.id)
+
         principal = principal_from_cookie(request.cookies.get(COOKIE))
         if principal is None:
             raise HTTPException(401, "not authenticated")
@@ -121,13 +170,47 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
     def healthz() -> dict:
         return {"ok": True}
 
+    @app.get("/metrics", response_class=PlainTextResponse)
+    def metrics() -> str:
+        """Prometheus-compatible operational metrics (PLAN-WEB W8)."""
+        snap = store.metrics_snapshot()
+        cache = hub.prefix_cache_stats()
+        lines = [
+            "# HELP milyonus_active_users Active web users",
+            "# TYPE milyonus_active_users gauge",
+            f"milyonus_active_users {snap['active_users']}",
+            "# HELP milyonus_active_sessions Active non-archived sessions",
+            "# TYPE milyonus_active_sessions gauge",
+            f"milyonus_active_sessions {snap['active_sessions']}",
+            "# HELP milyonus_turns_total Total web turns created",
+            "# TYPE milyonus_turns_total counter",
+            f"milyonus_turns_total {snap['turns_total']}",
+            "# HELP milyonus_turns_running Currently executing web turns",
+            "# TYPE milyonus_turns_running gauge",
+            f"milyonus_turns_running {snap['turns_running']}",
+            "# HELP milyonus_approvals_pending Pending tool approvals",
+            "# TYPE milyonus_approvals_pending gauge",
+            f"milyonus_approvals_pending {snap['approvals_pending']}",
+            "# HELP milyonus_tokens_used_total Cumulative tokens billed across tenants",
+            "# TYPE milyonus_tokens_used_total counter",
+            f"milyonus_tokens_used_total {snap['tokens_used_total']}",
+            "# HELP milyonus_prefix_cache_hits_total Stable system-prompt prefix cache hits",
+            "# TYPE milyonus_prefix_cache_hits_total counter",
+            f"milyonus_prefix_cache_hits_total {cache['hits']}",
+            "# HELP milyonus_prefix_cache_misses_total System-prompt prefix cache misses",
+            "# TYPE milyonus_prefix_cache_misses_total counter",
+            f"milyonus_prefix_cache_misses_total {cache['misses']}",
+            "# HELP milyonus_circuit_breaker_open Open provider circuit breakers",
+            "# TYPE milyonus_circuit_breaker_open gauge",
+            f"milyonus_circuit_breaker_open {cache['circuit_breaker_open']}",
+        ]
+        return "\n".join(lines) + "\n"
+
     @app.post("/v1/auth/magic-link", status_code=202)
     def magic_link(body: MagicLinkIn) -> dict:
         if not store.rate_limit("login:" + body.email.lower(), limit=5, window=3600):
             raise HTTPException(429, "too many login requests")
         token = store.create_magic_token(body.email)
-        # Dev/local: return token so curl works without a mailer.
-        # Production should mail it and omit the token field.
         expose = os.environ.get("MILYONUS_WEB_DEV_AUTH", "0") == "1"
         if not expose:
             from milyonus.web.mailer import send_login
@@ -161,8 +244,37 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
 
     @app.post("/v1/sessions")
     def create_session(body: SessionIn, principal: SessionPrincipal = Depends(current)) -> dict:
-        sid = store.create_session(principal.user_id, title=body.title)
-        return {"id": sid}
+        parent_id: str | None = None
+        if body.parent_id:
+            if store.get_session(principal.user_id, body.parent_id) is None:
+                raise HTTPException(404, "parent session not found")
+            parent_id = body.parent_id
+        sid = store.create_session(principal.user_id, title=body.title, parent_id=parent_id)
+        if parent_id and body.fork_before_message_id is not None:
+            from milyonus.core.store import SessionStore
+
+            home = tenant_home(root, principal.tenant_id)
+            ss = SessionStore(home / "state.db")
+            try:
+                parent_row = ss.find_session(
+                    channel="web", user_ref=principal.user_id, title=f"web:{parent_id}"
+                )
+                if parent_row is not None:
+                    child_core_id = ss.create_session(
+                        "web", user_ref=principal.user_id, title=f"web:{sid}"
+                    )
+                    for m in ss.history(parent_row.id):
+                        if str(m["id"]) == body.fork_before_message_id:
+                            break
+                        ss.append_message(
+                            child_core_id,
+                            turn=int(m["turn"]),
+                            role=str(m["role"]),
+                            content=str(m["content"] or ""),
+                        )
+            finally:
+                ss.close()
+        return {"id": sid, "parent_id": parent_id}
 
     @app.get("/v1/sessions/{session_id}")
     def get_session(session_id: str, principal: SessionPrincipal = Depends(current)) -> dict:
@@ -186,12 +298,24 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
                     }
                 )
         ss.close()
+        active_turn_id = store.active_turn(session_id)
+        pending_approvals = (
+            store.pending_approvals_for_turn(active_turn_id) if active_turn_id else []
+        )
+        fb = {
+            str(item["message_id"]): item["rating"]
+            for item in store.list_feedback(principal.user_id, session_id=session_id)
+        }
         return {
             "id": session_id,
             "title": meta["title"],
             "pinned": bool(meta["pinned"]),
+            "parent_id": meta.get("parent_id"),
             "updated_at": meta["updated_at"],
             "messages": messages,
+            "active_turn_id": active_turn_id,
+            "pending_approvals": pending_approvals,
+            "feedback": fb,
         }
 
     @app.patch("/v1/sessions/{session_id}")
@@ -223,9 +347,10 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
             hits = []
             for r in ss.search(q):
                 core = ss.get_session(r["session_id"])
-                if core is None or not (core.title or "").startswith("web:"):
+                title = core.title if core is not None else None
+                if not title or not title.startswith("web:"):
                     continue
-                web_id = core.title[4:]
+                web_id = title[4:]
                 if store.get_session(principal.user_id, web_id) is None:
                     continue
                 hits.append(
@@ -240,31 +365,135 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
         finally:
             ss.close()
 
-    @app.post("/v1/attachments")
-    async def upload(request: Request, principal: SessionPrincipal = Depends(current)) -> dict:
+    async def _handle_upload(request: Request, principal: SessionPrincipal) -> dict:
         from milyonus.security.injection import max_severity, scan
         from milyonus.security.redact import redact
+        from milyonus.web.context import detect_image_mime, extract_pdf_text
 
         if not store.rate_limit("upload:" + principal.user_id, limit=30, window=3600):
             raise HTTPException(429, "upload limit exceeded")
+
+        ct = (request.headers.get("content-type") or "").split(";")[0].strip().lower()
+        max_bytes = 5_000_000 if ct.startswith("image/") or ct == "application/pdf" else 1_000_000
         data = bytearray()
         async for chunk in request.stream():
-            if len(data) + len(chunk) > 1_000_000:
-                raise HTTPException(413, "maximum upload is 1 MB")
+            if len(data) + len(chunk) > max_bytes:
+                limit_mb = max_bytes // 1_000_000
+                raise HTTPException(413, f"maximum upload is {limit_mb} MB")
             data.extend(chunk)
-        try:
-            text = data.decode("utf-8")
-        except UnicodeDecodeError:
-            raise HTTPException(415, "only UTF-8 text is supported") from None
-        if "\x00" in text or max_severity(scan(text)) == "high":
-            raise HTTPException(422, "unsafe attachment")
+        raw = bytes(data)
+
+        quota = int(os.environ.get("MILYONUS_WEB_ATTACHMENT_QUOTA_BYTES", DEFAULT_ATTACHMENT_QUOTA))
+        if store.attachment_bytes_used(principal.tenant_id) + len(raw) > quota:
+            raise HTTPException(413, "tenant attachment storage quota exceeded")
+
+        filename = (request.headers.get("x-filename") or "upload").strip()[:120] or "upload"
+        filename = "".join(c if c.isalnum() or c in "._-" else "_" for c in filename)
+
         folder = tenant_home(root, principal.tenant_id) / "attachments"
         folder.mkdir(mode=0o700, exist_ok=True)
         aid = uuid.uuid4().hex
+        digest = hashlib.sha256(raw).hexdigest()
+
+        img_mime = detect_image_mime(raw) if ct.startswith("image/") else None
+        if img_mime is not None:
+            ext = {"image/png": ".png", "image/jpeg": ".jpg", "image/webp": ".webp"}[img_mime]
+            ws = tenant_home(root, principal.tenant_id) / "workspace" / ".uploads"
+            ws.mkdir(mode=0o700, parents=True, exist_ok=True)
+            img_path = ws / f"{aid}{ext}"
+            img_path.write_bytes(raw)
+            img_path.chmod(0o600)
+            note = f"[Image attachment: {filename} ({img_mime}, {len(raw)} bytes) saved at .uploads/{aid}{ext}. Use read_image if needed.]"
+            path = folder / aid
+            path.write_text(note, encoding="utf-8")
+            path.chmod(0o600)
+            store.record_attachment(
+                attachment_id=aid,
+                tenant_id=principal.tenant_id,
+                filename=filename,
+                mime=img_mime,
+                size_bytes=len(raw),
+                sha256=digest,
+                path=str(img_path),
+            )
+            return {"id": aid, "file_id": aid, "bytes": len(raw), "mime": img_mime}
+
+        if ct == "application/pdf" or raw.startswith(b"%PDF-"):
+            try:
+                text = extract_pdf_text(raw)
+            except ValueError:
+                raise HTTPException(415, "invalid PDF attachment") from None
+            if max_severity(scan(text)) == "high":
+                raise HTTPException(422, "unsafe attachment")
+            if not text:
+                text = f"[PDF attachment: {filename} ({len(raw)} bytes) contained no extractable text.]"
+            path = folder / aid
+            path.write_text(redact(text), encoding="utf-8")
+            path.chmod(0o600)
+            store.record_attachment(
+                attachment_id=aid,
+                tenant_id=principal.tenant_id,
+                filename=filename,
+                mime="application/pdf",
+                size_bytes=len(raw),
+                sha256=digest,
+                path=str(path),
+            )
+            return {"id": aid, "file_id": aid, "bytes": len(raw), "mime": "application/pdf"}
+
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError:
+            raise HTTPException(
+                415, "only UTF-8 text, PDF, or PNG/JPEG/WEBP images are supported"
+            ) from None
+        if "\x00" in text or max_severity(scan(text)) == "high":
+            raise HTTPException(422, "unsafe attachment")
         path = folder / aid
         path.write_text(redact(text), encoding="utf-8")
         path.chmod(0o600)
-        return {"id": aid, "bytes": len(data)}
+        store.record_attachment(
+            attachment_id=aid,
+            tenant_id=principal.tenant_id,
+            filename=filename,
+            mime=ct or "text/plain",
+            size_bytes=len(raw),
+            sha256=digest,
+            path=str(path),
+        )
+        return {"id": aid, "file_id": aid, "bytes": len(raw), "mime": ct or "text/plain"}
+
+    @app.post("/v1/attachments")
+    async def upload(request: Request, principal: SessionPrincipal = Depends(current)) -> dict:
+        return await _handle_upload(request, principal)
+
+    @app.post("/v1/files")
+    async def upload_file_alias(
+        request: Request, principal: SessionPrincipal = Depends(current)
+    ) -> dict:
+        return await _handle_upload(request, principal)
+
+    @app.get("/v1/attachments")
+    def list_attachments(principal: SessionPrincipal = Depends(current)) -> dict:
+        quota = int(os.environ.get("MILYONUS_WEB_ATTACHMENT_QUOTA_BYTES", DEFAULT_ATTACHMENT_QUOTA))
+        return {
+            "items": store.list_attachments(principal.tenant_id),
+            "bytes_used": store.attachment_bytes_used(principal.tenant_id),
+            "quota_bytes": quota,
+        }
+
+    @app.delete("/v1/attachments/{attachment_id}")
+    def delete_attachment(
+        attachment_id: str, principal: SessionPrincipal = Depends(current)
+    ) -> dict:
+        row = store.delete_attachment(principal.tenant_id, attachment_id)
+        if row is None:
+            raise HTTPException(404, "attachment not found")
+        home = tenant_home(root, principal.tenant_id)
+        for p in (home / "attachments" / attachment_id, Path(row["path"])):
+            if p.exists() and p.is_file() and home.resolve() in p.resolve().parents:
+                p.unlink(missing_ok=True)
+        return {"deleted": True}
 
     @app.post("/v1/sessions/{session_id}/messages")
     async def post_message(
@@ -299,6 +528,68 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
                 text=body.text + ("\n" + context if context else ""),
                 workspace=workspace,
                 home=home,
+                tools_enabled=body.tools_enabled,
+            )
+        except RuntimeError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        return {"turn_id": turn_id}
+
+    @app.post("/v1/messages/{message_id}/feedback")
+    def message_feedback(
+        message_id: str,
+        body: FeedbackIn,
+        principal: SessionPrincipal = Depends(current),
+    ) -> dict:
+        """Record thumbs up/down feedback for a message (PLAN-WEB §2.1)."""
+        if body.rating not in ("up", "down"):
+            raise HTTPException(400, "rating must be 'up' or 'down'")
+        if store.get_session(principal.user_id, body.session_id) is None:
+            raise HTTPException(404, "session not found")
+        return store.save_feedback(
+            user_id=principal.user_id,
+            session_id=body.session_id,
+            message_id=message_id,
+            rating=body.rating,
+            note=body.note,
+        )
+
+    @app.post("/v1/sessions/{session_id}/regenerate")
+    async def regenerate(
+        session_id: str,
+        principal: SessionPrincipal = Depends(current),
+    ) -> dict:
+        """Re-run the latest user turn in a session (PLAN-WEB §2.1)."""
+        if store.get_session(principal.user_id, session_id) is None:
+            raise HTTPException(404, "session not found")
+        if not store.rate_limit("message:" + principal.user_id, limit=30, window=60):
+            raise HTTPException(429, "message rate exceeded")
+        home = tenant_home(root, principal.tenant_id)
+        workspace = home / "workspace"
+        workspace.mkdir(mode=0o700, parents=True, exist_ok=True)
+        from milyonus.core.store import SessionStore
+
+        ss = SessionStore(home / "state.db")
+        try:
+            row = ss.find_session(
+                channel="web", user_ref=principal.user_id, title=f"web:{session_id}"
+            )
+            if row is None:
+                raise HTTPException(404, "no messages to regenerate")
+            ss.pop_last_assistant(row.id)
+            hist = ss.history(row.id)
+            last_user = next((m["content"] for m in reversed(hist) if m["role"] == "user"), None)
+            if not last_user:
+                raise HTTPException(404, "no user turn to regenerate")
+        finally:
+            ss.close()
+        try:
+            turn_id = await hub.start_turn(
+                user_id=principal.user_id,
+                session_id=session_id,
+                text=last_user,
+                workspace=workspace,
+                home=home,
+                append_user=False,
             )
         except RuntimeError as exc:
             raise HTTPException(409, str(exc)) from exc
@@ -335,6 +626,17 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
                 await asyncio.sleep(0.15)
 
         return StreamingResponse(gen(), media_type="text/event-stream")
+
+    @app.get("/v1/turns/{turn_id}/tool-results/{call_id}")
+    def get_tool_result(
+        turn_id: str, call_id: str, principal: SessionPrincipal = Depends(current)
+    ) -> dict:
+        if store.turn_owner(turn_id) != principal.user_id:
+            raise HTTPException(404, "tool result not found")
+        res = store.get_tool_result(turn_id, call_id)
+        if res is None:
+            raise HTTPException(404, "tool result not found")
+        return res
 
     @app.post("/v1/sessions/{session_id}/cancel")
     async def cancel(
@@ -374,7 +676,9 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
         principal: SessionPrincipal = Depends(current),
     ) -> dict:
         home = tenant_home(root, principal.tenant_id)
+        from milyonus.config.schema import MemoryConfig
         from milyonus.memory.store import MemoryStore
+        from milyonus.memory.trust import current_trust
 
         allowed = {
             "pending",
@@ -384,28 +688,46 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
             "expired",
             "superseded",
             "t0_staged",
+            "erased",
         }
+        cfg = MemoryConfig()
+        now = time.time()
         ms = MemoryStore(home / "state.db")
-        items = []
-        if state:
-            if state not in allowed:
-                raise HTTPException(400, "invalid state")
-            rows = list(ms.by_state(state))  # type: ignore[arg-type]
-        else:
-            rows = list(ms.by_state("active")) + list(ms.by_state("pending"))  # type: ignore[arg-type]
-        for item in rows:
-            if q and q.lower() not in (item.content or "").lower():
-                continue
-            items.append(
-                {
-                    "id": item.id,
-                    "content": item.content,
-                    "state": item.state,
-                    "trust_tier": item.trust_tier,
-                    "source_uri": item.provenance.source_uri if item.provenance else None,
-                }
-            )
-        ms.close()
+        try:
+            items = []
+            if state:
+                if state not in allowed:
+                    raise HTTPException(400, "invalid state")
+                rows = list(ms.by_state(state))  # type: ignore[arg-type]
+            else:
+                rows = list(ms.by_state("active")) + list(ms.by_state("pending"))  # type: ignore[arg-type]
+            for item in rows:
+                if q and q.lower() not in (item.content or "").lower():
+                    continue
+                trust = current_trust(
+                    item.trust_tier,
+                    item.last_reaffirmed_at or item.verified_at or item.created_at,
+                    now,
+                    cfg,
+                    ceiling=item.trust_ceiling,
+                    sensitivity=item.sensitivity,
+                )
+                items.append(
+                    {
+                        "id": item.id,
+                        "content": item.content,
+                        "state": item.state,
+                        "trust_tier": item.trust_tier,
+                        "trust_score": round(trust, 3),
+                        "trust_ceiling": item.trust_ceiling,
+                        "review_at": item.review_at,
+                        "reaffirm_count": item.reaffirm_count,
+                        "sensitivity": item.sensitivity,
+                        "source_uri": item.provenance.source_uri if item.provenance else None,
+                    }
+                )
+        finally:
+            ms.close()
         start = max(0, (page - 1) * 50)
         return {"items": items[start : start + 50], "page": page}
 
@@ -415,44 +737,53 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
         from milyonus.memory.store import MemoryStore
 
         ms = MemoryStore(home / "state.db")
-        item = ms.get(item_id)
-        if item is None:
-            raise HTTPException(404, "not found")
-        payload = {
-            "id": item.id,
-            "content": item.content,
-            "state": item.state,
-            "trust_tier": item.trust_tier,
-            "provenance": {
-                "source_kind": item.provenance.source_kind,
-                "source_uri": item.provenance.source_uri,
-                "session_id": item.provenance.session_id,
-                "turn_id": item.provenance.turn_id,
-                "actor": item.provenance.actor,
-            },
-            "evidence_hash": item.evidence_hash,
-        }
-        ms.close()
-        return payload
-
-    @app.post("/v1/memory/{item_id}/reaffirm")
-    def reaffirm(item_id: str, principal: SessionPrincipal = Depends(current)) -> dict:
-        from milyonus.memory.store import MemoryStore, ReaffirmError
-
-        ms = MemoryStore(tenant_home(root, principal.tenant_id) / "state.db")
         try:
             item = ms.get(item_id)
             if item is None:
                 raise HTTPException(404, "not found")
-            if item.state != "active":
-                raise HTTPException(409, "only active memory can be reaffirmed")
-            try:
-                ceiling = ms.reaffirm(item_id, min_interval_seconds=3600)
-            except ReaffirmError as exc:
-                raise HTTPException(429, str(exc)) from exc
-            return {"ok": True, "trust_ceiling": ceiling}
+            return {
+                "id": item.id,
+                "content": item.content,
+                "state": item.state,
+                "trust_tier": item.trust_tier,
+                "verdict": item.verdict,
+                "confirmations": item.confirmations,
+                "sensitivity": item.sensitivity,
+                "reaffirm_count": item.reaffirm_count,
+                "review_at": item.review_at,
+                "provenance": {
+                    "source_kind": item.provenance.source_kind,
+                    "source_uri": item.provenance.source_uri,
+                    "session_id": item.provenance.session_id,
+                    "turn_id": item.provenance.turn_id,
+                    "actor": item.provenance.actor,
+                },
+                "evidence_hash": item.evidence_hash,
+            }
         finally:
             ms.close()
+
+    @app.post("/v1/memory/{item_id}/reaffirm")
+    async def reaffirm(item_id: str, principal: SessionPrincipal = Depends(current)) -> dict:
+        from milyonus.memory.store import MemoryStore, ReaffirmError
+
+        def _do() -> float:
+            ms = MemoryStore(tenant_home(root, principal.tenant_id) / "state.db")
+            try:
+                item = ms.get(item_id)
+                if item is None:
+                    raise HTTPException(404, "not found")
+                if item.state != "active":
+                    raise HTTPException(409, "only active memory can be reaffirmed")
+                try:
+                    return ms.reaffirm(item_id, min_interval_seconds=3600)
+                except ReaffirmError as exc:
+                    raise HTTPException(429, str(exc)) from exc
+            finally:
+                ms.close()
+
+        ceiling = await hub.memory_writer.submit(_do)
+        return {"ok": True, "trust_ceiling": ceiling}
 
     @app.post("/v1/memory/revoke-preview")
     def revoke_preview(body: RevokeIn, principal: SessionPrincipal = Depends(current)) -> dict:
@@ -466,13 +797,18 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
             ms.close()
 
     @app.post("/v1/memory/revoke")
-    def revoke(body: RevokeIn, principal: SessionPrincipal = Depends(current)) -> dict:
+    async def revoke(body: RevokeIn, principal: SessionPrincipal = Depends(current)) -> dict:
         home = tenant_home(root, principal.tenant_id)
         from milyonus.memory.store import MemoryStore
 
-        ms = MemoryStore(home / "state.db")
-        revoked = ms.revoke_by_source(body.source_uri)
-        ms.close()
+        def _do() -> list[str]:
+            ms = MemoryStore(home / "state.db")
+            try:
+                return ms.revoke_by_source(body.source_uri)
+            finally:
+                ms.close()
+
+        revoked = await hub.memory_writer.submit(_do)
         return {"revoked": revoked}
 
     @app.get("/v1/audit/verify")
@@ -481,9 +817,12 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
         from milyonus.memory.store import MemoryStore
 
         ms = MemoryStore(home / "state.db")
-        intact = ms.verify_ledger()
-        ms.close()
-        return {"intact": intact, "head": None}
+        try:
+            intact = ms.verify_ledger()
+            head = ms.ledger_head()
+            return {"intact": intact, "head": head}
+        finally:
+            ms.close()
 
     @app.get("/v1/skills")
     def skills(principal: SessionPrincipal = Depends(current)) -> list:
@@ -502,6 +841,43 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
             raise HTTPException(404, "skill not found")
         return {"name": name, "body": body}
 
+    @app.get("/v1/project-instructions")
+    def get_project_instructions(principal: SessionPrincipal = Depends(current)) -> dict:
+        """Read tenant `.milyonusrules` project instructions (PLAN-WEB W6)."""
+        home = tenant_home(root, principal.tenant_id)
+        path = home / "workspace" / ".milyonusrules"
+        content = path.read_text("utf-8") if path.is_file() and not path.is_symlink() else ""
+        return {"filename": ".milyonusrules", "content": content}
+
+    @app.put("/v1/project-instructions")
+    def put_project_instructions(
+        body: ProjectInstructionsIn, principal: SessionPrincipal = Depends(current)
+    ) -> dict:
+        """Save tenant `.milyonusrules` after injection scanning and redaction."""
+        from milyonus.security.injection import max_severity, scan
+        from milyonus.security.redact import redact
+
+        findings = scan(body.content)
+        if max_severity(findings) == "high":
+            raise HTTPException(
+                422,
+                "project instructions blocked by injection scanner: "
+                + ", ".join(f.signal for f in findings),
+            )
+        ws = tenant_home(root, principal.tenant_id) / "workspace"
+        ws.mkdir(mode=0o700, parents=True, exist_ok=True)
+        path = ws / ".milyonusrules"
+        if path.is_symlink():
+            raise HTTPException(400, "invalid instruction file path")
+        cleaned = redact(body.content)
+        path.write_text(cleaned, encoding="utf-8")
+        path.chmod(0o600)
+        return {
+            "filename": ".milyonusrules",
+            "content": cleaned,
+            "findings": [f.signal for f in findings],
+        }
+
     @app.get("/v1/usage")
     def usage(principal: SessionPrincipal = Depends(current)) -> dict:
         return store.usage(principal.tenant_id)
@@ -518,20 +894,151 @@ def create_app(*, data_root: Path | None = None) -> FastAPI:
         store.put_settings(principal.user_id, current_vals)
         return current_vals
 
+    @app.get("/v1/api-keys")
+    def list_api_keys(principal: SessionPrincipal = Depends(current)) -> list:
+        return store.list_api_keys(principal.tenant_id)
+
+    @app.post("/v1/api-keys")
+    def create_api_key(body: ApiKeyIn, principal: SessionPrincipal = Depends(current)) -> dict:
+        key_id, raw_key, prefix = store.create_api_key(principal.tenant_id, body.name)
+        return {"id": key_id, "name": body.name, "prefix": prefix, "key": raw_key}
+
+    @app.delete("/v1/api-keys/{key_id}")
+    def revoke_api_key(key_id: str, principal: SessionPrincipal = Depends(current)) -> dict:
+        if not store.revoke_api_key(principal.tenant_id, key_id):
+            raise HTTPException(404, "api key not found")
+        return {"revoked": True}
+
     @app.get("/v1/export")
     def export(principal: SessionPrincipal = Depends(current)) -> dict:
+        """Full KVKK/GDPR JSON data export including sessions, messages, memory & provenance (ADR-0011)."""
+        home = tenant_home(root, principal.tenant_id)
+        from milyonus.core.store import SessionStore
+        from milyonus.memory.store import MemoryStore
+
+        sessions_out = []
+        ss = SessionStore(home / "state.db")
+        try:
+            for meta in store.list_sessions(principal.user_id):
+                row = ss.find_session(
+                    channel="web", user_ref=principal.user_id, title=f"web:{meta['id']}"
+                )
+                msgs = (
+                    [
+                        {
+                            "id": m["id"],
+                            "role": m["role"],
+                            "content": m["content"],
+                            "created_at": m["created_at"],
+                        }
+                        for m in ss.history(row.id)
+                    ]
+                    if row is not None
+                    else []
+                )
+                sessions_out.append({**meta, "messages": msgs})
+        finally:
+            ss.close()
+
+        memories_out = []
+        ms = MemoryStore(home / "state.db")
+        try:
+            for st in (
+                "active",
+                "pending",
+                "rejected",
+                "revoked",
+                "expired",
+                "superseded",
+                "t0_staged",
+                "erased",
+            ):
+                for item in ms.by_state(st):  # type: ignore[arg-type]
+                    memories_out.append(
+                        {
+                            "id": item.id,
+                            "content": item.content,
+                            "state": item.state,
+                            "trust_tier": item.trust_tier,
+                            "evidence_hash": item.evidence_hash,
+                            "created_at": item.created_at,
+                            "provenance": {
+                                "source_kind": item.provenance.source_kind,
+                                "source_uri": item.provenance.source_uri,
+                                "session_id": item.provenance.session_id,
+                                "turn_id": item.provenance.turn_id,
+                                "actor": item.provenance.actor,
+                            },
+                        }
+                    )
+            audit_intact = ms.verify_ledger()
+            ledger_head = ms.ledger_head()
+        finally:
+            ms.close()
+
         return {
             "user_id": principal.user_id,
             "email": principal.email,
-            "sessions": store.list_sessions(principal.user_id),
+            "sessions": sessions_out,
+            "memory": memories_out,
+            "feedback": store.list_feedback(principal.user_id),
+            "audit": {"intact": audit_intact, "head": ledger_head},
             "settings": store.get_settings(principal.user_id),
             "usage": store.usage(principal.tenant_id),
         }
 
     @app.delete("/v1/account")
-    def delete_account(response: Response, principal: SessionPrincipal = Depends(current)) -> dict:
+    async def delete_account(
+        response: Response, principal: SessionPrincipal = Depends(current)
+    ) -> dict:
+        """Irreversible account erasure: tombstones memory preserving ledger hash chain (ADR-0011)."""
+        home = tenant_home(root, principal.tenant_id)
+        from milyonus.core.store import SessionStore
+        from milyonus.memory.store import MemoryStore
+
+        def _erase_tenant_state() -> tuple[int, int]:
+            ms = MemoryStore(home / "state.db")
+            try:
+                tombstoned = ms.erase_all()
+            finally:
+                ms.close()
+            ss = SessionStore(home / "state.db")
+            try:
+                deleted_msgs = ss.erase_all()
+            finally:
+                ss.close()
+            return tombstoned, deleted_msgs
+
+        tombstoned, deleted_msgs = await hub.memory_writer.submit(_erase_tenant_state)
+        for subdir in ("attachments", "workspace"):
+            target = home / subdir
+            if target.exists() and not target.is_symlink():
+                shutil.rmtree(target, ignore_errors=True)
         store.erase_user(principal.user_id)
         clear_session_cookie(response)
-        return {"erased": True}
+        return {
+            "erased": True,
+            "tombstoned_memories": tombstoned,
+            "deleted_messages": deleted_msgs,
+        }
+
+    if static_dir is not None:
+        resolved_root = static_dir.resolve()
+        index_html = resolved_root / "index.html"
+        if index_html.is_file():
+
+            @app.get("/{full_path:path}", include_in_schema=False)
+            def serve_spa(full_path: str) -> FileResponse:
+                if full_path.startswith("v1/") or full_path in ("v1", "healthz", "metrics"):
+                    raise HTTPException(404, "not found")
+                if full_path:
+                    candidate = (resolved_root / full_path).resolve()
+                    if (
+                        candidate.is_relative_to(resolved_root)
+                        and candidate.is_file()
+                        and not candidate.is_symlink()
+                    ):
+                        return FileResponse(candidate)
+                return FileResponse(index_html)
 
     return app

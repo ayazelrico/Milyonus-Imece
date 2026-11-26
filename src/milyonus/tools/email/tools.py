@@ -53,17 +53,17 @@ def extract_body(msg: Message) -> str:
                 part.get("Content-Disposition", "")
             ):
                 payload = part.get_payload(decode=True)
-                if payload:
+                if isinstance(payload, bytes) and payload:
                     return payload.decode(part.get_content_charset() or "utf-8", "replace")
         # fall back to the first text/html stripped-ish
         for part in msg.walk():
             if part.get_content_type() == "text/html":
                 payload = part.get_payload(decode=True)
-                if payload:
+                if isinstance(payload, bytes) and payload:
                     return payload.decode(part.get_content_charset() or "utf-8", "replace")
         return ""
     payload = msg.get_payload(decode=True)
-    if payload:
+    if isinstance(payload, bytes) and payload:
         return payload.decode(msg.get_content_charset() or "utf-8", "replace")
     return str(msg.get_payload())
 
@@ -94,10 +94,14 @@ def make_email_tools() -> list[Tool]:
                 ids = data[0].split()[-limit:]
                 lines = []
                 for i in reversed(ids):
-                    _, msg_data = m.fetch(i, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])")
-                    hdr = email.message_from_bytes(msg_data[0][1])
+                    uid = i.decode() if isinstance(i, bytes) else str(i)
+                    _, msg_data = m.fetch(uid, "(BODY.PEEK[HEADER.FIELDS (FROM SUBJECT DATE)])")
+                    first = msg_data[0] if msg_data else None
+                    if not (isinstance(first, tuple) and isinstance(first[1], bytes)):
+                        continue
+                    hdr = email.message_from_bytes(first[1])
                     lines.append(
-                        f"[{i.decode()}] {decode_mime_header(hdr['From'])} — "
+                        f"[{uid}] {decode_mime_header(hdr['From'])} — "
                         f"{decode_mime_header(hdr['Subject'])}"
                     )
                 return redact("\n".join(lines) or "(no messages)")
@@ -114,8 +118,11 @@ def make_email_tools() -> list[Tool]:
             with imaplib.IMAP4_SSL(cfg["imap_host"], int(cfg["imap_port"])) as m:
                 m.login(cfg["address"], cfg["password"])
                 m.select(folder, readonly=True)
-                _, msg_data = m.fetch(msg_id.encode(), "(RFC822)")
-                msg = email.message_from_bytes(msg_data[0][1])
+                _, msg_data = m.fetch(msg_id, "(RFC822)")
+                first = msg_data[0] if msg_data else None
+                if not (isinstance(first, tuple) and isinstance(first[1], bytes)):
+                    return "email error: message not found"
+                msg = email.message_from_bytes(first[1])
                 body = extract_body(msg)[:_MAX_BODY]
                 return redact(
                     f"From: {decode_mime_header(msg['From'])}\n"

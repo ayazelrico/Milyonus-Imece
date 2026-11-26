@@ -1,5 +1,5 @@
 # Milyonus Agent — developer convenience targets.
-.PHONY: sync test lint fmt check hooks build docker-build docker-run poison safety
+.PHONY: sync test docker-test lint fmt typecheck check hooks build web-build docker-build docker-run poison safety
 
 sync:        ## install deps (matches CI: dev + admin + discord)
 	uv sync --extra dev --extra admin --extra discord
@@ -11,18 +11,27 @@ hooks:       ## enable the versioned git hooks (pre-push runs `make check`)
 test:        ## run the test suite
 	uv run pytest -q
 
+docker-test: ## run the full test suite including real Docker isolation tests
+	MILYONUS_TEST_DOCKER=1 uv run pytest -q
+
 lint:        ## lint
-	uv run ruff check src tests
+	uv run ruff check src tests evals
 
 fmt:         ## format
-	uv run ruff format src tests
+	uv run ruff format src tests evals
 
-check: lint  ## lint + format-check + test
-	uv run ruff format --check src tests
+typecheck:   ## run mypy across src/milyonus
+	uv run mypy src/milyonus
+
+check: lint typecheck safety  ## lint + format-check + typecheck + safety + test
+	uv run ruff format --check src tests evals
 	uv run pytest -q
 
 build:       ## build the wheel
 	uv build
+
+web-build:   ## typecheck and build the React web SPA
+	cd web && npm run build
 
 poison:      ## run PoisonBench (rule-based)
 	uv run python -m evals.poisonbench.run

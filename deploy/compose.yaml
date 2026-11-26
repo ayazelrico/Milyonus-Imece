@@ -1,4 +1,4 @@
-# Milyonus Agent — hardened compose deployment.
+# Milyonus Agent — hardened compose deployment (gateway + optional web & worker).
 services:
   milyonus:
     build:
@@ -7,7 +7,8 @@ services:
     image: milyonus/agent
     command: ["gateway", "start"]
     env_file:
-      - ./milyonus.env         # holds ANTHROPIC_API_KEY, TELEGRAM_BOT_TOKEN, ...
+      - path: ./milyonus.env
+        required: false         # holds ANTHROPIC_API_KEY, TELEGRAM_BOT_TOKEN, ...
     volumes:
       - milyonus-data:/data
     # Hardening (PLAN §6 layer 3).
@@ -18,6 +19,58 @@ services:
     security_opt:
       - no-new-privileges:true
     pids_limit: 256
+    restart: unless-stopped
+
+  web:
+    profiles: ["web"]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: milyonus/agent
+    command: ["web", "start", "--host", "0.0.0.0", "--port", "8787"]
+    ports:
+      - "8787:8787"
+    env_file:
+      - path: ./milyonus.env
+        required: false
+    environment:
+      MILYONUS_WEB_DATA: /data/web
+      MILYONUS_WEB_SECURE: "1"
+    volumes:
+      - milyonus-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,noexec,nosuid
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+  worker:
+    profiles: ["web", "worker"]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: milyonus/agent
+    command: ["proactive", "start"]
+    env_file:
+      - path: ./milyonus.env
+        required: false
+    volumes:
+      - milyonus-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 128
     restart: unless-stopped
 
 volumes:

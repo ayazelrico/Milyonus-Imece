@@ -153,19 +153,64 @@ def oracle_guard(protected_paths: tuple[Path, ...]) -> list[str]:
     Cwd isolation/read-only alone still permits host reads. This outer policy
     also applies to CLI child tools, independently of Codex's inner sandbox.
     Network is left to the CLI for inference; model web/MCP tools are disabled.
+
+    Supported OS-enforced backends (fail-closed; no unguarded fallback):
+      - macOS: `/usr/bin/sandbox-exec` (Seatbelt deny on subpaths + exec tmp trees)
+      - Linux: `bwrap` (bubblewrap mount namespace masking protected paths with
+        empty tmpfs overlays and isolated `/tmp`)
     """
-    if sys.platform != "darwin" or not Path("/usr/bin/sandbox-exec").is_file():
-        raise CodexError("CLI oracle isolation requires macOS sandbox-exec; no unsafe fallback")
     paths = sorted({str(p.resolve()) for p in protected_paths})
     if not paths or "/" in paths:
         raise ValueError("explicit repository/oracle paths required")
-    selectors = " ".join(f"(subpath {json.dumps(p)})" for p in paths)
-    # Executor temp trees can coexist with model calls in other tasks/processes.
-    selectors += ' (regex #".*/milyonus-exec-[^/]+(/.*)?$")'
-    profile = (
-        f"(version 1)(allow default)(deny file-read* {selectors})(deny file-write* {selectors})"
+
+    if sys.platform == "darwin" and Path("/usr/bin/sandbox-exec").is_file():
+        selectors = " ".join(f"(subpath {json.dumps(p)})" for p in paths)
+        # Executor temp trees can coexist with model calls in other tasks/processes.
+        selectors += ' (regex #".*/milyonus-exec-[^/]+(/.*)?$")'
+        profile = (
+            f"(version 1)(allow default)(deny file-read* {selectors})(deny file-write* {selectors})"
+        )
+        return ["/usr/bin/sandbox-exec", "-p", profile]
+
+    if sys.platform.startswith("linux"):
+        bwrap = shutil.which("bwrap")
+        if bwrap:
+            argv = [
+                bwrap,
+                "--die-with-parent",
+                "--ro-bind",
+                "/",
+                "/",
+                "--dev",
+                "/dev",
+                "--proc",
+                "/proc",
+                "--tmpfs",
+                "/tmp",
+            ]
+            # Mask every protected directory/file with an inaccessible empty tmpfs
+            # or /dev/null bind so neither the CLI nor any child process can read
+            # repository/oracles. `/tmp` is already replaced with a fresh tmpfs,
+            # and children of already-masked directories are already hidden.
+            masked_dirs: list[str] = ["/tmp"]
+            for p in paths:
+                if any(p == d or p.startswith(d + "/") for d in masked_dirs):
+                    continue
+                target = Path(p)
+                if not target.exists():
+                    continue
+                if target.is_dir():
+                    argv.extend(["--tmpfs", p])
+                    masked_dirs.append(p)
+                else:
+                    argv.extend(["--ro-bind", "/dev/null", p])
+            argv.append("--")
+            return argv
+
+    raise CodexError(
+        "CLI oracle isolation requires macOS sandbox-exec or Linux bubblewrap (bwrap); "
+        "no unsafe fallback"
     )
-    return ["/usr/bin/sandbox-exec", "-p", profile]
 
 
 def parse_codex_jsonl(output: bytes) -> AgentReply:

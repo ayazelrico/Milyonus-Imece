@@ -9,7 +9,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
 # Frozen, no dev deps -> reproducible runtime venv at /app/.venv.
-RUN uv sync --frozen --no-dev
+ARG EXTRAS="--extra web --extra admin --extra discord"
+RUN uv sync --frozen --no-dev ${EXTRAS}
 
 FROM python:3.12-slim AS runtime
 

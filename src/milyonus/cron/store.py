@@ -6,6 +6,7 @@ that is run through the agent loop on schedule. Stored in state.db.
 
 from __future__ import annotations
 
+import builtins
 import sqlite3
 import time
 import uuid
@@ -91,7 +92,7 @@ class CronStore:
         self._conn.commit()
         return tid
 
-    def list(self) -> list[CronTask]:
+    def list(self) -> builtins.list[CronTask]:
         rows = self._conn.execute("SELECT * FROM cron_tasks ORDER BY created_at DESC").fetchall()
         return [
             CronTask(
@@ -105,6 +106,7 @@ class CronStore:
                 last_run=r["last_run"],
                 next_run=r["next_run"],
                 created_at=r["created_at"],
+                autonomy=r["autonomy"],
             )
             for r in rows
         ]
@@ -114,7 +116,7 @@ class CronStore:
         self._conn.commit()
         return cur.rowcount > 0
 
-    def due(self, now: float | None = None) -> list[CronTask]:
+    def due(self, now: float | None = None) -> builtins.list[CronTask]:
         now = now or time.time()
         return [t for t in self.list() if t.enabled and t.next_run and t.next_run <= now]
 

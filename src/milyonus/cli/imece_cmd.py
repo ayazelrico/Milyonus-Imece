@@ -6,6 +6,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from typing import Literal
 
 import typer
 from rich.console import Console
@@ -365,6 +366,13 @@ def benchmark_cmd(
         if not sys.stdin.isatty():
             raise typer.BadParameter("noninteractive benchmark requires -y to confirm model spend")
         typer.confirm(f"Run {len(selected) * repeats} model-backed evaluations?", abort=True)
+    if sandbox_backend not in ("docker", "macos"):
+        raise typer.BadParameter(
+            f"sandbox_backend must be 'docker' or 'macos', got {sandbox_backend!r}"
+        )
+    typed_sandbox_backend: Literal["docker", "macos"] = (
+        "docker" if sandbox_backend == "docker" else "macos"
+    )
     settings = ImeceSettings(
         agents=agents,
         max_parallel=cfg.imece.max_parallel,
@@ -375,7 +383,7 @@ def benchmark_cmd(
         max_tokens=max_tokens,
         max_rounds=cfg.imece.max_rounds,
         verification="python",
-        sandbox_backend=sandbox_backend,
+        sandbox_backend=typed_sandbox_backend,
         sandbox_image=cfg.imece.sandbox_image,
         test_timeout=cfg.imece.test_timeout,
         agent_timeout=cfg.imece.agent_timeout,

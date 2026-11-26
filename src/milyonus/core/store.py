@@ -182,3 +182,26 @@ class SessionStore:
             "WHERE messages_fts MATCH ? ORDER BY rank LIMIT ?",
             (query, limit),
         ).fetchall()
+
+    def pop_last_assistant(self, session_id: str) -> bool:
+        """Delete the latest assistant message for a session (used by regenerate)."""
+        row = self._conn.execute(
+            "SELECT id, role FROM messages WHERE session_id=? "
+            "ORDER BY turn DESC, created_at DESC LIMIT 1",
+            (session_id,),
+        ).fetchone()
+        if row is None or row["role"] != "assistant":
+            return False
+        with self._tx() as c:
+            c.execute("DELETE FROM messages_fts WHERE message_id=?", (row["id"],))
+            c.execute("DELETE FROM messages WHERE id=?", (row["id"],))
+        return True
+
+    def erase_all(self) -> int:
+        """Delete all sessions, messages, and FTS entries (tenant erasure)."""
+        with self._tx() as c:
+            count = c.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
+            c.execute("DELETE FROM messages_fts")
+            c.execute("DELETE FROM messages")
+            c.execute("DELETE FROM sessions")
+        return int(count)

@@ -55,16 +55,41 @@ def jaccard(a: str, b: str) -> float:
     return inter / union if union else 0.0
 
 
+def _cosine(a: list[float], b: list[float]) -> float:
+    if not a or len(a) != len(b):
+        return 0.0
+    return max(0.0, min(1.0, sum(x * y for x, y in zip(a, b, strict=True))))
+
+
 def is_rephrase(
-    candidate: str, prior: list[str], *, threshold: float = 0.86
+    candidate: str,
+    prior: list[str],
+    *,
+    threshold: float = 0.86,
+    embedder=None,
 ) -> tuple[bool, str | None, float]:
-    """Return (is_rephrase, matched_prior, score). A candidate is a rephrase of a
-    prior rejected idea if lexical similarity meets the threshold. The threshold
-    default matches config.memory.rephrase_similarity."""
+    """Return (is_rephrase, matched_prior, score). Combines lexical Jaccard
+    with optional semantic embedding cosine similarity (PLAN §4.4) when an
+    embedder is provided; embedding errors degrade cleanly to lexical."""
+    if not prior:
+        return (False, None, 0.0)
     best_score = 0.0
     best_match: str | None = None
     for p in prior:
         score = jaccard(candidate, p)
         if score > best_score:
             best_score, best_match = score, p
+
+    if embedder is not None and best_score < threshold:
+        try:
+            vectors = embedder.embed([candidate, *prior])
+            if len(vectors) == len(prior) + 1:
+                cvec = vectors[0]
+                for p, pvec in zip(prior, vectors[1:], strict=True):
+                    sim = _cosine(cvec, pvec)
+                    if sim > best_score:
+                        best_score, best_match = sim, p
+        except Exception:  # noqa: BLE001 - degrade cleanly to lexical score
+            pass
+
     return (best_score >= threshold, best_match, best_score)
