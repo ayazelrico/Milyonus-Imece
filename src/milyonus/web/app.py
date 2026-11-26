@@ -1347,6 +1347,11 @@ def create_app(*, data_root: Path | None = None, static_dir: Path | None = None)
         finally:
             store_a.close()
 
+    # --- Hypernova H1–H10 Capabilities ----------------------------------
+    from milyonus.web.hypernova_routes import mount_hypernova_routes
+
+    mount_hypernova_routes(app, root=root, store=store, hub=hub, current=current)
+
     if static_dir is not None:
         resolved_root = static_dir.resolve()
         index_html = resolved_root / "index.html"

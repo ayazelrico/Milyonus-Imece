@@ -483,3 +483,77 @@ def memory_counterfactual(source_uri: str) -> None:
         f"  active   : {rep.before_active_count} → {rep.after_active_count} "
         f"(~{rep.tokens_freed_estimate} tokens freed)"
     )
+
+
+@memory_app.command("graph")
+def memory_graph(
+    fmt: str = typer.Option(
+        "mermaid", "--format", "-f", help="Output format: mermaid | dot | json"
+    ),
+    include_inactive: bool = typer.Option(False, "--all", help="Include revoked/rejected nodes"),
+) -> None:
+    """Export the Sovereign Epistemic Knowledge Graph from verified memory (H1)."""
+    import json
+
+    from milyonus.memory.graph import build_epistemic_graph
+
+    store = MemoryStore()
+    try:
+        g = build_epistemic_graph(store, include_inactive=include_inactive)
+    finally:
+        store.close()
+    if fmt == "json":
+        console.print(json.dumps(g.to_dict(), indent=2, ensure_ascii=False), markup=False)
+    elif fmt == "dot":
+        console.print(g.to_dot(), markup=False)
+    else:
+        console.print(g.to_mermaid(), markup=False)
+
+
+@memory_app.command("conflicts")
+def memory_conflicts() -> None:
+    """Detect active belief contradictions and trust-tier conflict resolutions (H1)."""
+    from milyonus.memory.graph import build_epistemic_graph
+
+    store = MemoryStore()
+    try:
+        g = build_epistemic_graph(store)
+    finally:
+        store.close()
+    if not g.conflicts:
+        console.print(f"[{PALETTE['ok']}]{GLYPH} 0 epistemic contradictions detected.[/]")
+        return
+    table = Table(title=f"{GLYPH} Epistemic Contradictions ({len(g.conflicts)})")
+    table.add_column("Severity")
+    table.add_column("Kind")
+    table.add_column("Subject")
+    table.add_column("Explanation")
+    table.add_column("Winner")
+    for c in g.conflicts:
+        color = PALETTE["risk"] if c.severity == "high" else PALETTE["warn"]
+        table.add_row(
+            f"[{color}]{c.severity}[/]",
+            c.kind,
+            c.subject,
+            c.explanation,
+            c.recommended_winner,
+        )
+    console.print(table)
+
+
+@memory_app.command("blast-radius")
+def memory_blast_radius(origin: str) -> None:
+    """Compute downstream belief blast radius for a memory ID or source URI (H1)."""
+    from milyonus.memory.graph import blast_radius
+
+    store = MemoryStore()
+    try:
+        rep = blast_radius(store, origin)
+    finally:
+        store.close()
+    console.print(
+        f"[bold {PALETTE['cyan_400']}]{GLYPH} Blast radius[/] ({rep.origin_kind}: {rep.origin})\n"
+        f"  affected : {len(rep.affected_ids)} item(s) · max depth {rep.max_depth}"
+    )
+    for depth, ids in rep.layers.items():
+        console.print(f"  depth {depth}: {', '.join(ids)}")

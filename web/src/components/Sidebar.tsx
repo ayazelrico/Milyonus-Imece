@@ -260,6 +260,16 @@ export function Sidebar({ sessions, loading = false, onCreate }: Props) {
           <button
             type="button"
             onClick={() => {
+              useUi.getState().setHypernovaOpen(true);
+              setSidebarOpen(false);
+            }}
+            className="w-full rounded-full border border-brand/60 bg-brand/20 hover:bg-brand/35 py-2 text-xs text-white font-medium"
+          >
+            ✦ Hypernova Lab (10X)
+          </button>
+          <button
+            type="button"
+            onClick={() => {
               useUi.getState().setWarRoomOpen(true);
               setSidebarOpen(false);
             }}
