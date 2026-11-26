@@ -81,6 +81,7 @@ ignore = ["E501"]
 [tool.ruff.lint.per-file-ignores]
 # FastAPI idiomatic Depends(...) defaults.
 "src/milyonus/web/app.py" = ["B008"]
+"src/milyonus/web/hypernova_routes.py" = ["B008"]
 # importorskip then import TestClient.
 "tests/test_web.py" = ["E402"]
 

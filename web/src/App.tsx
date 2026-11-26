@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { api, Session, SessionDetail, SkillSummary } from "./api";
 import { ChatThread } from "./components/ChatThread";
 import { Composer } from "./components/Composer";
@@ -10,6 +10,8 @@ import { TrustRail } from "./components/TrustRail";
 import { WarRoomModal } from "./components/WarRoomModal";
 import { Locale, t } from "./i18n";
 import { useUi } from "./store";
+
+const HypernovaModal = lazy(() => import("./components/HypernovaModal"));
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -530,6 +532,9 @@ function Shell({ onSignedOut }: { onSignedOut: () => void }) {
       <TrustRail />
       <SettingsModal onSignedOut={onSignedOut} />
       <WarRoomModal />
+      <Suspense fallback={null}>
+        <HypernovaModal />
+      </Suspense>
     </div>
   );
 }
