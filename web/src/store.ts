@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { Locale } from "./i18n";
 
 export type ChatMessage = {
   id: string;
@@ -11,6 +12,11 @@ export type ToolEvent = {
   name: string;
   args_preview?: string;
   risk?: string;
+  ok?: boolean;
+  duration_ms?: number;
+  preview?: string;
+  truncated?: boolean;
+  full_ref?: string;
 };
 
 export type ApprovalEvent = {
@@ -30,14 +36,33 @@ type UiState = {
   tools: ToolEvent[];
   approval: ApprovalEvent | null;
   railOpen: boolean;
+  sidebarOpen: boolean;
+  settingsOpen: boolean;
+  locale: Locale;
+  quietMemory: boolean;
+  toolsEnabled: boolean;
+  feedback: Record<string, "up" | "down">;
+  budgetPressure: number;
+  prefixCacheHit: boolean | null;
   setSession: (id: string | null) => void;
   pushMessage: (m: ChatMessage) => void;
   setMessages: (m: ChatMessage[]) => void;
   appendStream: (t: string) => void;
   clearStream: () => void;
   addTool: (t: ToolEvent) => void;
+  updateToolResult: (call_id: string, patch: Partial<ToolEvent>) => void;
+  clearTools: () => void;
   setApproval: (a: ApprovalEvent | null) => void;
   setRailOpen: (v: boolean) => void;
+  setSidebarOpen: (v: boolean) => void;
+  setSettingsOpen: (v: boolean) => void;
+  setLocale: (l: Locale) => void;
+  setQuietMemory: (v: boolean) => void;
+  setToolsEnabled: (v: boolean) => void;
+  setFeedback: (id: string, rating: "up" | "down") => void;
+  setFeedbackMap: (map: Record<string, "up" | "down">) => void;
+  setBudgetPressure: (p: number) => void;
+  setPrefixCacheHit: (v: boolean | null) => void;
 };
 
 export const useUi = create<UiState>((set) => ({
@@ -47,12 +72,47 @@ export const useUi = create<UiState>((set) => ({
   tools: [],
   approval: null,
   railOpen: true,
-  setSession: (id) => set({ sessionId: id }),
+  sidebarOpen: false,
+  settingsOpen: false,
+  locale: "en",
+  quietMemory: false,
+  toolsEnabled: true,
+  feedback: {},
+  budgetPressure: 0,
+  prefixCacheHit: null,
+  setSession: (id) =>
+    set({
+      sessionId: id,
+      tools: [],
+      streaming: "",
+      approval: null,
+      feedback: {},
+      budgetPressure: 0,
+      prefixCacheHit: null,
+    }),
   pushMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
   setMessages: (m) => set({ messages: m }),
   appendStream: (t) => set((s) => ({ streaming: s.streaming + t })),
   clearStream: () => set({ streaming: "" }),
-  addTool: (t) => set((s) => ({ tools: [...s.tools, t] })),
+  addTool: (t) =>
+    set((s) => ({
+      tools: s.tools.some((x) => x.call_id === t.call_id) ? s.tools : [...s.tools, t],
+    })),
+  updateToolResult: (call_id, patch) =>
+    set((s) => ({
+      tools: s.tools.map((x) => (x.call_id === call_id ? { ...x, ...patch } : x)),
+    })),
+  clearTools: () => set({ tools: [] }),
   setApproval: (a) => set({ approval: a }),
   setRailOpen: (v) => set({ railOpen: v }),
+  setSidebarOpen: (v) => set({ sidebarOpen: v }),
+  setSettingsOpen: (v) => set({ settingsOpen: v }),
+  setLocale: (l) => set({ locale: l }),
+  setQuietMemory: (v) => set({ quietMemory: v }),
+  setToolsEnabled: (v) => set({ toolsEnabled: v }),
+  setFeedback: (id, rating) =>
+    set((s) => ({ feedback: { ...s.feedback, [id]: rating } })),
+  setFeedbackMap: (map) => set({ feedback: map }),
+  setBudgetPressure: (p) => set({ budgetPressure: p }),
+  setPrefixCacheHit: (v) => set({ prefixCacheHit: v }),
 }));

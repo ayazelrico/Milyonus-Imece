@@ -1,0 +1,10 @@
+{
+  "name": "Milyonus Agent",
+  "short_name": "Milyonus",
+  "description": "Remembers. Verifies. Evolves. — Verified-memory AI agent.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#2E6BFF",
+  "icons": []
+}
