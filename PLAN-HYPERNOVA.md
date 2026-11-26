@@ -1,6 +1,6 @@
 # Milyonus-Imece — Hypernova Plan (10 Breakthrough Capabilities)
 
-> Status: **In progress — implementing H1–H10 (2026-11-26).**
+> Status: **All 10 capabilities (H1–H10) + 16-probe Chaos upgrade implemented and verified in-tree (2026-11-26).**
 > Companion action tracker: [PLAN-HYPERNOVA-ACTIONS.md](PLAN-HYPERNOVA-ACTIONS.md).
 > Previous milestone plans: [PLAN.md](PLAN.md) · [PLAN-WEB.md](PLAN-WEB.md) · [PLAN-5X.md](PLAN-5X.md) · [PLAN-MOONSHOT.md](PLAN-MOONSHOT.md).
 > Owner: @ayazelrico · License: Apache-2.0

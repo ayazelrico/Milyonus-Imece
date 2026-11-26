@@ -386,7 +386,8 @@ export default function HypernovaModal() {
                     type="button"
                     onClick={async () => {
                       if (!branchClaim.trim()) return;
-                      await api(`/v1/memory/branches/${encodeURIComponent(selectedBranch)}/items`, {
+                      const bPath = selectedBranch.split("/").map(encodeURIComponent).join("/");
+                      await api(`/v1/memory/branches/${bPath}/items`, {
                         method: "POST",
                         body: JSON.stringify({ op: "add", content: branchClaim.trim() }),
                       });
@@ -401,8 +402,9 @@ export default function HypernovaModal() {
                   <button
                     type="button"
                     onClick={async () => {
+                      const bPath = selectedBranch.split("/").map(encodeURIComponent).join("/");
                       const d = await api<Record<string, unknown>>(
-                        `/v1/memory/branches/${encodeURIComponent(selectedBranch)}/diff`,
+                        `/v1/memory/branches/${bPath}/diff`,
                       );
                       setBranchDiff(d);
                     }}
@@ -413,8 +415,9 @@ export default function HypernovaModal() {
                   <button
                     type="button"
                     onClick={async () => {
+                      const bPath = selectedBranch.split("/").map(encodeURIComponent).join("/");
                       const m = await api<{ message: string }>(
-                        `/v1/memory/branches/${encodeURIComponent(selectedBranch)}/merge`,
+                        `/v1/memory/branches/${bPath}/merge`,
                         { method: "POST", body: JSON.stringify({ force: false }) },
                       );
                       setNotice(m.message);

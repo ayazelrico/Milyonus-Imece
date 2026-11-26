@@ -32,7 +32,7 @@ TRAIT_POOL = (
     "cite-evidence-hashes",
     "red-team-assumptions",
     "fail-closed-on-ambiguity",
-    "minimize-token-overhead",
+    "minimize-context-overhead",
     "decompose-before-coding",
     "assert-invariants",
     "prefer-reversible-steps",
@@ -269,7 +269,7 @@ def default_task_fitness(task: str, genome: SwarmGenome) -> float:
     if is_security:
         high_value |= {"red-team-assumptions", "isolate-side-effects", "cite-evidence-hashes"}
     if is_fast:
-        high_value |= {"minimize-token-overhead"}
+        high_value |= {"minimize-context-overhead"}
     hits = len(set(genome.traits) & high_value)
     bloat = max(0, len(genome.traits) - 5) * 0.02
     score += min(0.20, hits * 0.048) - bloat

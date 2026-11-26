@@ -5,6 +5,48 @@ The format follows Keep a Changelog; versions follow the Milyonus model line.
 
 ## [Unreleased] — Milyonus-Imece (experimental)
 
+### Hypernova capabilities (H1–H10) — 2026-11-26
+- **H1 — Sovereign Epistemic Knowledge Graph & Contradiction Engine** (`memory/graph.py`):
+  deterministic semantic triple & polarity extraction, automatic contradiction detection with
+  trust-tier winner recommendation, PageRank belief centrality, BFS downstream blast-radius
+  traversal, Mermaid/DOT/SVG export (`milyonus memory graph | conflicts | blast-radius`,
+  `/v1/memory/graph | conflicts | blast-radius`).
+- **H2 — Cryptographic Memory Branching** (`memory/branch.py`): Git-style cognitive forking of
+  verified memory into hash-anchored branches, isolated staging, 3-way epistemic conflict-aware
+  diffing, and verified pipeline merges (`milyonus branch *`, `/v1/memory/branches*`).
+- **H3 — Zero-Trust Capability Leases & Canary Kill-Switch** (`security/leases.py`): HMAC-SHA256
+  signed TTL/tool/path/domain/call-scoped capability leases plus prompt-injection honeytoken
+  canaries that atomically revoke all active leases on leak (`milyonus lease *`, `/v1/leases*`).
+- **H4 — IRADE Constitutional Policy Engine & Live Veto Simulator** (`imece/constitution.py`):
+  cryptographically hashed Constitutions (`balanced-default`, `fortress-security`, `finops-strict`,
+  `rapid-research`), inviolable hard-veto articles, and side-by-side counterfactual IRADE council
+  simulation (`milyonus constitution *`, `/v1/constitution/*`).
+- **H5 — Swarm DNA & Evolutionary Strategy Genome** (`imece/evolution.py`): seeded genetic
+  algorithm (tournament selection, elitism, uniform crossover, bounded mutation) evolving
+  multi-agent genomes with SQLite phylogeny and direct `SkillForgeSpec` champion export
+  (`milyonus evolve *`, `/v1/evolution/*`).
+- **H6 — Cryptographic Selective Disclosure Merkle Proofs** (`security/disclosure.py`): blind
+  proprietary deliverables or PII in `.milyonus-proof.json` while generating genuine binary
+  SHA-256 Merkle authentication paths verified offline (`milyonus proof disclose |
+  verify-disclosure`, `/v1/proofs/disclose | verify-disclosure`).
+- **H7 — Autonomous Self-Healing Skill Immune System** (`skills/immune.py`): SHA-256
+  `.immune-manifest.json` sealing, tamper & secret-leak diagnostics, fail-closed auto-healing, and
+  atomic `.quarantine/` isolation with forensic `INCIDENT.json` (`milyonus skills immune-*`,
+  `/v1/skills/immune/*`).
+- **H8 — Flight Recorder: Black-Box Session DVR & Anomaly Detector** (`core/flight_recorder.py`):
+  hash-chained `.milyonus-flight.json` recordings, automatic anomaly detection (`tool_loop`,
+  `latency_spike`, `tool_failure_burst`, `empty_assistant_turn`), and frame-by-frame flight diffing
+  (`milyonus flight inspect | diff`, `/v1/sessions/{id}/flight`, `/v1/flights/*`).
+- **H9 — Multi-Model Cost-Latency-Trust Pareto Frontier Router** (`providers/pareto.py`): exact 3D
+  Pareto frontier solver with SQLite Beta/UCB empirical learning and budget-pressure auto-downgrade
+  enforcing strict safety floors on high/critical security tasks (`milyonus router *`, `/v1/router/*`).
+- **H10 — Federated İmece Mesh Protocol** (`imece/mesh.py`): signed `milyonus.mesh.v1` peer
+  envelopes, nonce anti-replay, Proof-Capsule verification, automatic Byzantine reputation slashing
+  & quarantine, and weighted consensus quorum (`milyonus mesh *`, `/v1/mesh/*`).
+- **Chaos Autopilot (16/16 A+) & Hypernova Command Center UI**: expanded `security/chaos.py` to
+  16 isolated probes across 8 vectors (`+leases`, `+federation`) and added lazy-loaded React SPA
+  `HypernovaModal.tsx` + inline SVG visualizations (`HypernovaVisuals.tsx`).
+
 ### Moonshot capabilities (M1–M5) — 2026-11-26
 - **M1 — Memory Time-Travel & Counterfactual Replay** (`memory/timetravel.py`): hash-verified
   ledger replay to any sequence or timestamp (`milyonus memory timeline | timetravel | epoch-diff

@@ -66,9 +66,22 @@ GET    /v1/imece/runs · POST /v1/imece/runs           → launch/list Live İme
 GET    /v1/imece/runs/{id} · /stream · /proof         → run detail, SSE phase stream, proof capsule
 POST   /v1/imece/runs/{id}/stop                       → emergency stop between collective phases
 
-POST   /v1/security/chaos                             → isolated 6-vector Adversarial Chaos Immunity Scorecard
+POST   /v1/security/chaos                             → isolated 8-vector (16-probe) Adversarial Chaos Scorecard
 POST   /v1/sessions/{id}/forge-skill {name, ...}      → distill, scan, and publish a verified SKILL.md
 GET    /v1/arena/leaderboard · POST /v1/arena/match   → head-to-head Strategy Arena + Elo leaderboard
+
+# Hypernova H1–H10 endpoints (PLAN-HYPERNOVA.md)
+GET    /v1/memory/graph · /conflicts · /blast-radius  → H1 Epistemic Knowledge Graph, contradictions & blast radius
+GET/POST /v1/memory/branches · /{name:path}/items|diff|merge|DELETE → H2 Git-style cognitive memory branching
+GET/POST /v1/leases · /{id}/verify · DELETE /{id}     → H3 Signed Capability Leases
+POST   /v1/leases/canary · /canary/scan               → H3 Honeytoken Canary global lease kill-switch
+GET    /v1/constitution/presets · POST /evaluate|/simulate → H4 IRADE Constitutional Policy Engine & Veto Simulator
+POST   /v1/evolution/run · GET /runs · /runs/{id}     → H5 Swarm DNA genetic evolution & phylogeny
+POST   /v1/proofs/disclose · /verify-disclosure       → H6 Cryptographic Selective Disclosure Merkle proofs
+GET    /v1/skills/immune/scan · POST /seal|/heal      → H7 Autonomous Self-Healing Skill Immune System
+GET    /v1/sessions/{id}/flight · POST /v1/flights/analyze|diff → H8 Black-Box Flight Recorder DVR & anomaly detector
+GET    /v1/router/frontier · POST /route|/outcome     → H9 Cost-Latency-Trust Pareto Frontier Router & Beta/UCB bandit
+GET/POST /v1/mesh/peers · DELETE /{id} · POST /dispatch → H10 Federated İmece Mesh Byzantine signed quorum
 ```
 
 ## SSE events

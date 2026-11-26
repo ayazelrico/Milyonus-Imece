@@ -213,11 +213,11 @@ def test_signed_proof_bundle_creation_verification_and_tamper_detection(
 
 async def test_adversarial_chaos_suite_scores_100():
     report = await run_chaos_suite(include_web=True)
-    assert report.total == 12
-    assert report.passed == 12
+    assert report.total >= 12
+    assert report.passed == report.total
     assert report.immunity_score == 100
     assert report.grade == "A+"
-    assert set(report.vectors) == {"injection", "risk", "memory", "t0", "skills", "isolation"}
+    assert {"injection", "risk", "memory", "t0", "skills", "isolation"} <= set(report.vectors)
 
 
 def test_adversarial_chaos_cli_writes_scorecard(tmp_path: Path):

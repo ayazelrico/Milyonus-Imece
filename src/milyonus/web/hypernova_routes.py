@@ -227,7 +227,7 @@ def mount_hypernova_routes(
             ms.close()
             mgr.close()
 
-    @app.post("/v1/memory/branches/{name}/items")
+    @app.post("/v1/memory/branches/{name:path}/items")
     def stage_branch_item(
         name: str, body: BranchStageIn, principal: SessionPrincipal = Depends(current)
     ) -> dict[str, Any]:
@@ -251,7 +251,7 @@ def mount_hypernova_routes(
         finally:
             mgr.close()
 
-    @app.get("/v1/memory/branches/{name}/diff")
+    @app.get("/v1/memory/branches/{name:path}/diff")
     def diff_branch(name: str, principal: SessionPrincipal = Depends(current)) -> dict[str, Any]:
         from milyonus.memory.branch import BranchError, MemoryBranchManager
         from milyonus.memory.store import MemoryStore
@@ -267,7 +267,7 @@ def mount_hypernova_routes(
             ms.close()
             mgr.close()
 
-    @app.post("/v1/memory/branches/{name}/merge")
+    @app.post("/v1/memory/branches/{name:path}/merge")
     async def merge_branch(
         name: str, body: BranchMergeIn, principal: SessionPrincipal = Depends(current)
     ) -> dict[str, Any]:
@@ -297,7 +297,7 @@ def mount_hypernova_routes(
             ms.close()
             mgr.close()
 
-    @app.delete("/v1/memory/branches/{name}")
+    @app.delete("/v1/memory/branches/{name:path}")
     def delete_branch(name: str, principal: SessionPrincipal = Depends(current)) -> dict[str, Any]:
         from milyonus.memory.branch import MemoryBranchManager
 

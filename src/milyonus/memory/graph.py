@@ -194,10 +194,13 @@ def extract_assertions(content: str) -> list[ExtractedAssertion]:
         for m in _POLARITY_RE.finditer(sent):
             pol_word = m.group("pol").lower()
             target = _norm(m.group("target"))
-            # Trim leading auxiliary verbs like "use" after always/never.
+            # Trim leading auxiliary verbs and trailing prepositional qualifiers.
             target = re.sub(
                 r"^(?:use|using|run|running|deploy|deploying|enable|enabling)\s+", "", target
             )
+            target = re.sub(
+                r"\s+\b(?:for|in|on|with|when|during|under|at|to)\b.*$", "", target
+            ).strip()
             if len(target) < 2:
                 continue
             pol = "positive" if pol_word in _POSITIVE_POL else "negative"

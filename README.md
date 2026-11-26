@@ -13,8 +13,8 @@ One command sends a task through **tens to thousands of real subagents**, a
 [![License](https://img.shields.io/badge/license-Apache--2.0-1E4FD8.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.12%2B-35C6F4.svg)](pyproject.toml)
 [![Version](https://img.shields.io/badge/version-5.5.0-071233.svg)](CHANGELOG.md)
-[![Tests](https://img.shields.io/badge/tests-657%20passing-22C55E.svg)](tests)
-[![Chaos](https://img.shields.io/badge/Chaos%20Immunity-100%2F100%20A%2B-22C55E.svg)](PLAN-MOONSHOT.md)
+[![Tests](https://img.shields.io/badge/tests-670%20passing-22C55E.svg)](tests)
+[![Chaos](https://img.shields.io/badge/Chaos%20Immunity-100%2F100%20A%2B%20(16%2F16)-22C55E.svg)](PLAN-HYPERNOVA.md)
 [![Imece](https://img.shields.io/badge/imece-experimental-F59E0B.svg)](#status--honest-trial-results)
 [![PoisonBench](https://img.shields.io/badge/PoisonBench%20ASR-0%25-22C55E.svg)](docs/benchmarks.md)
 
@@ -23,12 +23,15 @@ One command sends a task through **tens to thousands of real subagents**, a
 > **Status: experimental.** On 2026-11-02 a real-model run produced an accepted
 > Python deliverable, passed 12 independently designed tests in macOS isolation,
 > and passed a separate reference oracle withheld from the agents. Sandboxed
-> Python execution, hierarchical command/councils, a benchmark runner, and
-> five Moonshot capabilities (Time-Travel Memory, Signed Proof Capsules, Live
-> Web War Room, Adversarial Chaos Autopilot, Skill Forge & Elo Arena) now ship.
-> This is a small proof, not production validation. See the
+> Python execution, hierarchical command/councils, a benchmark runner,
+> five Moonshot capabilities (M1–M5), and **ten Hypernova capabilities (H1–H10)**
+> — Epistemic Knowledge Graph & Contradiction Engine, Git-Style Memory Branching,
+> Zero-Trust Capability Leases & Canary Kill-Switch, IRADE Constitutional Policy
+> Engine, Swarm DNA Evolution, Selective Disclosure Merkle Proofs, Skill Immune
+> System, Black-Box Flight Recorder DVR, Pareto Frontier Router, and Federated
+> İmece Mesh — now ship. This is a small proof, not production validation. See the
 > [completion assessment](docs/completion.md), [raw trial](docs/trials/2026-11-02-final-clamp.json),
-> [next 5X plan](PLAN-5X.md), and [Moonshot plan](PLAN-MOONSHOT.md).
+> [next 5X plan](PLAN-5X.md), [Moonshot plan](PLAN-MOONSHOT.md), and [Hypernova plan](PLAN-HYPERNOVA.md).
 
 ---
 
@@ -1368,7 +1371,7 @@ Guides: [docs/docker.md](docs/docker.md) · [docs/production.md](docs/production
 ```bash
 make sync                  # deps (matches CI: dev + admin + discord)
 make hooks                 # enable pre-push gate (runs the CI checks locally)
-uv run pytest -q           # full suite; 657 passed with real Docker (MILYONUS_TEST_DOCKER=1)
+uv run pytest -q           # full suite; 670 passed with real Docker (MILYONUS_TEST_DOCKER=1)
 make check                 # lint + format-check + mypy + safety + chaos + test — matches CI
 ```
 
@@ -1408,8 +1411,21 @@ large repeated real-model evaluation and third-party audit remain open.
 - [x] **M1** — Memory Time-Travel & Counterfactual Replay (`timetravel.py`, CLI, `/v1/memory/*`, Trust Rail scrubber)
 - [x] **M2** — Signed Evidence Bundles (`.milyonus-proof.json` Merkle root + Ed25519 offline verification)
 - [x] **M3** — Live İmece War Room on Web Surface #7 (`ImeceRunHub`, SSE telemetry, Emergency Stop, Proof download)
-- [x] **M4** — Adversarial Chaos & Red-Team Autopilot (12 isolated probes, 6 vectors, 100/100 A+ CI gate, Web Shield Check)
+- [x] **M4** — Adversarial Chaos & Red-Team Autopilot (16 isolated probes, 8 vectors, 100/100 A+ CI gate, Web Shield Check)
 - [x] **M5** — Skill Forge & Multi-Strategy Arena (scanner + AST-verified `SKILL.md` synthesis + SQLite Elo leaderboard)
+
+**Hypernova Capabilities (H1–H10)** — see [PLAN-HYPERNOVA.md](PLAN-HYPERNOVA.md) · [PLAN-HYPERNOVA-ACTIONS.md](PLAN-HYPERNOVA-ACTIONS.md)
+
+- [x] **H1** — Sovereign Epistemic Knowledge Graph & Contradiction Engine (`memory/graph.py`, PageRank centrality, Mermaid/DOT/SVG)
+- [x] **H2** — Cryptographic Memory Branching (`memory/branch.py`, Git-style cognitive fork/diff/verified-merge)
+- [x] **H3** — Zero-Trust Capability Leases & Honeytoken Canary Kill-Switch (`security/leases.py`, HMAC-signed TTL/scope leases)
+- [x] **H4** — IRADE Constitutional Policy Engine & Live Veto Simulator (`imece/constitution.py`, 4 presets + counterfactual simulation)
+- [x] **H5** — Swarm DNA & Evolutionary Strategy Genome (`imece/evolution.py`, seeded genetic evolution + SQLite phylogeny)
+- [x] **H6** — Cryptographic Selective Disclosure Merkle Proofs (`security/disclosure.py`, blind sensitive claims, prove gates offline)
+- [x] **H7** — Autonomous Self-Healing Skill Immune System (`skills/immune.py`, SHA-256 manifest sealing, auto-heal, `.quarantine/`)
+- [x] **H8** — Flight Recorder: Black-Box Session DVR & Anomaly Detector (`core/flight_recorder.py`, hash-chained DVR & diff)
+- [x] **H9** — Multi-Model Cost-Latency-Trust Pareto Frontier Router (`providers/pareto.py`, exact 3D Pareto + Beta/UCB + safety floors)
+- [x] **H10** — Federated İmece Mesh Protocol (`imece/mesh.py`, signed peer envelopes, Proof attestation, Byzantine slashing & quorum)
 
 **Platform**
 

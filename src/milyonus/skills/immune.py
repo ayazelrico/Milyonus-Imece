@@ -290,9 +290,17 @@ def heal_skill(
     raw = sm.read_text(encoding="utf-8")
     actions: list[str] = []
 
-    # 1. Redact accidental secret literals first.
+    # 1. Redact accidental secret literals (and strip adjacent leaked secret labels).
+    import re
+
     cleaned = redact(raw)
     if cleaned != raw:
+        cleaned = re.sub(
+            r"\b(?:api[_-]?key|secret|token|password|credential)\s*[:=]\s*(\[REDACTED[^\]]*\])",
+            r"\1",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
         actions.append("redacted_secret_literals")
 
     # 2. Fail closed if danger-level RCE/exfil signals remain.
