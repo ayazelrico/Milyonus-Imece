@@ -23,17 +23,24 @@ def _current_platform() -> str:
     return {"darwin": "macos", "linux": "linux", "windows": "windows"}.get(sys, sys)
 
 
+_BUNDLED_SKILLS_DIR = Path(__file__).resolve().parent.parent / "_bundled_skills"
+
+
 class SkillEngine:
     def __init__(self, roots: list[Path] | None = None, *, auto_recover: bool = False) -> None:
         # User skills first (take precedence), then bundled.
         # Bundled skills ship inside the package so they survive `pip install`.
-        bundled = Path(__file__).resolve().parent.parent / "_bundled_skills"
-        self.roots = roots or [skills_dir(), bundled]
+        self.roots = roots if roots is not None else [skills_dir(), _BUNDLED_SKILLS_DIR]
         self._platform = _current_platform()
         if auto_recover and self.roots and self.roots[0].exists():
             from milyonus.skills.publication import recover_publications
 
             recover_publications(self.roots[0], apply=True)
+
+    @classmethod
+    def for_tenant(cls, tenant_skills_dir: Path) -> SkillEngine:
+        """Create a tenant-isolated engine (tenant skills + bundled only, never host ~/.milyonus)."""
+        return cls(roots=[tenant_skills_dir, _BUNDLED_SKILLS_DIR])
 
     def _iter_skill_dirs(self) -> list[Path]:
         seen: set[str] = set()

@@ -856,17 +856,17 @@ def create_app(*, data_root: Path | None = None, static_dir: Path | None = None)
 
     @app.get("/v1/skills")
     def skills(principal: SessionPrincipal = Depends(current)) -> list:
-        del principal
         from milyonus.skills.engine import SkillEngine
 
-        return SkillEngine().list_level0()
+        home = tenant_home(root, principal.tenant_id)
+        return SkillEngine.for_tenant(home / "skills").list_level0()
 
     @app.get("/v1/skills/{name}")
     def skill_view(name: str, principal: SessionPrincipal = Depends(current)) -> dict:
-        del principal
         from milyonus.skills.engine import SkillEngine
 
-        body = SkillEngine().view(name)
+        home = tenant_home(root, principal.tenant_id)
+        body = SkillEngine.for_tenant(home / "skills").view(name)
         if body.startswith("skill not found:"):
             raise HTTPException(404, "skill not found")
         return {"name": name, "body": body}
@@ -1022,34 +1022,76 @@ def create_app(*, data_root: Path | None = None, static_dir: Path | None = None)
         response: Response, principal: SessionPrincipal = Depends(current)
     ) -> dict:
         """Irreversible account erasure: tombstones memory preserving ledger hash chain (ADR-0011)."""
+        import sqlite3
+
         home = tenant_home(root, principal.tenant_id)
         from milyonus.core.store import SessionStore
         from milyonus.memory.store import MemoryStore
 
-        def _erase_tenant_state() -> tuple[int, int]:
-            ms = MemoryStore(home / "state.db")
+        _EXTRA_TENANT_TABLES = (
+            "arena_ratings",
+            "arena_matches",
+            "mesh_peers",
+            "mesh_dispatches",
+            "pareto_stats",
+            "evolution_runs",
+            "evolution_genomes",
+            "memory_branch_items",
+            "memory_branches",
+            "capability_leases",
+            "lease_canaries",
+            "compliance_certs",
+            "dag_runs",
+            "privacy_budgets",
+            "privacy_releases",
+            "memory_vector",
+        )
+
+        def _erase_tenant_state() -> tuple[int, int, int]:
+            db_path = home / "state.db"
+            ms = MemoryStore(db_path)
             try:
                 tombstoned = ms.erase_all()
             finally:
                 ms.close()
-            ss = SessionStore(home / "state.db")
+            ss = SessionStore(db_path)
             try:
                 deleted_msgs = ss.erase_all()
             finally:
                 ss.close()
-            return tombstoned, deleted_msgs
+            purged_extra = 0
+            conn = sqlite3.connect(str(db_path))
+            try:
+                existing = {
+                    str(r[0])
+                    for r in conn.execute(
+                        "SELECT name FROM sqlite_master WHERE type='table'"
+                    ).fetchall()
+                }
+                for tbl in _EXTRA_TENANT_TABLES:
+                    if tbl in existing:
+                        cur = conn.execute(f"DELETE FROM {tbl}")
+                        purged_extra += max(0, cur.rowcount)
+                conn.commit()
+            finally:
+                conn.close()
+            return tombstoned, deleted_msgs, purged_extra
 
-        tombstoned, deleted_msgs = await hub.memory_writer.submit(_erase_tenant_state)
-        for subdir in ("attachments", "workspace"):
+        tombstoned, deleted_msgs, purged_extra = await hub.memory_writer.submit(_erase_tenant_state)
+        for subdir in ("attachments", "workspace", "skills"):
             target = home / subdir
             if target.exists() and not target.is_symlink():
                 shutil.rmtree(target, ignore_errors=True)
+        lease_key = home / ".lease_hmac.key"
+        if lease_key.is_file() and not lease_key.is_symlink():
+            lease_key.unlink(missing_ok=True)
         store.erase_user(principal.user_id)
         clear_session_cookie(response)
         return {
             "erased": True,
             "tombstoned_memories": tombstoned,
             "deleted_messages": deleted_msgs,
+            "purged_auxiliary_records": purged_extra,
         }
 
     # --- M1: Memory Time-Travel & Counterfactual Replay -----------------

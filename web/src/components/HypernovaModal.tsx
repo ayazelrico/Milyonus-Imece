@@ -226,35 +226,45 @@ export default function HypernovaModal() {
 
   if (!hypernovaOpen) return null;
 
+  async function runSafe(fn: () => Promise<void>) {
+    try {
+      await fn();
+    } catch (e) {
+      setNotice(String(e));
+    }
+  }
+
   async function runSelectiveDisclosureDemo() {
     setNotice("");
-    let bundle: Record<string, unknown>;
-    if (sessionId) {
-      bundle = await api<Record<string, unknown>>(`/v1/sessions/${sessionId}/proof`);
-    } else {
-      const runs = await api<{ id: string }[]>("/v1/imece/runs");
-      if (runs.length > 0) {
-        bundle = await api<Record<string, unknown>>(`/v1/imece/runs/${runs[0].id}/proof`);
+    await runSafe(async () => {
+      let bundle: Record<string, unknown>;
+      if (sessionId) {
+        bundle = await api<Record<string, unknown>>(`/v1/sessions/${sessionId}/proof`);
       } else {
-        setNotice("Start a chat session or War Room run first to derive a live disclosure proof.");
+        const runs = await api<{ id: string }[]>("/v1/imece/runs");
+        if (runs.length > 0) {
+          bundle = await api<Record<string, unknown>>(`/v1/imece/runs/${runs[0].id}/proof`);
+        } else {
+          setNotice("Start a chat session or War Room run first to derive a live disclosure proof.");
+          return;
+        }
+      }
+      const claims = Array.isArray(bundle.claims) ? bundle.claims : [];
+      if (claims.length === 0) {
+        setNotice("Active session has 0 claims yet — send a message first.");
         return;
       }
-    }
-    const claims = Array.isArray(bundle.claims) ? bundle.claims : [];
-    if (claims.length === 0) {
-      setNotice("Active session has 0 claims yet — send a message first.");
-      return;
-    }
-    const disc = await api<Record<string, unknown>>("/v1/proofs/disclose", {
-      method: "POST",
-      body: JSON.stringify({ bundle, reveal_indices: [0] }),
+      const disc = await api<Record<string, unknown>>("/v1/proofs/disclose", {
+        method: "POST",
+        body: JSON.stringify({ bundle, reveal_indices: [0] }),
+      });
+      setDiscResult(disc);
+      const ver = await api<Record<string, unknown>>("/v1/proofs/verify-disclosure", {
+        method: "POST",
+        body: JSON.stringify({ disclosure: disc }),
+      });
+      setDiscVerify(ver);
     });
-    setDiscResult(disc);
-    const ver = await api<Record<string, unknown>>("/v1/proofs/verify-disclosure", {
-      method: "POST",
-      body: JSON.stringify({ disclosure: disc }),
-    });
-    setDiscVerify(ver);
   }
 
   return (
@@ -384,46 +394,52 @@ export default function HypernovaModal() {
                   />
                   <button
                     type="button"
-                    onClick={async () => {
-                      if (!branchClaim.trim()) return;
-                      const bPath = selectedBranch.split("/").map(encodeURIComponent).join("/");
-                      await api(`/v1/memory/branches/${bPath}/items`, {
-                        method: "POST",
-                        body: JSON.stringify({ op: "add", content: branchClaim.trim() }),
-                      });
-                      setBranchClaim("");
-                      qc.invalidateQueries({ queryKey: ["hypernova-branches"] });
-                      setNotice("Staged isolated belief ✓");
-                    }}
+                    onClick={() =>
+                      void runSafe(async () => {
+                        if (!branchClaim.trim()) return;
+                        const bPath = selectedBranch.split("/").map(encodeURIComponent).join("/");
+                        await api(`/v1/memory/branches/${bPath}/items`, {
+                          method: "POST",
+                          body: JSON.stringify({ op: "add", content: branchClaim.trim() }),
+                        });
+                        setBranchClaim("");
+                        qc.invalidateQueries({ queryKey: ["hypernova-branches"] });
+                        setNotice("Staged isolated belief ✓");
+                      })
+                    }
                     className="rounded-full bg-white/15 hover:bg-white/25 px-3 py-1.5"
                   >
                     Stage Add
                   </button>
                   <button
                     type="button"
-                    onClick={async () => {
-                      const bPath = selectedBranch.split("/").map(encodeURIComponent).join("/");
-                      const d = await api<Record<string, unknown>>(
-                        `/v1/memory/branches/${bPath}/diff`,
-                      );
-                      setBranchDiff(d);
-                    }}
+                    onClick={() =>
+                      void runSafe(async () => {
+                        const bPath = selectedBranch.split("/").map(encodeURIComponent).join("/");
+                        const d = await api<Record<string, unknown>>(
+                          `/v1/memory/branches/${bPath}/diff`,
+                        );
+                        setBranchDiff(d);
+                      })
+                    }
                     className="rounded-full bg-white/10 hover:bg-white/20 px-3 py-1.5"
                   >
                     3-Way Diff
                   </button>
                   <button
                     type="button"
-                    onClick={async () => {
-                      const bPath = selectedBranch.split("/").map(encodeURIComponent).join("/");
-                      const m = await api<{ message: string }>(
-                        `/v1/memory/branches/${bPath}/merge`,
-                        { method: "POST", body: JSON.stringify({ force: false }) },
-                      );
-                      setNotice(m.message);
-                      qc.invalidateQueries({ queryKey: ["hypernova-branches"] });
-                      qc.invalidateQueries({ queryKey: ["memory"] });
-                    }}
+                    onClick={() =>
+                      void runSafe(async () => {
+                        const bPath = selectedBranch.split("/").map(encodeURIComponent).join("/");
+                        const m = await api<{ message: string }>(
+                          `/v1/memory/branches/${bPath}/merge`,
+                          { method: "POST", body: JSON.stringify({ force: false }) },
+                        );
+                        setNotice(m.message);
+                        qc.invalidateQueries({ queryKey: ["hypernova-branches"] });
+                        qc.invalidateQueries({ queryKey: ["memory"] });
+                      })
+                    }
                     className="rounded-full bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5"
                   >
                     Verified Merge
@@ -477,20 +493,22 @@ export default function HypernovaModal() {
               />
               <button
                 type="button"
-                onClick={async () => {
-                  await api("/v1/leases", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      subject: "web-agent",
-                      tools: leaseTools.split(",").map((s) => s.trim()).filter(Boolean),
-                      path_globs: leasePaths.split(",").map((s) => s.trim()).filter(Boolean),
-                      ttl_seconds: 600,
-                      max_calls: 15,
-                    }),
-                  });
-                  qc.invalidateQueries({ queryKey: ["hypernova-leases"] });
-                  setNotice("Minted HMAC-signed Capability Lease ✓");
-                }}
+                onClick={() =>
+                  void runSafe(async () => {
+                    await api("/v1/leases", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        subject: "web-agent",
+                        tools: leaseTools.split(",").map((s) => s.trim()).filter(Boolean),
+                        path_globs: leasePaths.split(",").map((s) => s.trim()).filter(Boolean),
+                        ttl_seconds: 600,
+                        max_calls: 15,
+                      }),
+                    });
+                    qc.invalidateQueries({ queryKey: ["hypernova-leases"] });
+                    setNotice("Minted HMAC-signed Capability Lease ✓");
+                  })
+                }
                 className="rounded-full bg-brand px-4 py-2 font-medium"
               >
                 Mint Signed Lease
@@ -512,10 +530,12 @@ export default function HypernovaModal() {
                   ) : (
                     <button
                       type="button"
-                      onClick={async () => {
-                        await api(`/v1/leases/${lr.lease_id}`, { method: "DELETE" });
-                        qc.invalidateQueries({ queryKey: ["hypernova-leases"] });
-                      }}
+                      onClick={() =>
+                        void runSafe(async () => {
+                          await api(`/v1/leases/${lr.lease_id}`, { method: "DELETE" });
+                          qc.invalidateQueries({ queryKey: ["hypernova-leases"] });
+                        })
+                      }
                       className="text-red-300 hover:underline"
                     >
                       Revoke
@@ -530,15 +550,17 @@ export default function HypernovaModal() {
                 <span className="font-medium text-white/85">Honeytoken Canary Kill-Switch</span>
                 <button
                   type="button"
-                  onClick={async () => {
-                    const c = await api<{ token: string }>("/v1/leases/canary", {
-                      method: "POST",
-                      body: JSON.stringify({ label: "ui-trap" }),
-                    });
-                    setCanaryToken(c.token);
-                    setCanaryProbe(`Simulated exfil: ${c.token}`);
-                    qc.invalidateQueries({ queryKey: ["hypernova-leases"] });
-                  }}
+                  onClick={() =>
+                    void runSafe(async () => {
+                      const c = await api<{ token: string }>("/v1/leases/canary", {
+                        method: "POST",
+                        body: JSON.stringify({ label: "ui-trap" }),
+                      });
+                      setCanaryToken(c.token);
+                      setCanaryProbe(`Simulated exfil: ${c.token}`);
+                      qc.invalidateQueries({ queryKey: ["hypernova-leases"] });
+                    })
+                  }
                   className="rounded-full bg-white/15 hover:bg-white/25 px-3 py-1"
                 >
                   Mint Canary Trap
@@ -556,15 +578,17 @@ export default function HypernovaModal() {
                 />
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (!canaryProbe.trim()) return;
-                    const r = await api<{ detail: string }>("/v1/leases/canary/scan", {
-                      method: "POST",
-                      body: JSON.stringify({ text: canaryProbe }),
-                    });
-                    setCanaryResult(r.detail);
-                    qc.invalidateQueries({ queryKey: ["hypernova-leases"] });
-                  }}
+                  onClick={() =>
+                    void runSafe(async () => {
+                      if (!canaryProbe.trim()) return;
+                      const r = await api<{ detail: string }>("/v1/leases/canary/scan", {
+                        method: "POST",
+                        body: JSON.stringify({ text: canaryProbe }),
+                      });
+                      setCanaryResult(r.detail);
+                      qc.invalidateQueries({ queryKey: ["hypernova-leases"] });
+                    })
+                  }
                   className="rounded-full bg-red-600/80 hover:bg-red-600 px-3 py-1.5"
                 >
                   Scan & Trip Kill-Switch
@@ -605,53 +629,57 @@ export default function HypernovaModal() {
               />
               <button
                 type="button"
-                onClick={async () => {
-                  const res = await api<Record<string, unknown>>("/v1/constitution/evaluate", {
-                    method: "POST",
-                    body: JSON.stringify({ preset: constPreset, text: constText }),
-                  });
-                  setConstEval(res);
-                }}
+                onClick={() =>
+                  void runSafe(async () => {
+                    const res = await api<Record<string, unknown>>("/v1/constitution/evaluate", {
+                      method: "POST",
+                      body: JSON.stringify({ preset: constPreset, text: constText }),
+                    });
+                    setConstEval(res);
+                  })
+                }
                 className="rounded-full bg-brand px-4 py-2 font-medium"
               >
                 Evaluate Articles
               </button>
               <button
                 type="button"
-                onClick={async () => {
-                  const sim = await api<typeof constSim>("/v1/constitution/simulate", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      options: [
-                        {
-                          id: "opt_fast",
-                          text: "Fast shortcut without full sandbox verification",
-                          scores: {
-                            correctness: 0.8,
-                            safety: 0.6,
-                            reversibility: 0.58,
-                            legal: 0.78,
-                            cost: 0.94,
-                            speed: 0.95,
+                onClick={() =>
+                  void runSafe(async () => {
+                    const sim = await api<typeof constSim>("/v1/constitution/simulate", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        options: [
+                          {
+                            id: "opt_fast",
+                            text: "Fast shortcut without full sandbox verification",
+                            scores: {
+                              correctness: 0.8,
+                              safety: 0.6,
+                              reversibility: 0.58,
+                              legal: 0.78,
+                              cost: 0.94,
+                              speed: 0.95,
+                            },
                           },
-                        },
-                        {
-                          id: "opt_fortress",
-                          text: "Sandboxed verified deployment with rollback",
-                          scores: {
-                            correctness: 0.91,
-                            safety: 0.95,
-                            reversibility: 0.92,
-                            legal: 0.94,
-                            cost: 0.52,
-                            speed: 0.55,
+                          {
+                            id: "opt_fortress",
+                            text: "Sandboxed verified deployment with rollback",
+                            scores: {
+                              correctness: 0.91,
+                              safety: 0.95,
+                              reversibility: 0.92,
+                              legal: 0.94,
+                              cost: 0.52,
+                              speed: 0.55,
+                            },
                           },
-                        },
-                      ],
-                    }),
-                  });
-                  setConstSim(sim);
-                }}
+                        ],
+                      }),
+                    });
+                    setConstSim(sim);
+                  })
+                }
                 className="rounded-full bg-white/15 hover:bg-white/25 px-4 py-2"
               >
                 Simulate 4 Constitutions
@@ -705,13 +733,15 @@ export default function HypernovaModal() {
               />
               <button
                 type="button"
-                onClick={async () => {
-                  const rep = await api<typeof evoReport>("/v1/evolution/run", {
-                    method: "POST",
-                    body: JSON.stringify({ task: evoTask, generations: evoGens, population_size: 12 }),
-                  });
-                  setEvoReport(rep);
-                }}
+                onClick={() =>
+                  void runSafe(async () => {
+                    const rep = await api<typeof evoReport>("/v1/evolution/run", {
+                      method: "POST",
+                      body: JSON.stringify({ task: evoTask, generations: evoGens, population_size: 12 }),
+                    });
+                    setEvoReport(rep);
+                  })
+                }
                 className="rounded-full bg-brand px-4 py-2 font-medium"
               >
                 Evolve Swarm DNA
@@ -778,11 +808,13 @@ export default function HypernovaModal() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={async () => {
-                    await api("/v1/skills/immune/seal", { method: "POST" });
-                    qc.invalidateQueries({ queryKey: ["hypernova-immune"] });
-                    setNotice("Sealed SHA-256 baseline manifest ✓");
-                  }}
+                  onClick={() =>
+                    void runSafe(async () => {
+                      await api("/v1/skills/immune/seal", { method: "POST" });
+                      qc.invalidateQueries({ queryKey: ["hypernova-immune"] });
+                      setNotice("Sealed SHA-256 baseline manifest ✓");
+                    })
+                  }
                   className="rounded-full bg-brand px-3 py-1"
                 >
                   Seal Manifest
@@ -814,14 +846,16 @@ export default function HypernovaModal() {
                   {e.healable && (
                     <button
                       type="button"
-                      onClick={async () => {
-                        const r = await api<{ message: string }>("/v1/skills/immune/heal", {
-                          method: "POST",
-                          body: JSON.stringify({ name: e.name }),
-                        });
-                        setNotice(r.message);
-                        qc.invalidateQueries({ queryKey: ["hypernova-immune"] });
-                      }}
+                      onClick={() =>
+                        void runSafe(async () => {
+                          const r = await api<{ message: string }>("/v1/skills/immune/heal", {
+                            method: "POST",
+                            body: JSON.stringify({ name: e.name }),
+                          });
+                          setNotice(r.message);
+                          qc.invalidateQueries({ queryKey: ["hypernova-immune"] });
+                        })
+                      }
                       className="rounded-full bg-emerald-600 px-3 py-1"
                     >
                       Auto-Heal
@@ -843,11 +877,13 @@ export default function HypernovaModal() {
               <button
                 type="button"
                 disabled={!sessionId}
-                onClick={async () => {
-                  if (!sessionId) return;
-                  const f = await api<typeof flightRec>(`/v1/sessions/${sessionId}/flight`);
-                  setFlightRec(f);
-                }}
+                onClick={() =>
+                  void runSafe(async () => {
+                    if (!sessionId) return;
+                    const f = await api<typeof flightRec>(`/v1/sessions/${sessionId}/flight`);
+                    setFlightRec(f);
+                  })
+                }
                 className="rounded-full bg-brand disabled:opacity-40 px-4 py-1.5 font-medium"
               >
                 Capture Black-Box DVR
@@ -918,17 +954,19 @@ export default function HypernovaModal() {
               </label>
               <button
                 type="button"
-                onClick={async () => {
-                  const res = await api<typeof routeResp>("/v1/router/route", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      prompt: paretoPrompt,
-                      budget_pressure: budgetPressure,
-                      require_local: localOnly,
-                    }),
-                  });
-                  setRouteResp(res);
-                }}
+                onClick={() =>
+                  void runSafe(async () => {
+                    const res = await api<typeof routeResp>("/v1/router/route", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        prompt: paretoPrompt,
+                        budget_pressure: budgetPressure,
+                        require_local: localOnly,
+                      }),
+                    });
+                    setRouteResp(res);
+                  })
+                }
                 className="rounded-full bg-brand px-4 py-2 font-medium"
               >
                 Route on Frontier
@@ -972,17 +1010,19 @@ export default function HypernovaModal() {
               </label>
               <button
                 type="button"
-                onClick={async () => {
-                  const res = await api<typeof meshDispatch>("/v1/mesh/dispatch", {
-                    method: "POST",
-                    body: JSON.stringify({
-                      task: meshTask,
-                      byzantine_nodes: simByzantine ? ["node-beta"] : [],
-                    }),
-                  });
-                  setMeshDispatch(res);
-                  qc.invalidateQueries({ queryKey: ["hypernova-mesh"] });
-                }}
+                onClick={() =>
+                  void runSafe(async () => {
+                    const res = await api<typeof meshDispatch>("/v1/mesh/dispatch", {
+                      method: "POST",
+                      body: JSON.stringify({
+                        task: meshTask,
+                        byzantine_nodes: simByzantine ? ["node-beta"] : [],
+                      }),
+                    });
+                    setMeshDispatch(res);
+                    qc.invalidateQueries({ queryKey: ["hypernova-mesh"] });
+                  })
+                }
                 className="rounded-full bg-brand px-4 py-2 font-medium"
               >
                 Broadcast Signed Quorum
